@@ -1,6 +1,17 @@
 {
   "name": "ome-zarr.js",
-  "private": true,
+  "description": "Some JavaScript utils for simple rendering of OME-Zarr images",
+  "author": "OME Team",
+  "license": "BSD",
+  "homepage": "<YOUR_SITE_URL>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/will-moore/ome-zarr.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/will-moore/ome-zarr.js/issues"
+  },
+  "keywords": ["ome", "zarr", "image", "rendering"],
   "version": "0.0.0",
   "type": "module",
   "files": ["dist"],
