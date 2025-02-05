@@ -18,7 +18,7 @@ Usage:
     document.getElementById("thumbnail").src = src;
 
 
-# Typescript from ome-zarr-models-py
+## Typescript from ome-zarr-models-py
 
 I have experimented with using https://github.com/phillipdupuis/pydantic-to-typescript
 to generate typescript interfaces from https://github.com/ome-zarr-models/ome-zarr-models-py.
