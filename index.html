@@ -16,17 +16,13 @@
   
       const omezarr = await import("http://localhost:5173/src/index.ts");
       
-      // v0.4
+      // OME-Zarr v0.4
       const source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
       const store = new zarr.FetchStore(source);
-      // const data = await zarr.open.v2(store);
-
-      // console.log("attrs", data.attrs);
-      // const arr = await zarr.open.v2(store, { kind: "array" });
-
       let src = await omezarr.renderThumbnail(store);
       document.getElementById("thumbnail1").src = src;
 
+      // OME-Zarr v0.5
       const source_v5 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
       const store_v5 = new zarr.FetchStore(source_v5);
       src = await omezarr.renderThumbnail(store_v5);
