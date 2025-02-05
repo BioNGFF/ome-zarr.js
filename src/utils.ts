@@ -59,7 +59,7 @@ export function getDefaultColors(n: number, visibilities: boolean[]) {
   return colors.map(hexToRGB);
 }
 
-export function getMinMaxValues(chunk2d) {
+export function getMinMaxValues(chunk2d: any): [number, number] {
   const data = chunk2d.data;
   let maxV = 0;
   let minV = Infinity;
@@ -78,7 +78,9 @@ export function range(start: number, end: number) {
   return Array.from({ length: end - start }, (_, i) => i + start);
 }
 
-export function renderTo8bitArray(ndChunks, minMaxValues, colors) {
+export function renderTo8bitArray(ndChunks: any,
+    minMaxValues: Array<[number, number]>,
+    colors: Array<[number, number, number]>) {
   // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
   // ndChunks is list of zarr arrays
 
@@ -127,7 +129,7 @@ export function renderTo8bitArray(ndChunks, minMaxValues, colors) {
   return rgba;
 }
 
-function boostContrast(rgba, factor) {
+function boostContrast(rgba: Uint8ClampedArray, factor: number) {
   // Increase contrast by factor
   for (let pixel = 0; pixel < rgba.length / 4; pixel++) {
     for (let i = 0; i < 3; i++) {
@@ -139,7 +141,7 @@ function boostContrast(rgba, factor) {
   return rgba;
 }
 
-function getHistogram(uint8array, bins = 5) {
+function getHistogram(uint8array: Uint8ClampedArray, bins = 5) {
   // Create histogram from uint8array
   let hist = new Array(bins).fill(0);
   const binSize = 256 / bins;

@@ -72,7 +72,7 @@ export async function renderThumbnail(
     colors = getDefaultColors(channel_count, visibilities);
   }
   // filter for active channels
-  colors = colors.filter((col, idx) => visibilities[idx]);
+  colors = colors.filter((col, idx) => col && visibilities[idx]);
 
   let activeChannels = visibilities.reduce((prev, active, index) => {
     if (active) prev.push(index);
