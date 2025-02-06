@@ -32,18 +32,32 @@ export async function renderThumbnail(
     console.log("Lowest resolution too large for Thumbnail: ", shape);
     return "";
   }
+  // we want to remove any start/end values from window, to calculate min/max
+  if ("channels" in omero) {
+    omero.channels = omero.channels.map((ch) => {
+      if (ch.window) {
+        ch.window.start = undefined;
+        ch.window.end = undefined;
+      }
+      return ch;
+    });
+    console.log("thumb omero", omero);
+  }
 
-  return renderImage(arr, multiscale.axes, omero);
+  let autoBoost = true;
+  return renderImage(arr, multiscale.axes, omero, autoBoost);
 }
 
 export async function renderImage(
     arr: zarr.Array<any>,
     axes: Axis[],
-    omero: Omero | null | undefined
+    omero: Omero | null | undefined,
+    autoBoost: boolean = false
   ) {
     // Main rendering function...
     // We have the zarr Array already in hand, axes for dimensions
     // and omero for rendering settings
+    // if autoBoost is true, check histogram and boost contrast if needed
     let shape = arr.shape;
     let dims = shape.length;
     let width = shape[dims - 1];
@@ -100,12 +114,20 @@ export async function renderImage(
     // Wait for all chunks to be fetched...
     let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));
     let ndChunks = await Promise.all(promises);
-    console.log("Got all chunks", ndChunks.length);
   
-    // Get min and max values for each chunk, then render to 8bit array
-    let minMaxValues = ndChunks.map((ch) => getMinMaxValues(ch));
-    let rbgData = renderTo8bitArray(ndChunks, minMaxValues, colors);
-  
+    // Use start/end values from 'omero' if available, otherwise calculate min/max
+    let minMaxValues = activeChannelIndices.map((chIndex:number, i:number) => {
+        if (omero && omero.channels[chIndex]) {
+            let chOmero = omero.channels[chIndex];
+            if (chOmero?.window?.start !== undefined && chOmero?.window?.end !== undefined) {
+                return [chOmero.window.start, chOmero.window.end];
+            }
+        }
+        return getMinMaxValues(ndChunks[i]);
+    });
+
+    // Render to 8bit rgb array
+    let rbgData = renderTo8bitArray(ndChunks, minMaxValues, colors, autoBoost);
     // Use a canvas element to convert the 8bit array to a dataUrl
     const canvas = document.createElement("canvas");
     canvas.width = width;

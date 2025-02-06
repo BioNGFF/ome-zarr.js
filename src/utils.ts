@@ -1,4 +1,3 @@
-
 import * as zarr from "zarrita";
 import { ImageAttrs } from "./types/ome";
 
@@ -82,16 +81,19 @@ export function getMinMaxValues(chunk2d: any): [number, number] {
   return [minV, maxV];
 }
 
-
 export function range(start: number, end: number) {
   // range(5, 10) -> [5, 6, 7, 8, 9]
   return Array.from({ length: end - start }, (_, i) => i + start);
 }
 
-export function renderTo8bitArray(ndChunks: any,
-    minMaxValues: Array<[number, number]>,
-    colors: Array<[number, number, number]>) {
+export function renderTo8bitArray(
+  ndChunks: any,
+  minMaxValues: Array<[number, number]>,
+  colors: Array<[number, number, number]>,
+  autoBoost: boolean = false
+) {
   // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
+  // if autoBoost is true, check histogram and boost contrast if needed
   // ndChunks is list of zarr arrays
 
   // assume all chunks are same shape
@@ -129,11 +131,13 @@ export function renderTo8bitArray(ndChunks: any,
   }
   // if iterating pixels is fast, check histogram and boost contrast if needed
   // Thumbnails are less than 5 millisecs. 512x512 is 10-20 millisecs.
-  if (performance.now() - start < 100) {
-    let hist = getHistogram(rgba, 5);
-    if (hist[4] < 1) {
-      // If few pixels in top bin, boost contrast
-      rgba = boostContrast(rgba, 2);
+  if (performance.now() - start < 100 && autoBoost) {
+    let bins = 5;
+    let hist = getHistogram(rgba, bins);
+    // If top bin, has less than 1% of pixesl, boost contrast
+    if (hist[bins - 1] < 1) {
+      let factor = 2;
+      rgba = boostContrast(rgba, factor);
     }
   }
   return rgba;
@@ -152,18 +156,20 @@ function boostContrast(rgba: Uint8ClampedArray, factor: number) {
 }
 
 function getHistogram(uint8array: Uint8ClampedArray, bins = 5) {
-  // Create histogram from uint8array
+  // Create histogram from uint8array.
+  // Returns list of percentages in each bin
   let hist = new Array(bins).fill(0);
   const binSize = 256 / bins;
   let pixelCount = uint8array.length / 4;
   for (let i = 0; i < pixelCount; i++) {
+    // get max of r,g,b
     let maxV = uint8array[i * 4];
     maxV = Math.max(uint8array[i * 4 + 1], maxV);
     maxV = Math.max(uint8array[i * 4 + 2], maxV);
     let bin = Math.floor(maxV / binSize);
     hist[bin] += 1;
   }
-  // Normalize
+  // Normalize to percentage
   hist = hist.map((v) => (100 * v) / pixelCount);
   return hist;
 }
@@ -216,7 +222,6 @@ export async function getArray(
   let width = shape[dims - 1];
   let height = shape[dims - 2];
   let longestSide = Math.max(width, height);
-  console.log("longestSide", longestSide, "targetSize", targetSize);
   if (targetSize !== undefined && targetSize < longestSide) {
     // use the multiscale.coordinateTransforms to get relative sizes of arrays
     // NB: only in Zarr v0.4 and v0.5 (otherwise have to load arrays in turn, or guess!)
@@ -233,16 +238,13 @@ export async function getArray(
     });
     let scalesFrom1 = scales.map((scale) => scale / scales[0]);
     let longestSizes = scalesFrom1.map((scale) => longestSide / scale);
-    console.log("scales", scales, "scalesFrom1", scalesFrom1);
 
     let pathIndex;
     for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
       let size = longestSizes[pathIndex];
       let nextSize = longestSizes[pathIndex + 1];
-      console.log("pathIndex", pathIndex, "size", size, "nextSize", nextSize);
       if (!nextSize) {
         // we have reached smallest
-        console.log("Use smallest!");
         break;
       } else if (nextSize > targetSize) {
         // go smaller
@@ -250,16 +252,12 @@ export async function getArray(
       } else {
         // is targetSize closer to this or next?
         let avg = (size + nextSize) / 2;
-        console.log("average", avg);
         if (targetSize < avg) {
           pathIndex += 1;
         }
         break;
       }
     }
-    console.log("longestSizes", longestSizes);
-    console.log("targetSize", targetSize);
-    console.log("pathIndex", pathIndex, "result", longestSizes[pathIndex]);
     path = paths[pathIndex];
     zarrLocation = root.resolve(path);
     arr = await openFn(zarrLocation, { kind: "array" });
