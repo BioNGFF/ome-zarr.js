@@ -1,5 +1,6 @@
 import * as zarr from "zarrita";
 import { ImageAttrs } from "./types/ome";
+import { getLutRgb } from "./luts";
 
 export const MAX_CHANNELS = 3;
 export const COLORS = {
@@ -22,7 +23,10 @@ export interface ImageAttrsV5 {
 }
 type OmeAttrs = ImageAttrs | ImageAttrsV5;
 
-export function hexToRGB(hex: string): [number, number, number] {
+export function hexToRGB(hex: string): [number, number, number] | string {
+  if (hex.includes(".lut")) {
+    return hex;
+  }
   if (hex.startsWith("#")) hex = hex.slice(1);
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
@@ -89,7 +93,7 @@ export function range(start: number, end: number) {
 export function renderTo8bitArray(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
-  colors: Array<[number, number, number]>,
+  colors: Array<[number, number, number] | string>,
   autoBoost: boolean = false
 ) {
   // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
@@ -118,10 +122,18 @@ export function renderTo8bitArray(
       let range = minMaxValues[p];
       let rawValue = data[y];
       let fraction = (rawValue - range[0]) / (range[1] - range[0]);
+      fraction = Math.min(1, Math.max(0, fraction));
       // for red, green, blue,
       for (let i = 0; i < 3; i++) {
         // rgb[i] is 0-255...
-        let v = (fraction * rgb[i]) << 0;
+        let v;
+        if (typeof rgb === "string") {
+          let lut = getLutRgb(rgb);
+          let val = (fraction * 255) << 0;
+          v = lut[val][i];
+        } else {
+          v = (fraction * rgb[i]) << 0;
+        }
         // increase pixel intensity if value is higher
         rgba[offset * 4 + i] = Math.max(rgba[offset * 4 + i], v);
       }

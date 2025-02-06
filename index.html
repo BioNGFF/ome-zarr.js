@@ -8,12 +8,18 @@
       img {
         margin: 10px;
       }
+      img.lut {
+        margin: 1px;
+        width: 256px;
+        height: 15px;
+      }
     </style>
   </head>
   <body>
     <div id="thumbnails"></div>
     <div id="splitview"></div>
     <div id="stack"></div>
+    <div id="luts"></div>
     <script type="module">
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
       const omezarr = await import("/src/index.ts");
@@ -66,7 +72,7 @@
       );
       // turn first channel ON, green!
       omero.channels[0].active = true;
-      omero.channels[0].color = "00FF00";
+      omero.channels[0].color = "16_colors.lut";
       // TODO: use dim names from multiscale
       let sizeZ = arr200.shape.at(-3);
       let interval = Math.ceil(sizeZ / 7);
@@ -76,6 +82,14 @@
         let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
         document.getElementById("stack").innerHTML += html;
       };
+
+
+      // show luts
+      omezarr.getLuts().forEach(lut => {
+        let src = lut.png;
+        let html = `<img class="lut" src="${src}" title="${lut.name}" />`;
+        document.getElementById("luts").innerHTML += html;
+      });
     </script>
   </body>
 </html>
