@@ -41,7 +41,6 @@ export async function renderThumbnail(
       }
       return ch;
     });
-    console.log("thumb omero", omero);
   }
 
   let autoBoost = true;
@@ -99,12 +98,12 @@ export async function renderImage(
         if (index >= dims - 2) {
           return slice(0, dimSize);
         }
-        // z
+        // Use omero for z/t if available, otherwise use middle slice
         if (axesNames[index] == "z") {
-          return parseInt(dimSize / 2 + "");
+          return omero?.rdefs?.defaultZ ?? parseInt(dimSize / 2 + "");
         }
         if (axesNames[index] == "t") {
-          return parseInt(dimSize / 2 + "");
+          return omero?.rdefs?.defaultT ?? parseInt(dimSize / 2 + "");
         }
         return 0;
       });

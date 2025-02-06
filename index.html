@@ -13,8 +13,8 @@
   <body>
     <div id="thumbnails"></div>
     <div id="splitview"></div>
+    <div id="stack"></div>
     <script type="module">
-      console.log("loading deps....");
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
       const omezarr = await import("/src/index.ts");
 
@@ -56,6 +56,26 @@
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
       });
+
+      // get a smaller array for Z-stack
+      const arr200 = await omezarr.getArray(
+        store0,
+        multiscale,
+        200,
+        zarr_version
+      );
+      // turn first channel ON, green!
+      omero.channels[0].active = true;
+      omero.channels[0].color = "00FF00";
+      // TODO: use dim names from multiscale
+      let sizeZ = arr200.shape.at(-3);
+      let interval = Math.ceil(sizeZ / 7);
+      for (let zSlice = interval; zSlice <= sizeZ; zSlice += interval) {
+        omero.rdefs = {defaultZ: zSlice};
+        let src = await omezarr.renderImage(arr200, multiscale.axes, omero);
+        let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
+        document.getElementById("stack").innerHTML += html;
+      };
     </script>
   </body>
 </html>

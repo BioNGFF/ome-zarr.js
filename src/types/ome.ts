@@ -4,6 +4,8 @@
 /* This file was automatically generated from pydantic models by running pydantic2ts.
 /* pydantic2ts --module src/ome_zarr_models/v04/image.py --output ome.ts
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
+/* 
+/* ** NB: actually, omero.rdefs were added by hand!
 */
 
 
@@ -72,6 +74,11 @@ export interface Dataset {
  */
 export interface Omero {
   channels: Channel[];
+  rdefs: {
+    defaultT: number;
+    defaultZ: number;
+    model: "greyscale" | "color";
+  };
   [k: string]: unknown;
 }
 /**
