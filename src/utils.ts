@@ -1,5 +1,5 @@
 
-export const MAX_CHANNELS = 4;
+export const MAX_CHANNELS = 3;
 export const COLORS = {
   cyan: "#00FFFF",
   yellow: "#FFFF00",

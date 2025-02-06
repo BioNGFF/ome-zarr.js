@@ -1,33 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ome-zarr.js</title>
+    <style>
+      img {
+        margin: 10px;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
-    <img id="thumbnail1" />
-    <img id="thumbnail2" />
     <script type="module">
-
-      console.log("loading deps....")
+      console.log("loading deps....");
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
-  
-      const omezarr = await import("http://localhost:5173/src/index.ts");
-      
-      // OME-Zarr v0.4
-      const source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
-      const store = new zarr.FetchStore(source);
-      let src = await omezarr.renderThumbnail(store);
-      document.getElementById("thumbnail1").src = src;
+      const omezarr = await import("/src/index.ts");
 
-      // OME-Zarr v0.5
-      const source_v5 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
-      const store_v5 = new zarr.FetchStore(source_v5);
-      src = await omezarr.renderThumbnail(store_v5);
-      document.getElementById("thumbnail2").src = src;
+      const urls = [
+        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr", // OME-Zarr v0.4
+        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr", // OME-Zarr v0.5
+        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' metadata best ignored
+      ];
 
+      urls.forEach(async (url) => {
+        const store = new zarr.FetchStore(url);
+        let src = await omezarr.renderThumbnail(store);
+        let html = `<img src="${src}" />`;
+        document.getElementById("app").innerHTML += html;
+      });
     </script>
   </body>
 </html>
