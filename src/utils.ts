@@ -1,4 +1,7 @@
 
+import * as zarr from "zarrita";
+import { ImageAttrs } from "./types/ome";
+
 export const MAX_CHANNELS = 3;
 export const COLORS = {
   cyan: "#00FFFF",
@@ -12,6 +15,13 @@ export const COLORS = {
 export const MAGENTA_GREEN = [COLORS.magenta, COLORS.green];
 export const RGB = [COLORS.red, COLORS.green, COLORS.blue];
 export const CYMRGB = Object.values(COLORS).slice(0, -2);
+
+// For now, the only difference we care about between v0.4 and v0.5 is the nesting
+// of the ImageAttrs object within an 'ome' key.
+export interface ImageAttrsV5 {
+  ome: ImageAttrs;
+}
+type OmeAttrs = ImageAttrs | ImageAttrsV5;
 
 export function hexToRGB(hex: string): [number, number, number] {
   if (hex.startsWith("#")) hex = hex.slice(1);
@@ -156,4 +166,104 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5) {
   // Normalize
   hist = hist.map((v) => (100 * v) / pixelCount);
   return hist;
+}
+
+export async function getMultiscale(store: zarr.FetchStore) {
+  const data = await zarr.open(store, { kind: "group" });
+  let attrs: OmeAttrs = data.attrs as OmeAttrs;
+
+  // Handle v0.4 or v0.5 to get the multiscale object
+  let multiscale: Multiscale;
+  let omero: Omero | null | undefined;
+  let zarr_version: 2 | 3 = 2;
+  if ("ome" in attrs) {
+    attrs = attrs as ImageAttrsV5;
+    multiscale = attrs.ome.multiscales[0];
+    omero = attrs.ome.omero;
+    zarr_version = 3;
+  } else {
+    attrs = attrs as ImageAttrs;
+    multiscale = attrs.multiscales[0];
+    omero = attrs.omero;
+  }
+  return { multiscale, omero, zarr_version };
+}
+
+export async function getArray(
+  store: zarr.FetchStore,
+  multiscale: Multiscale,
+  targetSize: number | undefined,
+  zarr_version: 2 | 3 | undefined
+): Promise<zarr.Array<any>> {
+  const paths: Array<string> = multiscale.datasets.map((d) => d.path);
+  // By default, we use the largest thumbnail path (first dataset)
+  let root = zarr.root(store);
+  const openFn =
+    zarr_version === 3
+      ? zarr.open.v3
+      : zarr_version === 2
+      ? zarr.open.v2
+      : zarr.open;
+
+  // Open the zarr array and check size
+  let path: string = paths[0];
+  let zarrLocation = root.resolve(path);
+  let arr = await openFn(zarrLocation, { kind: "array" });
+
+  // pick a different dataset level if we want a different size
+  let shape = arr.shape;
+  let dims = shape.length;
+  let width = shape[dims - 1];
+  let height = shape[dims - 2];
+  let longestSide = Math.max(width, height);
+  console.log("longestSide", longestSide, "targetSize", targetSize);
+  if (targetSize !== undefined && targetSize < longestSide) {
+    // use the multiscale.coordinateTransforms to get relative sizes of arrays
+    // NB: only in Zarr v0.4 and v0.5 (otherwise have to load arrays in turn, or guess!)
+    let scales: number[] = multiscale.datasets.map((ds) => {
+      if (Array.isArray(ds.coordinateTransformations)) {
+        let ct = ds.coordinateTransformations.find(
+          (ct: any) => "scale" in ct
+        ) as { scale: number[] };
+        let scaleX = ct.scale.at(-1) as number;
+        return scaleX;
+      }
+      // TODO: handle missing coordinateTransformations
+      return 1;
+    });
+    let scalesFrom1 = scales.map((scale) => scale / scales[0]);
+    let longestSizes = scalesFrom1.map((scale) => longestSide / scale);
+    console.log("scales", scales, "scalesFrom1", scalesFrom1);
+
+    let pathIndex;
+    for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
+      let size = longestSizes[pathIndex];
+      let nextSize = longestSizes[pathIndex + 1];
+      console.log("pathIndex", pathIndex, "size", size, "nextSize", nextSize);
+      if (!nextSize) {
+        // we have reached smallest
+        console.log("Use smallest!");
+        break;
+      } else if (nextSize > targetSize) {
+        // go smaller
+        continue;
+      } else {
+        // is targetSize closer to this or next?
+        let avg = (size + nextSize) / 2;
+        console.log("average", avg);
+        if (targetSize < avg) {
+          pathIndex += 1;
+        }
+        break;
+      }
+    }
+    console.log("longestSizes", longestSizes);
+    console.log("targetSize", targetSize);
+    console.log("pathIndex", pathIndex, "result", longestSizes[pathIndex]);
+    path = paths[pathIndex];
+    zarrLocation = root.resolve(path);
+    arr = await openFn(zarrLocation, { kind: "array" });
+  }
+
+  return arr;
 }

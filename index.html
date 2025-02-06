@@ -52,8 +52,7 @@
         let omeroChannel = JSON.parse(JSON.stringify(omero));
         // turn on the channel we want to render...
         omeroChannel.channels[index].active = true;
-        console.log("omeroChannel", omeroChannel);
-        let src = await omezarr.renderImage(multiscale, arr, omeroChannel);
+        let src = await omezarr.renderImage(arr, multiscale.axes, omeroChannel);
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
       });
