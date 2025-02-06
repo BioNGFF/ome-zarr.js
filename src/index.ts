@@ -21,40 +21,114 @@ type OmeAttrs = ImageAttrs | ImageAttrsV5;
 // Don't try to render thumbnails larger than this
 const MAX_SIZE = 1000;
 
-export async function renderThumbnail(
-  store: zarr.FetchStore,
-  thumbDatasetIndex?: number
-): Promise<string> {
-  // create 'root' so we can traverse the zarr store (below)
-  let root = zarr.root(store);
-  const data = await zarr.open(root, { kind: "group" });
-
+export async function getMultiscale(store: zarr.FetchStore) {
+  const data = await zarr.open(store, { kind: "group" });
   let attrs: OmeAttrs = data.attrs as OmeAttrs;
 
   // Handle v0.4 or v0.5 to get the multiscale object
   let multiscale: Multiscale;
+  let omero: Omero | null | undefined;
   let zarr_version: 2 | 3 = 2;
   if ("ome" in attrs) {
     attrs = attrs as ImageAttrsV5;
     multiscale = attrs.ome.multiscales[0];
+    omero = attrs.ome.omero;
     zarr_version = 3;
   } else {
     attrs = attrs as ImageAttrs;
     multiscale = attrs.multiscales[0];
+    omero = attrs.omero;
   }
+  return { multiscale, omero, zarr_version };
+}
 
+export async function getArray(
+  store: zarr.FetchStore,
+  multiscale: Multiscale,
+  targetSize: number | undefined,
+  zarr_version: 2 | 3 | undefined
+): Promise<zarr.Array<any>> {
   const paths: Array<string> = multiscale.datasets.map((d) => d.path);
-  // By default, we use the smallest thumbnail path (last dataset)
-  let path: string = paths[paths.length - 1];
-  if (thumbDatasetIndex != undefined && thumbDatasetIndex < paths.length) {
-    // but if we have a valid dataset index, use that...
-    path = paths[thumbDatasetIndex];
-  }
+  // By default, we use the largest thumbnail path (first dataset)
+  let root = zarr.root(store);
+  const openFn =
+    zarr_version === 3
+      ? zarr.open.v3
+      : zarr_version === 2
+      ? zarr.open.v2
+      : zarr.open;
 
   // Open the zarr array and check size
-  const zarrLocation = root.resolve(path);
-  const openFn = zarr_version === 3 ? zarr.open.v3 : zarr.open.v2;
-  const arr = await openFn(zarrLocation, { kind: "array" });
+  let path: string = paths[0];
+  let zarrLocation = root.resolve(path);
+  let arr = await openFn(zarrLocation, { kind: "array" });
+
+  // pick a different dataset level if we want a different size
+  let shape = arr.shape;
+  let dims = shape.length;
+  let width = shape[dims - 1];
+  let height = shape[dims - 2];
+  let longestSide = Math.max(width, height);
+  console.log("longestSide", longestSide, "targetSize", targetSize);
+  if (targetSize !== undefined && targetSize < longestSide) {
+    // use the multiscale.coordinateTransforms to get relative sizes of arrays
+    // NB: only in Zarr v0.4 and v0.5 (otherwise have to load arrays in turn, or guess!)
+    let scales: number[] = multiscale.datasets.map((ds) => {
+      if (Array.isArray(ds.coordinateTransformations)) {
+        let ct = ds.coordinateTransformations.find(
+          (ct: any) => "scale" in ct
+        ) as { scale: number[] };
+        let scaleX = ct.scale.at(-1) as number;
+        return scaleX;
+      }
+      // TODO: handle missing coordinateTransformations
+      return 1;
+    });
+    let scalesFrom1 = scales.map((scale) => scale / scales[0]);
+    let longestSizes = scalesFrom1.map((scale) => longestSide / scale);
+    console.log("scales", scales, "scalesFrom1", scalesFrom1);
+
+    let pathIndex;
+    for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
+      let size = longestSizes[pathIndex];
+      let nextSize = longestSizes[pathIndex + 1];
+      console.log("pathIndex", pathIndex, "size", size, "nextSize", nextSize);
+      if (!nextSize) {
+        // we have reached smallest
+        console.log("Use smallest!");
+        break;
+      } else if (nextSize > targetSize) {
+        // go smaller
+        continue;
+      } else {
+        // is targetSize closer to this or next?
+        let avg = (size + nextSize) / 2;
+        console.log("average", avg);
+        if (targetSize < avg) {
+          pathIndex += 1;
+        }
+        break;
+      }
+    }
+    console.log("longestSizes", longestSizes);
+    console.log("targetSize", targetSize);
+    console.log("pathIndex", pathIndex, "result", longestSizes[pathIndex]);
+    path = paths[pathIndex];
+    zarrLocation = root.resolve(path);
+    arr = await openFn(zarrLocation, { kind: "array" });
+  }
+
+  return arr;
+}
+
+export async function renderThumbnail(
+  store: zarr.FetchStore,
+  targetSize: number = 100
+): Promise<string> {
+  const { multiscale, omero, zarr_version } = await getMultiscale(store);
+
+  const arr = await getArray(store, multiscale, targetSize, zarr_version);
+
   let shape = arr.shape;
   let dims = shape.length;
   let width = shape[dims - 1];
@@ -63,6 +137,19 @@ export async function renderThumbnail(
     console.log("Lowest resolution too large for Thumbnail: ", shape);
     return "";
   }
+
+  return renderImage(multiscale, arr, omero);
+}
+
+export async function renderImage(
+  multiscale: Multiscale,
+  arr,
+  omero: Omero | null | undefined
+) {
+  let shape = arr.shape;
+  let dims = shape.length;
+  let width = shape[dims - 1];
+  let height = shape[dims - 2];
 
   // NB: We don't handle pre v0.4 data yet (no axes)
   let axesNames = multiscale.axes.map((a) => a.name);
@@ -73,8 +160,7 @@ export async function renderThumbnail(
   let colors;
 
   // If we have 'omero', use it for channel colors and visibilities
-  if ("omero" in attrs) {
-    let omero: Omero = attrs.omero as Omero;
+  if (omero) {
     let active_count = 0;
     visibilities = omero.channels.map((ch) => {
       active_count += ch.active ? 1 : 0;
@@ -97,7 +183,7 @@ export async function renderThumbnail(
     let chSlice = shape.map((dimSize, index) => {
       // channel
       if (index == chDim) return chIndex;
-      // x and y
+      // x and y - we want full range
       if (index >= dims - 2) {
         return slice(0, dimSize);
       }

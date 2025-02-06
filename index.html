@@ -11,7 +11,8 @@
     </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="thumbnails"></div>
+    <div id="splitview"></div>
     <script type="module">
       console.log("loading deps....");
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
@@ -20,14 +21,41 @@
       const urls = [
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr", // OME-Zarr v0.4
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr", // OME-Zarr v0.5
-        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' metadata best ignored
+        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' has lots of white channels
       ];
 
       urls.forEach(async (url) => {
         const store = new zarr.FetchStore(url);
         let src = await omezarr.renderThumbnail(store);
         let html = `<img src="${src}" />`;
-        document.getElementById("app").innerHTML += html;
+        document.getElementById("thumbnails").innerHTML += html;
+      });
+
+      // For rendering Images, we want to keep the zarr array in hand...
+      const store0 = new zarr.FetchStore(urls[0]);
+      const { multiscale, omero, zarr_version } = await omezarr.getMultiscale(
+        store0
+      );
+      let targetSize = 300;
+      // get the zarr array corresponding to our target size
+      const arr = await omezarr.getArray(
+        store0,
+        multiscale,
+        targetSize,
+        zarr_version
+      );
+      // turn OFF all channels
+      omero.channels.forEach((ch) => (ch.active = false));
+      // for each channel...
+      omero.channels.forEach(async (channel, index) => {
+        // deepcopy omero for each channel...
+        let omeroChannel = JSON.parse(JSON.stringify(omero));
+        // turn on the channel we want to render...
+        omeroChannel.channels[index].active = true;
+        console.log("omeroChannel", omeroChannel);
+        let src = await omezarr.renderImage(multiscale, arr, omeroChannel);
+        let html = `<img src="${src}" />`;
+        document.getElementById("splitview").innerHTML += html;
       });
     </script>
   </body>
