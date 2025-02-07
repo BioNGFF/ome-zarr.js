@@ -72,7 +72,7 @@
       );
       // turn first channel ON, green!
       omero.channels[0].active = true;
-      omero.channels[0].color = "16_colors.lut";
+      omero.channels[0].lut = "16_colors.lut";
       // TODO: use dim names from multiscale
       let sizeZ = arr200.shape.at(-3);
       let interval = Math.ceil(sizeZ / 7);

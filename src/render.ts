@@ -68,26 +68,28 @@ export async function renderImage(
     let channel_count = shape[chDim] || 1;
     let visibilities;
     // list of [r,g,b] colors
-    let colors;
+    let rgbColors: Array<[number, number, number]>;
+    let luts: Array<string | undefined> | undefined = undefined;
   
-    // If we have 'omero', use it for channel colors and visibilities
+    // If we have 'omero', use it for channel rgbColors and visibilities
     if (omero) {
       let active_count = 0;
       visibilities = omero.channels.map((ch) => {
         active_count += ch.active ? 1 : 0;
         return ch.active && active_count <= MAX_CHANNELS;
       });
-      colors = omero.channels.map((ch) => hexToRGB(ch.color));
+      rgbColors = omero.channels.map((ch) => hexToRGB(ch.color));
+      luts = omero.channels.map((ch) => "lut" in ch ? ch.lut as string : undefined);
     } else {
       visibilities = getDefaultVisibilities(channel_count);
-      colors = getDefaultColors(channel_count, visibilities);
+      rgbColors = getDefaultColors(channel_count, visibilities);
     }
     // filter for active channels
-    colors = colors.filter((col, idx) => col && visibilities[idx]);
     let activeChannelIndices = visibilities.reduce((prev, active, index) => {
       if (active) prev.push(index);
       return prev;
     }, []);
+    rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
   
     // For each active channel, get a multi-dimensional slice
     let chSlices = activeChannelIndices.map((chIndex: number) => {
@@ -126,7 +128,7 @@ export async function renderImage(
     });
 
     // Render to 8bit rgb array
-    let rbgData = renderTo8bitArray(ndChunks, minMaxValues, colors, autoBoost);
+    let rbgData = renderTo8bitArray(ndChunks, minMaxValues, rgbColors, luts, autoBoost);
     // Use a canvas element to convert the 8bit array to a dataUrl
     const canvas = document.createElement("canvas");
     canvas.width = width;

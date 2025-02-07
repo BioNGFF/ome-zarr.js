@@ -23,10 +23,7 @@ export interface ImageAttrsV5 {
 }
 type OmeAttrs = ImageAttrs | ImageAttrsV5;
 
-export function hexToRGB(hex: string): [number, number, number] | string {
-  if (hex.includes(".lut")) {
-    return hex;
-  }
+export function hexToRGB(hex: string): [number, number, number] {
   if (hex.startsWith("#")) hex = hex.slice(1);
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
@@ -93,7 +90,8 @@ export function range(start: number, end: number) {
 export function renderTo8bitArray(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
-  colors: Array<[number, number, number] | string>,
+  colors: Array<[number, number, number]>,
+  luts: Array<string | undefined> | undefined,
   autoBoost: boolean = false
 ) {
   // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
@@ -127,8 +125,8 @@ export function renderTo8bitArray(
       for (let i = 0; i < 3; i++) {
         // rgb[i] is 0-255...
         let v;
-        if (typeof rgb === "string") {
-          let lut = getLutRgb(rgb);
+        if (luts?.[p]) {
+          let lut = getLutRgb(luts[p] as string);
           let val = (fraction * 255) << 0;
           v = lut[val][i];
         } else {
