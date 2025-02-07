@@ -116,12 +116,14 @@ export function renderTo8bitArray(
 
   let rgba = new Uint8ClampedArray(4 * height * width).fill(0);
   let offset = 0;
-  for (let y = 0; y < pixels; y++) {
-    for (let p = 0; p < ndChunks.length; p++) {
-      let rgb = colors[p];
-      let lutRgb = lutRgbs?.[p];
-      let data = ndChunks[p].data;
-      let range = minMaxValues[p];
+  for (let p = 0; p < ndChunks.length; p++) {
+    offset = 0;
+    let rgb = colors[p];
+    let lutRgb = lutRgbs?.[p];
+    let data = ndChunks[p].data;
+    let range = minMaxValues[p];
+    let inverted = inverteds?.[p];
+    for (let y = 0; y < pixels; y++) {
       let rawValue = data[y];
       let fraction = (rawValue - range[0]) / (range[1] - range[0]);
       fraction = Math.min(1, Math.max(0, fraction));
@@ -138,9 +140,9 @@ export function renderTo8bitArray(
         // increase pixel intensity if value is higher
         rgba[offset * 4 + i] = Math.max(rgba[offset * 4 + i], v);
       }
+      rgba[offset * 4 + 3] = 255; // alpha
+      offset += 1;
     }
-    rgba[offset * 4 + 3] = 255; // alpha
-    offset += 1;
   }
   // if iterating pixels is fast, check histogram and boost contrast if needed
   // Thumbnails are less than 5 millisecs. 512x512 is 10-20 millisecs.
