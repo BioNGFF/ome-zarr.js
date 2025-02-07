@@ -6,6 +6,7 @@
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
 /* 
 /* ** NB: actually, omero.rdefs were added by hand!
+/* Also added channel.active, channel.inverted, channel.lut
 /* AND window.start and window.end are now optional
 */
 
@@ -88,6 +89,9 @@ export interface Omero {
 export interface Channel {
   color: string;
   window: Window;
+  lut?: string;
+  active?: boolean;
+  inverted?: boolean;
   [k: string]: unknown;
 }
 /**
