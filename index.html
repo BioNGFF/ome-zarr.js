@@ -63,6 +63,14 @@
         document.getElementById("splitview").innerHTML += html;
       });
 
+      // Inverted 
+      let omeroChannel = JSON.parse(JSON.stringify(omero));
+      omeroChannel.channels[1].active = true;
+      omeroChannel.channels[1].inverted = true;
+      let src = await omezarr.renderImage(arr, multiscale.axes, omeroChannel);
+      let html = `<img src="${src}" />`;
+      document.getElementById("splitview").innerHTML += html;
+
       // get a smaller array for Z-stack
       const arr200 = await omezarr.getArray(
         store0,
@@ -70,7 +78,7 @@
         200,
         zarr_version
       );
-      // turn first channel ON, green!
+      // turn first channel ON, use LUT
       omero.channels[0].active = true;
       omero.channels[0].lut = "16_colors.lut";
       // TODO: use dim names from multiscale

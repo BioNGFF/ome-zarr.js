@@ -70,6 +70,7 @@ export async function renderImage(
     // list of [r,g,b] colors
     let rgbColors: Array<[number, number, number]>;
     let luts: Array<string | undefined> | undefined = undefined;
+    let inverteds: Array<boolean> | undefined = undefined;
   
     // If we have 'omero', use it for channel rgbColors and visibilities
     if (omero) {
@@ -90,6 +91,7 @@ export async function renderImage(
       return prev;
     }, []);
     rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
+    inverteds = activeChannelIndices.map((chIndex: number) => Boolean(omero?.channels[chIndex].inverted));
   
     // For each active channel, get a multi-dimensional slice
     let chSlices = activeChannelIndices.map((chIndex: number) => {
@@ -128,7 +130,7 @@ export async function renderImage(
     });
 
     // Render to 8bit rgb array
-    let rbgData = renderTo8bitArray(ndChunks, minMaxValues, rgbColors, luts, autoBoost);
+    let rbgData = renderTo8bitArray(ndChunks, minMaxValues, rgbColors, luts, inverteds, autoBoost);
     // Use a canvas element to convert the 8bit array to a dataUrl
     const canvas = document.createElement("canvas");
     canvas.width = width;

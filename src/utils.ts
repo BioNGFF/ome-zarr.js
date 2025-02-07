@@ -92,6 +92,7 @@ export function renderTo8bitArray(
   minMaxValues: Array<[number, number]>,
   colors: Array<[number, number, number]>,
   luts: Array<string | undefined> | undefined,
+  inverteds: Array<boolean> | undefined,
   autoBoost: boolean = false
 ) {
   // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
@@ -134,8 +135,15 @@ export function renderTo8bitArray(
         if (lutRgb) {
           let val = (fraction * 255) << 0;
           v = lutRgb[val][i];
+          if (inverted) {
+            v = 255 - v;
+          }
         } else {
           v = (fraction * rgb[i]) << 0;
+          // invert. If channel is 'red' only, don't invert green & blue!
+          if (inverted && rgb[i] != 0) {
+            v = 255 - v;
+          }
         }
         // increase pixel intensity if value is higher
         rgba[offset * 4 + i] = Math.max(rgba[offset * 4 + i], v);
