@@ -1,6 +1,14 @@
+type Rgb = Array<[number, number, number]>;
+
+// interface Lut {
+//   path: string;
+//   name: string;
+//   rgb: Rgb;
+// }
+
 export function getLuts() {
   return LUTS.map((lut) => {
-    return { name: lut.name, png: lutToPng(lut.rgb) };
+    return { name: lut.name, png: lutToPng(lut.rgb as Rgb) };
   });
 }
 
@@ -9,7 +17,7 @@ export function getLutRgb(name: string) {
   return lut?.rgb || LUTS[0].rgb;
 }
 
-function lutToPng(lutRgb) {
+function lutToPng(lutRgb: Rgb) {
   let height = 1;
   let width = 256;
   let rgba = new Uint8ClampedArray(4 * height * width).fill(255);

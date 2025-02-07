@@ -2,7 +2,7 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
 // import { Slice } from "@zarrita/indexing";
-import { Axis, Omero } from "./types/ome";
+import { Axis, Omero, Channel } from "./types/ome";
 import {
   getDefaultVisibilities,
   hexToRGB,
@@ -33,8 +33,8 @@ export async function renderThumbnail(
     return "";
   }
   // we want to remove any start/end values from window, to calculate min/max
-  if ("channels" in omero) {
-    omero.channels = omero.channels.map((ch) => {
+  if (omero && "channels" in omero) {
+    omero.channels = omero.channels.map((ch: Channel) => {
       if (ch.window) {
         ch.window.start = undefined;
         ch.window.end = undefined;

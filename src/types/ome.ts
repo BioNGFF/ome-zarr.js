@@ -6,6 +6,7 @@
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
 /* 
 /* ** NB: actually, omero.rdefs were added by hand!
+/* AND window.start and window.end are now optional
 */
 
 
@@ -95,7 +96,7 @@ export interface Channel {
 export interface Window {
   max: number;
   min: number;
-  start: number;
-  end: number;
+  start?: number;
+  end?: number;
   [k: string]: unknown;
 }

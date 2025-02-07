@@ -1,5 +1,5 @@
 import * as zarr from "zarrita";
-import { ImageAttrs } from "./types/ome";
+import { ImageAttrs, Multiscale, Omero } from "./types/ome";
 import { getLutRgb } from "./luts";
 
 export const MAX_CHANNELS = 3;
@@ -108,6 +108,9 @@ export function renderTo8bitArray(
     minMaxValues = ndChunks.map(getMinMaxValues);
   }
 
+  // load luts if needed
+  const lutRgbs = luts?.map((lut) => lut && getLutRgb(lut as string));
+
   // let rgb = [255, 255, 255];
   let start = performance.now();
 
@@ -116,6 +119,7 @@ export function renderTo8bitArray(
   for (let y = 0; y < pixels; y++) {
     for (let p = 0; p < ndChunks.length; p++) {
       let rgb = colors[p];
+      let lutRgb = lutRgbs?.[p];
       let data = ndChunks[p].data;
       let range = minMaxValues[p];
       let rawValue = data[y];
@@ -125,10 +129,9 @@ export function renderTo8bitArray(
       for (let i = 0; i < 3; i++) {
         // rgb[i] is 0-255...
         let v;
-        if (luts?.[p]) {
-          let lut = getLutRgb(luts[p] as string);
+        if (lutRgb) {
           let val = (fraction * 255) << 0;
-          v = lut[val][i];
+          v = lutRgb[val][i];
         } else {
           v = (fraction * rgb[i]) << 0;
         }
