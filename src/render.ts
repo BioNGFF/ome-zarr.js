@@ -1,7 +1,6 @@
 
 import * as zarr from "zarrita";
-import { slice } from "zarrita";
-// import { Slice } from "@zarrita/indexing";
+
 import { Axis, Omero, Channel } from "./types/ome";
 import {
   getDefaultVisibilities,
@@ -10,6 +9,7 @@ import {
   getDefaultColors,
   getMinMaxValues,
   getMultiscale,
+  getSlices,
   renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
@@ -44,13 +44,14 @@ export async function renderThumbnail(
   }
 
   let autoBoost = true;
-  return renderImage(arr, multiscale.axes, omero, autoBoost);
+  return renderImage(arr, multiscale.axes, omero, {}, autoBoost);
 }
 
 export async function renderImage(
     arr: zarr.Array<any>,
     axes: Axis[],
     omero: Omero | null | undefined,
+    sliceIndices: {[k: string]: (number | [number, number] | undefined)}  = {},
     autoBoost: boolean = false
   ) {
     // Main rendering function...
@@ -58,9 +59,6 @@ export async function renderImage(
     // and omero for rendering settings
     // if autoBoost is true, check histogram and boost contrast if needed
     let shape = arr.shape;
-    let dims = shape.length;
-    let width = shape[dims - 1];
-    let height = shape[dims - 2];
   
     // NB: We don't handle pre v0.4 data yet (no axes)
     let axesNames = axes.map((a) => a.name);
@@ -93,26 +91,14 @@ export async function renderImage(
     rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
     inverteds = activeChannelIndices.map((chIndex: number) => Boolean(omero?.channels[chIndex].inverted));
   
-    // For each active channel, get a multi-dimensional slice
-    let chSlices = activeChannelIndices.map((chIndex: number) => {
-      let chSlice = shape.map((dimSize, index) => {
-        // channel
-        if (index == chDim) return chIndex;
-        // x and y - we want full range
-        if (index >= dims - 2) {
-          return slice(0, dimSize);
-        }
-        // Use omero for z/t if available, otherwise use middle slice
-        if (axesNames[index] == "z") {
-          return omero?.rdefs?.defaultZ ?? parseInt(dimSize / 2 + "");
-        }
-        if (axesNames[index] == "t") {
-          return omero?.rdefs?.defaultT ?? parseInt(dimSize / 2 + "");
-        }
-        return 0;
-      });
-      return chSlice;
-    });
+    // Get slices for each channel
+    if (sliceIndices["z"] == undefined) {
+        sliceIndices["z"] = omero?.rdefs?.defaultZ;
+    }
+    if (sliceIndices["t"] == undefined) {
+      sliceIndices["t"] = omero?.rdefs?.defaultT;
+    }
+    let chSlices = getSlices(activeChannelIndices, shape, axesNames, sliceIndices);
   
     // Wait for all chunks to be fetched...
     let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));
@@ -133,6 +119,8 @@ export async function renderImage(
     let rbgData = renderTo8bitArray(ndChunks, minMaxValues, rgbColors, luts, inverteds, autoBoost);
     // Use a canvas element to convert the 8bit array to a dataUrl
     const canvas = document.createElement("canvas");
+    const height = ndChunks[0].shape[0];
+    const width = ndChunks[0].shape[1];
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");

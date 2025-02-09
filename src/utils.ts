@@ -1,4 +1,5 @@
 import * as zarr from "zarrita";
+import { slice } from "zarrita";
 import { ImageAttrs, Multiscale, Omero } from "./types/ome";
 import { getLutRgb } from "./luts";
 
@@ -221,7 +222,7 @@ export async function getMultiscale(store: zarr.FetchStore) {
 export async function getArray(
   store: zarr.FetchStore,
   multiscale: Multiscale,
-  targetSize: number | undefined,
+  targetSize: number | undefined = 1024, // by default, don't try to render BIG images
   zarr_version: 2 | 3 | undefined
 ): Promise<zarr.Array<any>> {
   const paths: Array<string> = multiscale.datasets.map((d) => d.path);
@@ -287,4 +288,36 @@ export async function getArray(
   }
 
   return arr;
+}
+
+export function getSlices(activeChannelIndices: number[], shape: number[], axesNames: string[], indices:{[k: string]: (number | [number, number] | undefined)}) {
+  // For each active channel, get a multi-dimensional slice
+  let chSlices = activeChannelIndices.map((chIndex: number) => {
+    let chSlice = shape.map((dimSize, index) => {
+      let name = axesNames[index];
+      // channel
+      if (name == "c") return chIndex;
+      
+      if (name in indices) {
+        let idx = indices[name];
+        if (Array.isArray(idx)) {
+          return slice(idx[0], idx[1]);
+        } else if (Number.isInteger(idx)) {
+          return idx;
+        }
+      }
+      // no valid indices supplied, use defaults...
+      // x and y - we want full range
+      if (name == "x" || name == "y") {
+        return slice(0, dimSize);
+      }
+      // Use omero for z/t if available, otherwise use middle slice
+      if (name == "z" || name == "t") {
+        return parseInt(dimSize / 2 + "");
+      }
+      return 0;
+    });
+    return chSlice;
+  });
+  return chSlices;
 }
