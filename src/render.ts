@@ -8,7 +8,7 @@ import {
   getArray,
   getDefaultColors,
   getMinMaxValues,
-  getMultiscale,
+  getMultiscaleWithArray,
   getSlices,
   renderTo8bitArray,
   MAX_CHANNELS,
@@ -17,13 +17,15 @@ import {
 
 export async function renderThumbnail(
   store: zarr.FetchStore,
-  targetSize: number = 100,
+  targetSize: number | undefined = undefined,
   maxSize: number = 1000
 ): Promise<string> {
-  const { multiscale, omero, zarr_version } = await getMultiscale(store);
+  // Lets load SMALLEST resolution and render it as a thumbnail
+  const datasetIndex = -1;
+  let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(store, datasetIndex);
 
-  const arr = await getArray(store, multiscale, targetSize, zarr_version);
-
+  // targetSize is specified, may need to load a different resolution...
+  // pick a different dataset level if we want a different size
   let shape = arr.shape;
   let dims = shape.length;
   let width = shape[dims - 1];
@@ -32,6 +34,35 @@ export async function renderThumbnail(
     console.log("Lowest resolution too large for Thumbnail: ", shape);
     return "";
   }
+
+  let longestSide = Math.max(width, height);
+  if (targetSize !== undefined && targetSize > longestSide) {
+    let longestSizes = shapes.map((shape) => Math.max(shape[dims - 1], shape[dims - 2]));
+    const paths: Array<string> = multiscale.datasets.map((d) => d.path);
+
+    let pathIndex;
+    for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
+      let size = longestSizes[pathIndex];
+      let nextSize = longestSizes[pathIndex + 1];
+      if (!nextSize) {
+        // we have reached smallest
+        break;
+      } else if (nextSize > targetSize) {
+        // go smaller
+        continue;
+      } else {
+        // is targetSize closer to this or next?
+        let avg = (size + nextSize) / 2;
+        if (targetSize < avg) {
+          pathIndex += 1;
+        }
+        break;
+      }
+    }
+    let path = paths[pathIndex];
+    arr = await getArray(store, path, zarr_version);
+  }
+
   // we want to remove any start/end values from window, to calculate min/max
   if (omero && "channels" in omero) {
     omero.channels = omero.channels.map((ch: Channel) => {

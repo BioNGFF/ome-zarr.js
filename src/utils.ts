@@ -219,14 +219,49 @@ export async function getMultiscale(store: zarr.FetchStore) {
   return { multiscale, omero, zarr_version };
 }
 
+export async function getMultiscaleWithArray(store: zarr.FetchStore, datasetIndex: number = 0) {
+  const { multiscale, omero, zarr_version } = await getMultiscale(store);
+
+  const paths: Array<string> = multiscale.datasets.map((d) => d.path);
+  if (datasetIndex < 0) {
+    datasetIndex = paths.length + datasetIndex;
+  }
+  const path = paths[datasetIndex];
+
+  // Get the zarr array
+  const arr = await getArray(store, path, zarr_version);
+
+  // calculate some useful values...
+  const shape = arr.shape;
+  const scales: Array<number[]> = multiscale.datasets.map((ds) => {
+    if (Array.isArray(ds.coordinateTransformations)) {
+      let ct = ds.coordinateTransformations.find(
+        (ct: any) => "scale" in ct
+      ) as { scale: number[] };
+      return ct.scale;
+    }
+    // TODO: handle missing coordinateTransformations
+    return [1, 1, 1];
+  });
+  const arrayScale = scales[datasetIndex];
+
+  // we know the shape and scale of the chosen array, so we can calculate the
+  // shapes of other arrays in the multiscale pyramid...
+  const shapes = scales.map((scale) => {
+    return shape.map((dim, i) => Math.ceil(dim * arrayScale[i] / scale[i]));
+  });
+
+  return { arr, shapes, multiscale, omero, scales, zarr_version };
+};
+
+
 export async function getArray(
   store: zarr.FetchStore,
-  multiscale: Multiscale,
-  targetSize: number | undefined = 1024, // by default, don't try to render BIG images
+  path: string,
   zarr_version: 2 | 3 | undefined
 ): Promise<zarr.Array<any>> {
-  const paths: Array<string> = multiscale.datasets.map((d) => d.path);
-  // By default, we use the largest thumbnail path (first dataset)
+
+  // Open the zarr array and check size
   let root = zarr.root(store);
   const openFn =
     zarr_version === 3
@@ -234,58 +269,8 @@ export async function getArray(
       : zarr_version === 2
       ? zarr.open.v2
       : zarr.open;
-
-  // Open the zarr array and check size
-  let path: string = paths[0];
   let zarrLocation = root.resolve(path);
   let arr = await openFn(zarrLocation, { kind: "array" });
-
-  // pick a different dataset level if we want a different size
-  let shape = arr.shape;
-  let dims = shape.length;
-  let width = shape[dims - 1];
-  let height = shape[dims - 2];
-  let longestSide = Math.max(width, height);
-  if (targetSize !== undefined && targetSize < longestSide) {
-    // use the multiscale.coordinateTransforms to get relative sizes of arrays
-    // NB: only in Zarr v0.4 and v0.5 (otherwise have to load arrays in turn, or guess!)
-    let scales: number[] = multiscale.datasets.map((ds) => {
-      if (Array.isArray(ds.coordinateTransformations)) {
-        let ct = ds.coordinateTransformations.find(
-          (ct: any) => "scale" in ct
-        ) as { scale: number[] };
-        let scaleX = ct.scale.at(-1) as number;
-        return scaleX;
-      }
-      // TODO: handle missing coordinateTransformations
-      return 1;
-    });
-    let scalesFrom1 = scales.map((scale) => scale / scales[0]);
-    let longestSizes = scalesFrom1.map((scale) => longestSide / scale);
-
-    let pathIndex;
-    for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
-      let size = longestSizes[pathIndex];
-      let nextSize = longestSizes[pathIndex + 1];
-      if (!nextSize) {
-        // we have reached smallest
-        break;
-      } else if (nextSize > targetSize) {
-        // go smaller
-        continue;
-      } else {
-        // is targetSize closer to this or next?
-        let avg = (size + nextSize) / 2;
-        if (targetSize < avg) {
-          pathIndex += 1;
-        }
-        break;
-      }
-    }
-    path = paths[pathIndex];
-    zarrLocation = root.resolve(path);
-    arr = await openFn(zarrLocation, { kind: "array" });
-  }
 
   return arr;
 }

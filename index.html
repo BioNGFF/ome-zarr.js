@@ -44,24 +44,18 @@
       ];
       urls.forEach(async (url) => {
         const store = new zarr.FetchStore(url);
-        let src = await omezarr.renderThumbnail(store);
-        let html = `<img src="${src}" />`;
+        // Uses the smallest resolution by default
+        let thumbSrc = await omezarr.renderThumbnail(store);
+        // pick a resolution where longest side is closest to 300px
+        let bigThumbSrc = await omezarr.renderThumbnail(store, 300);
+        let html = `<img src="${thumbSrc}" /><img src="${bigThumbSrc}" />`;
         document.getElementById("thumbnails").innerHTML += html;
       });
 
       // For rendering Images, we want to keep the zarr array in hand...
-      const store0 = new zarr.FetchStore(IDR0062);
-      const { multiscale, omero, zarr_version } = await omezarr.getMultiscale(
-        store0
-      );
-      let targetSize = 300;
-      // get the zarr array corresponding to our target size
-      const arr = await omezarr.getArray(
-        store0,
-        multiscale,
-        targetSize,
-        zarr_version
-      );
+      const store62 = new zarr.FetchStore(IDR0062);
+      // arr will be full-sized array by default
+      const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
       // turn OFF all channels
       omero.channels.forEach((ch) => (ch.active = false));
       // for each channel...
@@ -84,12 +78,11 @@
       document.getElementById("splitview").innerHTML += html;
 
       // get a smaller array for Z-stack
-      const arr200 = await omezarr.getArray(
-        store0,
-        multiscale,
-        200,
-        zarr_version
-      );
+      console.log("idr0062 shapes", shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
+      const paths = multiscale.datasets.map((d) => d.path);
+      console.log("idr0062 paths", paths);
+      const path = paths[1];
+      const arr200 = await omezarr.getArray(store62, path, zarr_version);
       // turn first channel ON, use LUT
       omero.channels[0].active = true;
       omero.channels[0].lut = "16_colors.lut";
@@ -107,16 +100,9 @@
       const storeBig = new zarr.FetchStore(IDR0083);
       let bigThumb = await omezarr.renderThumbnail(storeBig, 400);
       document.getElementById("bigThumb").src = bigThumb;
-      // BIG image
-      let big = await omezarr.getMultiscale(storeBig);
-      // Load full-resolution array
-      targetSize = Infinity;
-      const bigArray = await omezarr.getArray(
-        storeBig,
-        big.multiscale,
-        targetSize,
-        big.zarr_version
-      );
+      // BIG image, Load full-resolution array
+      let big = await omezarr.getMultiscaleWithArray(storeBig);
+      const bigArray = big.arr;
       // Full-sized image is 144384	x 93184
       let sliceIndices = {"x": [50000, 50500], "y": [30000, 30500]};
       let bigImageSrc = await omezarr.renderImage(
