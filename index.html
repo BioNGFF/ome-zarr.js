@@ -5,10 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ome-zarr.js</title>
     <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
       img {
         margin: 10px;
       }
-      img.lut {
+      .lut {
+        display: inline-block;
+        margin: 2px;
+        text-align: center;
+      }
+      .lut img {
         margin: 1px;
         width: 256px;
         height: 15px;
@@ -16,13 +24,20 @@
     </style>
   </head>
   <body>
+    <h2>renderTumbnail()</h2>
+    <p>Default thumbnail is smallest multiscales resolution. Can also specify target size (300 px here)</p>
     <div id="thumbnails"></div>
+    <h2>renderImage()</h2>
+    <p>We can choose various rendering settings etc. "Inverted" is a orthogonal view</p>
     <div id="splitview"></div>
+    <p>A smaller resolution "1", at various z-indeces with Look-up table "16_colors.lut"</p>
     <div id="stack"></div>
+    <p>Thumbnail and region of the same big image</p>
     <div>
       <img id="bigThumb" />
       <div id="bigImages"></div>
     </div>
+    <h2>Look-up tables available to choose</h2>
     <div id="luts"></div>
     <script type="module">
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
@@ -69,11 +84,12 @@
         document.getElementById("splitview").innerHTML += html;
       });
 
-      // Inverted image
+      // Inverted image - orthogonal view
       let omeroChannel = JSON.parse(JSON.stringify(omero));
       omeroChannel.channels[1].active = true;
       omeroChannel.channels[1].inverted = true;
-      let src = await omezarr.renderImage(arr, multiscale.axes, omeroChannel);
+      let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
+      let src = await omezarr.renderImage(arr, multiscale.axes, omeroChannel, slices62);
       let html = `<img src="${src}" />`;
       document.getElementById("splitview").innerHTML += html;
 
@@ -116,7 +132,8 @@
       // show luts
       omezarr.getLuts().forEach((lut) => {
         let src = lut.png;
-        let html = `<img class="lut" src="${src}" title="${lut.name}" />`;
+        let html = `<div class="lut"><legend>${lut.name}</legend>
+          <img class="lut" src="${src}" title="${lut.name}" /></div>`;
         document.getElementById("luts").innerHTML += html;
       });
     </script>
