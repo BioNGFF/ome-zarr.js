@@ -86,3 +86,12 @@ to generate typescript interfaces from https://github.com/ome-zarr-models/ome-za
 The `src/types/ome.ts` file was generated with:
 
     $ pydantic2ts --module src/ome_zarr_models/v04/image.py --output ome.ts
+
+
+## Release steps
+
+Bump `package.json` version, then...
+
+    $ npm run build
+    $ npm pack
+    $ npm publish
