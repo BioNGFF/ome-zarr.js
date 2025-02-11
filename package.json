@@ -12,11 +12,11 @@
     "url": "https://github.com/will-moore/ome-zarr.js/issues"
   },
   "keywords": ["ome", "zarr", "image", "rendering"],
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "files": ["dist"],
   "main": "./dist/ome-zarr.umd.cjs",
-  "module": "./dist/my-lib.js",
+  "module": "./dist/ome-zarr.js",
   "exports": {
     ".": {
       "import": "./dist/ome-zarr.js",
