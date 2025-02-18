@@ -17,6 +17,13 @@ export const MAGENTA_GREEN = [COLORS.magenta, COLORS.green];
 export const RGB = [COLORS.red, COLORS.green, COLORS.blue];
 export const CYMRGB = Object.values(COLORS).slice(0, -2);
 
+// this duplicates Slice() from zarrita as I couldn't import it
+export interface Slice {
+	start: number | null;
+	stop: number | null;
+	step: number | null;
+}
+
 // For now, the only difference we care about between v0.4 and v0.5 is the nesting
 // of the ImageAttrs object within an 'ome' key.
 export interface ImageAttrsV5 {
@@ -219,7 +226,17 @@ export async function getMultiscale(store: zarr.FetchStore) {
   return { multiscale, omero, zarr_version };
 }
 
-export async function getMultiscaleWithArray(store: zarr.FetchStore, datasetIndex: number = 0) {
+export async function getMultiscaleWithArray(
+  store: zarr.FetchStore,
+  datasetIndex: number = 0
+): Promise<{
+  arr: zarr.Array<any>;
+  shapes: number[][];
+  multiscale: Multiscale;
+  omero: Omero | null | undefined;
+  scales: number[][];
+  zarr_version: 2 | 3;
+}> {
   const { multiscale, omero, zarr_version } = await getMultiscale(store);
 
   const paths: Array<string> = multiscale.datasets.map((d) => d.path);
@@ -248,19 +265,17 @@ export async function getMultiscaleWithArray(store: zarr.FetchStore, datasetInde
   // we know the shape and scale of the chosen array, so we can calculate the
   // shapes of other arrays in the multiscale pyramid...
   const shapes = scales.map((scale) => {
-    return shape.map((dim, i) => Math.ceil(dim * arrayScale[i] / scale[i]));
+    return shape.map((dim, i) => Math.ceil((dim * arrayScale[i]) / scale[i]));
   });
 
   return { arr, shapes, multiscale, omero, scales, zarr_version };
-};
-
+}
 
 export async function getArray(
   store: zarr.FetchStore,
   path: string,
   zarr_version: 2 | 3 | undefined
 ): Promise<zarr.Array<any>> {
-
   // Open the zarr array and check size
   let root = zarr.root(store);
   const openFn =
@@ -275,14 +290,19 @@ export async function getArray(
   return arr;
 }
 
-export function getSlices(activeChannelIndices: number[], shape: number[], axesNames: string[], indices:{[k: string]: (number | [number, number] | undefined)}) {
+export function getSlices(
+  activeChannelIndices: number[],
+  shape: number[],
+  axesNames: string[],
+  indices: { [k: string]: number | [number, number] | undefined }
+): (number | Slice | undefined)[][] {
   // For each active channel, get a multi-dimensional slice
   let chSlices = activeChannelIndices.map((chIndex: number) => {
     let chSlice = shape.map((dimSize, index) => {
       let name = axesNames[index];
       // channel
       if (name == "c") return chIndex;
-      
+
       if (name in indices) {
         let idx = indices[name];
         if (Array.isArray(idx)) {
