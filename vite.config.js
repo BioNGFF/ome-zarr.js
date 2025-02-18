@@ -27,5 +27,6 @@ export default defineConfig({
       },
     },
   },
-  plugins: [dts({ tsconfigPath: './tsconfig.json' })]
+  // generate single ome-zarr.d.ts file on build
+  plugins: [dts({ tsconfigPath: './tsconfig.json', rollupTypes: true })]
 })
