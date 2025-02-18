@@ -15,12 +15,10 @@
   "version": "0.0.5",
   "type": "module",
   "files": ["dist"],
-  "main": "./dist/ome-zarr.umd.cjs",
   "module": "./dist/ome-zarr.js",
   "exports": {
     ".": {
-      "import": "./dist/ome-zarr.js",
-      "require": "./dist/ome-zarr.umd.cjs"
+      "import": "./dist/ome-zarr.js"
     }
   },
   "scripts": {

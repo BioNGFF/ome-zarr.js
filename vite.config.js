@@ -13,6 +13,7 @@ export default defineConfig({
       name: 'ome-zarr',
       // the proper extensions will be added
       fileName: 'ome-zarr',
+      formats: ['es'],
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
