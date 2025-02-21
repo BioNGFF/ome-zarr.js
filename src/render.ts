@@ -36,8 +36,7 @@ export async function renderThumbnail(
   let width = shape[dims - 1];
   let height = shape[dims - 2];
   if (height * width > maxSize * maxSize) {
-    console.log("Lowest resolution too large for Thumbnail: ", shape);
-    return "";
+    throw new Error(`Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`);
   }
 
   let longestSide = Math.max(width, height);
@@ -79,7 +78,6 @@ export async function renderThumbnail(
     });
   }
 
-  let autoBoost = true;
   return renderImage(arr, multiscale.axes, omero, {}, autoBoost);
 }
 
