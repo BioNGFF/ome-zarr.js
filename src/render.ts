@@ -16,10 +16,15 @@ import {
 
 
 export async function renderThumbnail(
-  store: zarr.FetchStore,
+  store: zarr.FetchStore | string,
   targetSize: number | undefined = undefined,
+  autoBoost: boolean = false,
   maxSize: number = 1000
 ): Promise<string> {
+  if (typeof store === "string") {
+    store = new zarr.FetchStore(store);
+  }
+
   // Lets load SMALLEST resolution and render it as a thumbnail
   const datasetIndex = -1;
   let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(store, datasetIndex);
