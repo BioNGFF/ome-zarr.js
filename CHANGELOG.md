@@ -1,4 +1,11 @@
 
+0.0.7 (February 2024)
+---------------------
+
+- Support renderThumbnail(url_or_store)
+- Add autoBoost param to renderThumbnail()
+- renderThumbnail() throws Error if lowest resolution is too big
+
 0.0.6 (February 2024)
 ---------------------
 
