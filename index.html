@@ -25,8 +25,21 @@
   </head>
   <body>
     <h2>renderTumbnail()</h2>
-    <p>Default thumbnail is smallest multiscales resolution. Can also specify target size (300 px here)</p>
+    <p>Default thumbnail is smallest multiscales resolution:</p>
+    <code><pre>
+      let thumbSrc = await omezarr.renderThumbnail(url);
+      document.getElementById("thumbnail").src = thumbSrc;
+    </pre></code>
     <div id="thumbnails"></div>
+    <p>We can specify a targetSize to pick a larger multiscales resolution to render.
+      If autoBoost" is true, contrast will be boosted if needed.</p>
+    <code><pre>
+      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
+      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
+      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
+      </pre>
+    </code>
+    <div id="bigThumbnails"></div>
     <h2>renderImage()</h2>
     <p>We can choose various rendering settings etc. "Inverted" is a orthogonal view</p>
     <div id="splitview"></div>
@@ -49,23 +62,28 @@
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
       const IDR0083 =
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr";
+      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"; // OME-Zarr v0.5
 
       // Thumbnails...
       const urls = [
         IDR0062,
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr", // OME-Zarr v0.5
-        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' has lots of white channels
+        IDR0066,
+        // "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' has lots of white channels
         IDR0048,
       ];
       urls.forEach(async (url) => {
-        const store = new zarr.FetchStore(url);
         // Uses the smallest resolution by default
-        let thumbSrc = await omezarr.renderThumbnail(store);
-        // pick a resolution where longest side is closest to 300px
-        let bigThumbSrc = await omezarr.renderThumbnail(store, 300);
-        let html = `<img src="${thumbSrc}" /><img src="${bigThumbSrc}" />`;
+        let thumbSrc = await omezarr.renderThumbnail(url);
+        let html = `<img src="${thumbSrc}" />`;
         document.getElementById("thumbnails").innerHTML += html;
       });
+
+      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
+      let bigImg = `<img src="${thumbSrc}" />`;
+      document.getElementById("bigThumbnails").innerHTML += bigImg;
+      thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
+      bigImg = `<img src="${thumbSrc}" />`;
+      document.getElementById("bigThumbnails").innerHTML += bigImg;
 
       // For rendering Images, we want to keep the zarr array in hand...
       const store62 = new zarr.FetchStore(IDR0062);
@@ -76,10 +94,10 @@
       // for each channel...
       omero.channels.forEach(async (channel, index) => {
         // deepcopy omero for each channel...
-        let omeroChannel = JSON.parse(JSON.stringify(omero));
+        let omeroCopy = JSON.parse(JSON.stringify(omero));
         // turn on the channel we want to render...
-        omeroChannel.channels[index].active = true;
-        let src = await omezarr.renderImage(arr, multiscale.axes, omeroChannel);
+        omeroCopy.channels[index].active = true;
+        let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
       });
@@ -89,9 +107,10 @@
       omeroChannel.channels[1].active = true;
       omeroChannel.channels[1].inverted = true;
       let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
-      let src = await omezarr.renderImage(arr, multiscale.axes, omeroChannel, slices62);
-      let html = `<img src="${src}" />`;
-      document.getElementById("splitview").innerHTML += html;
+      omezarr.renderImage(arr, multiscale.axes, omeroChannel, slices62).then(src => {
+        let html = `<img src="${src}" />`;
+        document.getElementById("splitview").innerHTML += html;
+      });
 
       // get a smaller array for Z-stack
       console.log("idr0062 shapes", shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
