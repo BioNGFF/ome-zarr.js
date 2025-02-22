@@ -96,7 +96,7 @@ export async function renderImage(
   
     // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'
     // v0.4 onwards is list of Axis objects
-    let axesNames = axes?.map((a) => a.name || a) || ['t', 'c', 'z', 'y', 'x'];
+    let axesNames = axes?.map((a) => a.name || a.toString()) || ['t', 'c', 'z', 'y', 'x'];
     let chDim = axesNames.indexOf("c");
     let channel_count = shape[chDim] || 1;
     let visibilities;
