@@ -94,8 +94,9 @@ export async function renderImage(
     // if autoBoost is true, check histogram and boost contrast if needed
     let shape = arr.shape;
   
-    // NB: We don't handle pre v0.4 data yet (no axes)
-    let axesNames = axes.map((a) => a.name);
+    // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'
+    // v0.4 onwards is list of Axis objects
+    let axesNames = axes?.map((a) => a.name || a) || ['t', 'c', 'z', 'y', 'x'];
     let chDim = axesNames.indexOf("c");
     let channel_count = shape[chDim] || 1;
     let visibilities;
