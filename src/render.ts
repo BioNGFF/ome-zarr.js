@@ -109,6 +109,9 @@ export async function renderImage(
     if (omero) {
       let active_count = 0;
       visibilities = omero.channels.map((ch) => {
+        if (ch.active == undefined) {
+          ch.active = true;
+        }
         active_count += ch.active ? 1 : 0;
         return ch.active && active_count <= MAX_CHANNELS;
       });
