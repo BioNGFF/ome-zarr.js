@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../node_modules/numcodecs/dist/zlib.js"],
-  "sourcesContent": ["import \"./chunk-INHXZS53.js\";\n\n// src/zlib.ts\nimport * as fflate from \"fflate\";\nvar Zlib = class Zlib2 {\n  static codecId = \"zlib\";\n  level;\n  constructor(level = 1) {\n    if (level < -1 || level > 9) {\n      throw new Error(\"Invalid zlib compression level, it should be between -1 and 9\");\n    }\n    this.level = level;\n  }\n  static fromConfig({ level }) {\n    return new Zlib2(level);\n  }\n  encode(data) {\n    return fflate.zlibSync(data, { level: this.level });\n  }\n  decode(data) {\n    return fflate.unzlibSync(data);\n  }\n};\nvar zlib_default = Zlib;\nexport {\n  zlib_default as default\n};\n"],
-  "mappings": ";;;;;;;;;;AAAA;AAIA,IAAI,QAAO,WAAY;AAAA,EAGrB,YAAY,QAAQ,GAAG;AADvB;AAEE,QAAI,QAAQ,MAAM,QAAQ,GAAG;AAC3B,YAAM,IAAI,MAAM,+DAA+D;AAAA,IACjF;AACA,SAAK,QAAQ;AAAA,EACf;AAAA,EACA,OAAO,WAAW,EAAE,MAAM,GAAG;AAC3B,WAAO,IAAI,GAAM,KAAK;AAAA,EACxB;AAAA,EACA,OAAO,MAAM;AACX,WAAc,SAAS,MAAM,EAAE,OAAO,KAAK,MAAM,CAAC;AAAA,EACpD;AAAA,EACA,OAAO,MAAM;AACX,WAAc,WAAW,IAAI;AAAA,EAC/B;AACF,GAjBE,cADS,IACF,WAAU,SADR;AAmBX,IAAI,eAAe;",
-  "names": []
-}
