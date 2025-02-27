@@ -23,7 +23,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/will-moore/ome-zarr.js' }
+      { icon: 'github', link: 'https://github.com/BioNGFF/ome-zarr.js' }
     ]
   },
   base: '/ome-zarr.js/'
