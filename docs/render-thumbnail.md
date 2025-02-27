@@ -94,6 +94,20 @@ let targetSize = 500;
 let thumbSrc = await omezarr.renderThumbnail(url, targetSize, false, maxSize);
 ```
 
+
+## What's being loaded?
+
+Under the hood, `renderThumbnail()` makes several calls to fetch `zarr` metadata and chunks:
+
+ - When we open the `multiscales` group with `zarr.open(store, { kind: "group" })` then `zarrita.js` will
+ attempt to fetch the `.zgroup` and `.zattrs`. If these are not found (for `zarr v3` data) then it will
+ fetch the `zarr.json` for `zarr v3`.
+ - We then fetch the array metadata for the lowest resolution dataset. Since we now know whether the
+ data is `zarr v2` or `v3`, we directly load the `.zarray` or `zarr.json`. This gives us the `shape` of
+ the lowest resolution array and so we can calculate the sizes of the other arrays in the multiscales pyramid.
+ - If we have chosen a `targetSize` which specifies a different dataset, we also fetch that array metadata.
+ - Finally we fetch the array chunks required to render an image plane for each active channel.
+
 <style module>
 .thumb_container {
   clear: left;
