@@ -11,7 +11,7 @@ import { ref } from 'vue'
 
 const imgSrc = ref("");
 
-const props = defineProps(['url', 'targetSize']);
+const props = defineProps(['url', 'targetSize', 'autoBoost']);
 
 const VURL = "https://ome.github.io/ome-ngff-validator/?source="
 
@@ -22,7 +22,9 @@ onMounted(async () => {
   // NB: needs `npm run build` first!
   const omezarr = await import('ome-zarr.js');
 
-  omezarr.renderThumbnail(props.url, props.targetSize).then(src => {
+  let autoBoost = Boolean(props.autoBoost);
+
+  omezarr.renderThumbnail(props.url, props.targetSize, autoBoost).then(src => {
     imgSrc.value = src;
   })
 });
