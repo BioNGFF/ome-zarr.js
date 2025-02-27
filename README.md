@@ -77,6 +77,11 @@ viewed with:
     $ npm install
     $ npm run dev
 
+To develop and build the docs, we need to build ome-zarr.js first so it can be
+imported from /dist/ by the docs:
+
+    $ npm run build
+    $ npm run docs:dev
 
 ## Typescript from ome-zarr-models-py
 
