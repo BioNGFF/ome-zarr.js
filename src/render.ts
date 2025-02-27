@@ -41,7 +41,15 @@ export async function renderThumbnail(
 
   let longestSide = Math.max(width, height);
   if (targetSize !== undefined && targetSize > longestSide) {
-    let longestSizes = shapes.map((shape) => Math.max(shape[dims - 1], shape[dims - 2]));
+    let longestSizes: number[] = [];
+    // If we don't have shapes (v0.1, 0.2, 0.3), we "guess" scale of * 2 for each level
+    if (shapes == undefined) {
+      longestSizes = multiscale.datasets.map((d, i) => d && longestSide * 2 ** i);
+      longestSizes.reverse();
+      // e.g. [1568, 784, 392, 196, 98, 49]
+    } else {
+      longestSizes = shapes.map((shape) => Math.max(shape[dims - 1], shape[dims - 2]));
+    }
     const paths: Array<string> = multiscale.datasets.map((d) => d.path);
 
     let pathIndex;

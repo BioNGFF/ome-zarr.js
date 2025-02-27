@@ -231,7 +231,7 @@ export async function getMultiscaleWithArray(
   datasetIndex: number = 0
 ): Promise<{
   arr: zarr.Array<any>;
-  shapes: number[][];
+  shapes: number[][] | undefined;
   multiscale: Multiscale;
   omero: Omero | null | undefined;
   scales: number[][];
@@ -257,14 +257,15 @@ export async function getMultiscaleWithArray(
       ) as { scale: number[] };
       return ct.scale;
     }
-    // TODO: handle missing coordinateTransformations
-    return [1, 1, 1];
-  });
+    // handle missing coordinateTransformations below
+    return undefined;
+  }).filter((s) => s !== undefined) as number[][]; // remove undefined
+
   const arrayScale = scales[datasetIndex];
 
   // we know the shape and scale of the chosen array, so we can calculate the
   // shapes of other arrays in the multiscale pyramid...
-  const shapes = scales.map((scale) => {
+  const shapes = (scales.length === 0) ? undefined : scales.map((scale) => {
     return shape.map((dim, i) => Math.ceil((dim * arrayScale[i]) / scale[i]));
   });
 
