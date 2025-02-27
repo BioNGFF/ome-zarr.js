@@ -45,7 +45,6 @@ let thumbSrc = await omezarr.renderThumbnail(url, 300);
 ```
 
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" targetSize=300 />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr" targetSize=300 />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" targetSize=300 />
 
 <!-- Thumbnail are float:left so we need to clear that -->
@@ -79,6 +78,21 @@ Here we show the same Image thumbnail, with `autoBoost = false` and with `autoBo
 We only attempt to perform `autoBoost` if the initial render process took less than 100 millisecs, so
 as not to cause performance issues with larger images.
 :::
+
+
+## Max Size
+
+We want to avoid attempts to render massive images. If the smallest resolution level
+has `width x height` greater than `maxSize x maxSize` then `renderThumbnail()` will throw an `Error`,
+with the default `maxSize` being `1000`.
+
+To change that threshold, we can specify a different value:
+
+```js
+let maxSize = 1500;
+let targetSize = 500;
+let thumbSrc = await omezarr.renderThumbnail(url, targetSize, false, maxSize);
+```
 
 <style module>
 .thumb_container {
