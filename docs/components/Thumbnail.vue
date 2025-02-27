@@ -1,6 +1,7 @@
 
 <script setup>
 
+import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js/+esm";
 import { onMounted } from 'vue';
 import { ref } from 'vue'
 
@@ -11,7 +12,7 @@ const props = defineProps(['url', 'targetSize']);
 const VURL = "https://ome.github.io/ome-ngff-validator/?source="
 
 onMounted(async () => {
-  const omezarr = await import('ome-zarr.js');
+  // const omezarr = await import('ome-zarr.js');
 
   console.log('targetSize', props.targetSize);
 
