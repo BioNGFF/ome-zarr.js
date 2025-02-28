@@ -21,9 +21,9 @@ onMounted(async () => {
   // NB: needs `npm run build` first!
   const omezarr = await import('ome-zarr.js');
 
-  // For rendering Images, we want to keep the zarr array in hand...
-  // `arr` will be the multiscale highest resolution array by default
+  // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
   const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(props.url);
+
   // turn OFF all channels
   omero.channels.forEach((ch) => (ch.active = false));
   // for each channel...
@@ -32,6 +32,8 @@ onMounted(async () => {
     let omeroCopy = JSON.parse(JSON.stringify(omero));
     // turn on the channel we want to render...
     omeroCopy.channels[index].active = true;
+
+    // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
     let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy, {}, autoBoost);
     imgSrcList.value.push(src);
   });

@@ -98,5 +98,10 @@ The `src/types/ome.ts` file was generated with:
 Bump `package.json` version, then...
 
     $ npm run build
+
+    # check the docs are up to date (images are rendering correctly)
+    $ npm run docs:build
+    $ npm run docs:preview
+
     $ npm pack
     $ npm publish

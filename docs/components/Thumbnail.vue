@@ -17,6 +17,7 @@ onMounted(async () => {
   // NB: needs `npm run build` first!
   const omezarr = await import('ome-zarr.js');
 
+  // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
   omezarr.renderThumbnail(props.url, props.targetSize, autoBoost).then(src => {
     imgSrc.value = src;
   })
