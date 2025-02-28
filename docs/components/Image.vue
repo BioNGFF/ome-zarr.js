@@ -21,6 +21,9 @@ const omeroRef = ref({channels: []});
 const multiscaleRef = ref(null);
 
 
+const luts = ref([]);
+const lut = ref("fire.lut");
+
 // hard-coded for now
 const theZ = ref(100);
 const theT = ref(0);
@@ -31,6 +34,11 @@ onMounted(async () => {
   console.log("onMounted omero before", omeroRef.value);
 
   omezarr = await import('ome-zarr.js');
+
+  if (props.example == 'luts') {
+    // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
+    luts.value = omezarr.getLuts();
+  }
 
   // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
   const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(props.url);
@@ -45,6 +53,11 @@ onMounted(async () => {
 
 function handleZ(event) {
   console.log('handleZ', event.target.value, theZ.value);
+  render();
+}
+
+function handleLut(lutName) {
+  lut.value = lutName;
   render();
 }
 
@@ -74,14 +87,12 @@ async function render() {
       // we know the image is greyscale...
       omeroCopy.channels[index].color = "FFFFFF";
       omeroCopy.channels[index].window.end = 2000;
+    } else if (props.example == 'luts') {
+      omeroCopy.channels[index].lut = lut.value;
     }
 
-    let multiscale = JSON.parse(JSON.stringify(multiscaleRef.value));
-
-    console.log("omeroCopy", omeroCopy, multiscale, arrRef)
-
     // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-    let src = await omezarr.renderImage(arrRef, multiscale.axes, omeroCopy, {}, autoBoost);
+    let src = await omezarr.renderImage(arrRef, multiscaleRef.value.axes, omeroCopy, {}, autoBoost);
 
     // replace the src
     imgSrcList.value[index] = src;
@@ -90,25 +101,56 @@ async function render() {
 </script>
 
 <template>
+  <div :class="$style.luts" v-if="props.example == 'luts'">
+    <button @click="()=>{handleLut(lut.name)}" :class="$style.lut" v-for="lut in luts" :key="lut.name">
+      <legend>{{lut.name}}</legend>
+      <img :src="lut.png" />
+    </button>
+  </div>
+
+  <div :class="$style.clear_left"></div>
+
+  <h4 v-if="props.example == 'luts'">{{ lut }}</h4>
+
   <a v-for="src in imgSrcList" :key="src" :href="VURL + props.url" target="_blank">
-    <img alt="thumbnail" :src="src" :style="{ maxWidth: maxWidth + 'px' }"/>
+    <img :class="$style.renderedImage" :src="src" :style="{ maxWidth: maxWidth + 'px' }"/>
   </a>
 
-  <div v-if="props.example == 'ztSliders'">
-  TheZ:
-  <input @change="handleZ" type="range" min="0" max="201" v-model="theZ" />
-  {{ theZ }}
-  <br>
-  TheT:
-  <input @change="handleZ" type="range" min="0" max="79" v-model="theT" />
-  {{ theT }}
-</div>
+  <div v-if="props.example == 'ztSliders'" style="margin: 10px;">
+    Z:
+    <input @change="handleZ" type="range" min="0" max="201" v-model="theZ" />
+    {{ theZ }}
+    <br>
+    T:
+    <input @change="handleZ" type="range" min="0" max="79" v-model="theT" />
+    {{ theT }}
+  </div>
+
+<div :class="$style.clear_left"></div>
 
 </template>
 
 <style module>
-img {
+.renderedImage {
   float: left;
   margin: 5px;
 }
+.luts {
+  height: 318px;
+  overflow: auto;
+  margin-bottom: 10px;
+}
+.lut {
+  float: left;
+  margin: 2px 5px;
+}
+.lut img {
+  width: 200px;
+  height: 15px;
+}
+
+.clear_left {
+  clear: left;
+}
+
 </style>

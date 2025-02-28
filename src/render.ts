@@ -136,6 +136,9 @@ export async function renderImage(
     }, []);
     rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
     inverteds = activeChannelIndices.map((chIndex: number) => Boolean(omero?.channels[chIndex].inverted));
+    if (luts !== undefined) {
+      luts = luts.filter((_, index) => activeChannelIndices.includes(index));
+    }
   
     // Get slices for each channel
     if (sliceIndices["z"] == undefined) {

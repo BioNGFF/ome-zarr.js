@@ -39,8 +39,6 @@ omero.channels.forEach(async (channel, index) => {
 <Image url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0" autoBoost=true example="splitView" />
 </ClientOnly>
 
-<div :class="$style.clear_left"></div>
-
 Image is from [idr0036-gustafsdottir-cellpainting](https://idr.openmicroscopy.org/webclient/?show=screen-1952).
 
 # Z and T indices
@@ -58,12 +56,6 @@ When updating Z and T, we keep the same `arr` object in hand. `renderImage()` on
 <Image url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD815/c49efcfd-e767-4ae5-adbf-299cafd92120/c49efcfd-e767-4ae5-adbf-299cafd92120.zarr/0/" autoBoost=true example="ztSliders" />
 </ClientOnly>
 
-<div :class="$style.clear_left"></div>
 
 Image is from [idr0051-fulton-tailbudlightsheet](https://idr.openmicroscopy.org/webclient/?show=project-552).
 
-<style module>
-.clear_left {
-  clear: left;
-}
-</style>
