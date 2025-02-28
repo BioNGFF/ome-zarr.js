@@ -6,7 +6,8 @@
 By default, `renderThumbnail(url)` will use the smallest resolution `dataset` from the
 `multiscales` pyramid.
 
-It will also use any `omero` rendering settings to choose active channels and colors.
+It will also use any [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md)
+rendering settings in the image metadata to choose active channels and colors.
 
 ```js
 import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js/+esm";
@@ -23,6 +24,7 @@ resolution for each `OME-Zarr` Image. Click the thumbnails to inspect each Image
 import Thumbnail from './components/Thumbnail.vue';
 </script>
 
+<!-- ClientOnly because ome-zarr.js uses browser API: document.createElement('canvas') -->
 <ClientOnly>
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/" />
