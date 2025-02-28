@@ -8,6 +8,7 @@ const imgSrc = ref("");
 
 const props = defineProps(['url', 'targetSize', 'autoBoost']);
 
+let autoBoost = Boolean(props.autoBoost);
 const VURL = "https://ome.github.io/ome-ngff-validator/?source="
 
 onMounted(async () => {
@@ -15,8 +16,6 @@ onMounted(async () => {
   // This loads from http://localhost:5173/ome-zarr.js/@fs/Users/wmoore/Desktop/ZARR/ome-zarr.js/dist/ome-zarr.js
   // NB: needs `npm run build` first!
   const omezarr = await import('ome-zarr.js');
-
-  let autoBoost = Boolean(props.autoBoost);
 
   omezarr.renderThumbnail(props.url, props.targetSize, autoBoost).then(src => {
     imgSrc.value = src;

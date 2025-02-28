@@ -5,11 +5,15 @@
 import { onMounted } from 'vue';
 import { ref } from 'vue'
 
+const VURL = "https://ome.github.io/ome-ngff-validator/?source=";
+
 const imgSrcList = ref([]);
 
-const props = defineProps(['url', 'targetSize']);
+const props = defineProps(['url', 'targetSize', 'autoBoost']);
 
-const VURL = "https://ome.github.io/ome-ngff-validator/?source="
+const autoBoost = Boolean(props.autoBoost);
+
+const maxWidth = 200;
 
 onMounted(async () => {
 
@@ -28,7 +32,7 @@ onMounted(async () => {
     let omeroCopy = JSON.parse(JSON.stringify(omero));
     // turn on the channel we want to render...
     omeroCopy.channels[index].active = true;
-    let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
+    let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy, {}, autoBoost);
     imgSrcList.value.push(src);
   });
 });
@@ -36,7 +40,7 @@ onMounted(async () => {
 
 <template>
   <a v-for="src in imgSrcList" :key="src" :href="VURL + props.url" target="_blank">
-    <img alt="thumbnail" :src="src" />
+    <img alt="thumbnail" :src="src" :style="{ maxWidth: maxWidth + 'px' }"/>
   </a>
 </template>
 

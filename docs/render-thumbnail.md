@@ -1,5 +1,8 @@
 # renderThumbnail
 
+::: warning
+ome-zarr.js is not yet stable and the API may change in patch releases.
+:::
 
 ## Default usage
 
