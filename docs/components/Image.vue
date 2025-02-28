@@ -15,40 +15,56 @@ const autoBoost = Boolean(props.autoBoost);
 
 const maxWidth = (props.example == 'splitView') ? 200 : 500;
 
+// We store image array and metadata in these refs
+let arrRef = null;
+const omeroRef = ref({channels: []});
+const multiscaleRef = ref(null);
+
+
 // hard-coded for now
 const theZ = ref(100);
 const theT = ref(0);
 
-onMounted(() => {
+let omezarr;
 
+onMounted(async () => {
+  console.log("onMounted omero before", omeroRef.value);
+
+  omezarr = await import('ome-zarr.js');
+
+  // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
+  const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(props.url);
+  arrRef = arr;
+  omeroRef.value = omero;
+  multiscaleRef.value = multiscale;
+
+  console.log("onMounted omero", omeroRef.value);
   render();
 
 });
 
 function handleZ(event) {
-  console.log(event.target.value, theZ.value);
+  console.log('handleZ', event.target.value, theZ.value);
   render();
 }
 
 async function render() {
   // This loads from http://localhost:5173/ome-zarr.js/@fs/Users/wmoore/Desktop/ZARR/ome-zarr.js/dist/ome-zarr.js
   // NB: needs `npm run build` first!
-  const omezarr = await import('ome-zarr.js');
 
-  // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-  const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(props.url);
+  console.log("rendering omeroRef.value", omeroRef.value);
 
   if (imgSrcList.length == 0) {
     // initialize imgSrcList
-    omero.channels.forEach((ch) => imgSrcList.value.push(""));
+    omeroRef.value.channels.forEach((ch) => imgSrcList.value.push(""));
   }
 
   // turn OFF all channels
-  omero.channels.forEach((ch) => (ch.active = false));
+  omeroRef.value.channels.forEach((ch) => (ch.active = false));
   // for each channel...
-  omero.channels.forEach(async (channel, index) => {
+  omeroRef.value.channels.forEach(async (channel, index) => {
     // deepcopy omero for each channel...
-    let omeroCopy = JSON.parse(JSON.stringify(omero));
+    let omeroCopy = JSON.parse(JSON.stringify(omeroRef.value));
     // turn on the channel we want to render...
     omeroCopy.channels[index].active = true;
 
@@ -59,10 +75,13 @@ async function render() {
       omeroCopy.channels[index].color = "FFFFFF";
       omeroCopy.channels[index].window.end = 2000;
     }
-    console.log("omeroCopy", omeroCopy)
+
+    let multiscale = JSON.parse(JSON.stringify(multiscaleRef.value));
+
+    console.log("omeroCopy", omeroCopy, multiscale, arrRef)
 
     // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-    let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy, {}, autoBoost);
+    let src = await omezarr.renderImage(arrRef, multiscale.axes, omeroCopy, {}, autoBoost);
 
     // replace the src
     imgSrcList.value[index] = src;
@@ -76,11 +95,13 @@ async function render() {
   </a>
 
   <div v-if="props.example == 'ztSliders'">
-  TheZ: {{ theZ }}
+  TheZ:
   <input @change="handleZ" type="range" min="0" max="201" v-model="theZ" />
+  {{ theZ }}
   <br>
-  TheT: {{ theT }}
+  TheT:
   <input @change="handleZ" type="range" min="0" max="79" v-model="theT" />
+  {{ theT }}
 </div>
 
 </template>
