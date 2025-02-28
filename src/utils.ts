@@ -227,7 +227,7 @@ export async function getMultiscale(store: zarr.FetchStore) {
 }
 
 export async function getMultiscaleWithArray(
-  store: zarr.FetchStore,
+  store: zarr.FetchStore | string,
   datasetIndex: number = 0
 ): Promise<{
   arr: zarr.Array<any>;
@@ -237,6 +237,9 @@ export async function getMultiscaleWithArray(
   scales: number[][];
   zarr_version: 2 | 3;
 }> {
+  if (typeof store === "string") {
+    store = new zarr.FetchStore(store);
+  }
   const { multiscale, omero, zarr_version } = await getMultiscale(store);
 
   const paths: Array<string> = multiscale.datasets.map((d) => d.path);
