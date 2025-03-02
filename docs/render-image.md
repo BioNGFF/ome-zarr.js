@@ -4,6 +4,7 @@ outline: deep
 
 <script setup>
 import Image from './components/Image.vue';
+import ImageViewer from './components/ImageViewer.vue';
 </script>
 
 # renderImage
@@ -36,7 +37,7 @@ omero.channels.forEach(async (channel, index) => {
 
 
 <ClientOnly>
-<Image url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0" autoBoost=true example="splitView" />
+<ImageViewer url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0" />
 </ClientOnly>
 
 Image is from [idr0036-gustafsdottir-cellpainting](https://idr.openmicroscopy.org/webclient/?show=screen-1952).
