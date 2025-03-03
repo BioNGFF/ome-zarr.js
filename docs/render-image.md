@@ -22,17 +22,15 @@ by the [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md) objec
 // `arr` will be the multiscale highest resolution array by default
 let url = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
 const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(url);
-// turn OFF all channels
-omero.channels.forEach((ch) => (ch.active = false));
-// for each channel...
-omero.channels.forEach(async (channel, index) => {
-  // deepcopy omero for each channel...
-  let omeroCopy = JSON.parse(JSON.stringify(omero));
-  // turn on the channel we want to render...
-  omeroCopy.channels[index].active = true;
-  let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
-  document.getElementById("splitview").innerHTML += `<img src="${src}" />`;
-});
+// turn channel on/off
+omero.channels[0].active = true;
+// set channel color
+omero.channels[0].color = "FFFFFF";
+// set start/end range
+omero.channels[0].window.start = 100;
+omero.channels[0].window.end = 200;
+let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
+document.getElementById("splitview").innerHTML += `<img src="${src}" />`;
 ```
 
 
