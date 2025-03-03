@@ -28,6 +28,12 @@ function toggleChannel(index) {
   render();
 }
 
+function handleColor(index, event) {
+  console.log('handleColor', index, event.target.value);
+  omeroRef.value.channels[index].color = event.target.value.replace("#", "");
+  render();
+}
+
 onMounted(async () => {
   // This loads from http://localhost:5173/ome-zarr.js/@fs/Users/wmoore/Desktop/ZARR/ome-zarr.js/dist/ome-zarr.js
   // NB: needs `npm run build` first!
@@ -58,7 +64,11 @@ async function render() {
   </a>
 
   <div v-for="(ch, index) in omeroRef.channels">
-    <label><input type="checkbox" :checked="ch.active" @click="()=>{toggleChannel(index)}" />{{ ch.label }}</label>
+    <input type="color" @change="(event)=>{handleColor(index, event)}" :value="'#' + ch.color" />
+    <label>
+      <input type="checkbox" :checked="ch.active" @click="()=>{toggleChannel(index)}" />
+      {{ ch.label }}
+    </label>
   </div>
 
 <div :class="$style.clear_left"></div>
