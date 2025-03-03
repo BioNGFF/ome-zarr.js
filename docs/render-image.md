@@ -29,8 +29,9 @@ omero.channels[0].color = "FFFFFF";
 // set start/end range
 omero.channels[0].window.start = 100;
 omero.channels[0].window.end = 200;
+// This call will load the chunks and render to rgb image
 let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
-document.getElementById("splitview").innerHTML += `<img src="${src}" />`;
+document.getElementById("image").src = src;
 ```
 
 
