@@ -7,7 +7,9 @@ so it's available to use elsewhere.
 
 We use https://github.com/manzt/zarrita.js for loading zarr data.
 
-Supports OME-Zarr v0.4 and v0.5 images.
+Supports all versions of OME-Zarr v0.1 -> v0.5.
+
+The URL must point to a `multiscales` image (not a `plate` or `bioformats2raw.layout` group).
 
 Usage:
 
