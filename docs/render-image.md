@@ -69,7 +69,7 @@ Image is from [idr0051-fulton-tailbudlightsheet](https://idr.openmicroscopy.org/
 ## getMultiscaleWithArray
 
 The first call in the `renderImage()` example above is `getMultiscaleWithArray()` and this is also used
-by `renderThumbnail()`. By default, this loads the first (higheset resolution) `multiscale.dataset` of the pyramid,
+by `renderThumbnail()`. By default, this loads the first (highest resolution) `multiscale.dataset` of the pyramid,
 but the `datasetIndex` can be used to specify a different one. 
 
 It loads both the first `multiscale` metadata for the Image, as well as one of the zarr arrays from the
