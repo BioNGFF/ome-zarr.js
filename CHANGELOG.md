@@ -1,4 +1,9 @@
 
+0.0.10 (March 2025)
+-------------------
+
+- Ship CommonJS and ES modules again
+
 0.0.9 (March 2025)
 ------------------
 
