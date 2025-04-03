@@ -41,8 +41,8 @@ document.getElementById("image").src = src;
 ```
 
 Note: The UI elements of the viewer below and others on the docs pages are provided by Vue.js [components within the
-documentation](https://github.com/will-moore/ome-zarr.js/blob/main/docs/components/), rather than the `ome-zarr.js` library itself.
-The example below is from [ImageViewer](https://github.com/will-moore/ome-zarr.js/blob/main/docs/components/ImageViewer.vue) component.
+documentation](https://github.com/biongff/ome-zarr.js/blob/main/docs/components/), rather than the `ome-zarr.js` library itself.
+The example below is from [ImageViewer](https://github.com/biongff/ome-zarr.js/blob/main/docs/components/ImageViewer.vue) component.
 
 <ClientOnly>
 <ImageViewer url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0" />
