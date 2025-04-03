@@ -3,13 +3,13 @@
   "description": "Some JavaScript utils for simple rendering of OME-Zarr images",
   "author": "OME Team",
   "license": "BSD",
-  "homepage": "git+https://github.com/will-moore/ome-zarr.js.git",
+  "homepage": "git+https://github.com/biongff/ome-zarr.js.git",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/will-moore/ome-zarr.js.git"
+    "url": "git+https://github.com/biongff/ome-zarr.js.git"
   },
   "bugs": {
-    "url": "https://github.com/will-moore/ome-zarr.js/issues"
+    "url": "https://github.com/biongff/ome-zarr.js/issues"
   },
   "keywords": [
     "ome",
