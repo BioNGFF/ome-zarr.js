@@ -13,7 +13,7 @@ Supports all versions of OME-Zarr v0.1 -> v0.5.
 
 The URL must point to a `multiscales` image (not a `plate` or `bioformats2raw.layout` group).
 
-# Usage
+## Usage
 
 `renderThumbnail()` uses rendering settings from `omero`, metadata if the zarr image has it
 and the lowest resolution of the multiscales pyramid by default:
