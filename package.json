@@ -11,10 +11,17 @@
   "bugs": {
     "url": "https://github.com/will-moore/ome-zarr.js/issues"
   },
-  "keywords": ["ome", "zarr", "image", "rendering"],
-  "version": "0.0.8",
+  "keywords": [
+    "ome",
+    "zarr",
+    "image",
+    "rendering"
+  ],
+  "version": "0.0.11",
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "module": "./dist/ome-zarr.js",
   "exports": {
     ".": {
@@ -24,15 +31,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "typescript": "~5.6.2",
     "vite": "^6.0.5",
-    "vite-plugin-dts": "^4.5.0"
+    "vite-plugin-dts": "^4.5.0",
+    "vitepress": "^1.6.3"
   },
   "packageManager": "pnpm@9.4.0+sha512.f549b8a52c9d2b8536762f99c0722205efc5af913e77835dbccc3b0b0b2ca9e7dc8022b78062c17291c48e88749c70ce88eb5a74f1fa8c4bf5e18bb46c8bd83a",
   "dependencies": {
-    "zarrita": "0.4.0-next.19"
+    "zarrita": "^0.5.0"
   }
 }

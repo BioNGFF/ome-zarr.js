@@ -25,3 +25,6 @@ dist-ssr
 
 # build
 *.tgz
+
+# docs
+docs/.vitepress/cache/

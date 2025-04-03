@@ -7,7 +7,9 @@ so it's available to use elsewhere.
 
 We use https://github.com/manzt/zarrita.js for loading zarr data.
 
-Supports OME-Zarr v0.4 and v0.5 images.
+Supports all versions of OME-Zarr v0.1 -> v0.5.
+
+The URL must point to a `multiscales` image (not a `plate` or `bioformats2raw.layout` group).
 
 Usage:
 
@@ -77,6 +79,11 @@ viewed with:
     $ npm install
     $ npm run dev
 
+To develop and build the docs, we need to build ome-zarr.js first so it can be
+imported from /dist/ by the docs:
+
+    $ npm run build
+    $ npm run docs:dev
 
 ## Typescript from ome-zarr-models-py
 
@@ -90,8 +97,18 @@ The `src/types/ome.ts` file was generated with:
 
 ## Release steps
 
-Bump `package.json` version, then...
+ - Bump `package.json` version
+ - Update `CHANGELOG.md`
+ - Commit changes
+ - Then...
 
     $ npm run build
+
+    # check the docs are up to date (images are rendering correctly)
+    $ npm run docs:build
+    $ npm run docs:preview
+
     $ npm pack
     $ npm publish
+
+- Finally, `$ git tag v0.0.9` and push tag and `main`
