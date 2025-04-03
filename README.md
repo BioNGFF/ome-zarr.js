@@ -1,9 +1,11 @@
 # ome-zarr.js
 Some JavaScript utils for simple rendering of OME-Zarr images.
 
-A work in progress to copy the thumbnail rendering code used in
-https://ome.github.io/ome2024-ngff-challenge/
-so it's available to use elsewhere.
+
+## About
+
+See the [Documentation pages](https://biongff.github.io/ome-zarr.js/)
+for more details and demos.
 
 We use https://github.com/manzt/zarrita.js for loading zarr data.
 
@@ -11,7 +13,7 @@ Supports all versions of OME-Zarr v0.1 -> v0.5.
 
 The URL must point to a `multiscales` image (not a `plate` or `bioformats2raw.layout` group).
 
-Usage:
+# Usage
 
 `renderThumbnail()` uses rendering settings from `omero`, metadata if the zarr image has it
 and the lowest resolution of the multiscales pyramid by default:
