@@ -1,3 +1,12 @@
+export type { 
+  ImageAttrs, 
+  Multiscale, 
+  Axis, 
+  Dataset, 
+  Omero, 
+  Channel, 
+  Window 
+} from "./types/ome";
 export {
   getArray,
   getMultiscale,
