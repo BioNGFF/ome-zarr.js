@@ -102,7 +102,8 @@ The `src/types/ome.ts` file was generated with:
  - Bump `package.json` version
  - Update `CHANGELOG.md`
  - Commit changes
- - Then...
+
+Then:
 
     $ npm run build
 
