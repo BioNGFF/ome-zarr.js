@@ -1,4 +1,9 @@
 
+0.0.12 (May 2015)
+-----------------
+
+- Export types used in public methods (Thanks to [Konrad Rokicki](https://github.com/krokicki)) [#7](https://github.com/BioNGFF/ome-zarr.js/pull/7)
+
 0.0.11 (March 2025)
 -------------------
 
