@@ -71,6 +71,9 @@
       // v0.3
       const IDR0079 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
 
+      // https://github.com/BioNGFF/ome-zarr.js/issues/9
+      const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64.zarr/";
+
       // Thumbnails...
       const urls = [
         IDR0077,
@@ -80,7 +83,9 @@
         IDR0066,
         // "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' has lots of white channels
         IDR0048,
+        TEST_INT64,
       ];
+      document.getElementById("thumbnails").innerHTML = `<p>Expected ${urls.length} thumbnails...</p>`;
       urls.forEach(async (url) => {
         // Uses the smallest resolution by default
         let thumbSrc = await omezarr.renderThumbnail(url);
@@ -107,7 +112,9 @@
         let omeroCopy = JSON.parse(JSON.stringify(omero));
         // turn on the channel we want to render...
         omeroCopy.channels[index].active = true;
+        let start = Date.now();
         let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
+        console.log(`renderImage channel ${index} took ${Date.now() - start} ms   (Expect 60-80 ms)`);
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
       });
@@ -165,6 +172,15 @@
           <img class="lut" src="${src}" title="${lut.name}" /></div>`;
         document.getElementById("luts").innerHTML += html;
       });
+
+      // After a couple of seconds, check various images have been rendered...
+      setTimeout(() => {
+        console.log("Checking thumbnails...");
+        let imgs = document.querySelectorAll("#thumbnails img");
+        if (imgs.length != urls.length) {
+          alert(`Expected ${urls.length} thumbnails, but found ${imgs.length}`);
+        }
+      }, 2000);
     </script>
   </body>
 </html>
