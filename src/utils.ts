@@ -83,7 +83,8 @@ export function getMinMaxValues(chunk2d: any): [number, number] {
   let minV = Infinity;
   let length = chunk2d.data.length;
   for (let y = 0; y < length; y++) {
-    let rawValue = data[y];
+    // In case of bigint, convert to number. See #9
+    let rawValue = Number(data[y]);
     maxV = Math.max(maxV, rawValue);
     minV = Math.min(minV, rawValue);
   }
@@ -133,7 +134,8 @@ export function renderTo8bitArray(
     let range = minMaxValues[p];
     let inverted = inverteds?.[p];
     for (let y = 0; y < pixels; y++) {
-      let rawValue = data[y];
+      // In case of bigint, convert to number. See #9
+      let rawValue = Number(data[y]);
       let fraction = (rawValue - range[0]) / (range[1] - range[0]);
       fraction = Math.min(1, Math.max(0, fraction));
       // for red, green, blue,
