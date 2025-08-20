@@ -7,6 +7,10 @@ Some JavaScript utils for simple rendering of OME-Zarr images.
 See the [Documentation pages](https://biongff.github.io/ome-zarr.js/)
 for more details and demos.
 
+To test thumbnail rendering of a sample image, the easiest option is to try
+https://ome.github.io/ome-ngff-validator/ which uses `ome-zarr.js` to display
+a thumbnail.
+
 We use https://github.com/manzt/zarrita.js for loading zarr data.
 
 Supports all versions of OME-Zarr v0.1 -> v0.5.
