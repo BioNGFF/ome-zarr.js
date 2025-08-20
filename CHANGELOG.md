@@ -1,8 +1,13 @@
 
-0.0.13 (August 2015)
+0.0.14 (August 2015)
 --------------------
 
 - Support 64-bit data [#10](https://github.com/BioNGFF/ome-zarr.js/pull/10)
+
+0.0.13 (August 2015)
+--------------------
+
+- Update README
 
 0.0.12 (May 2015)
 -----------------
