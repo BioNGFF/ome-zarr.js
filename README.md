@@ -103,7 +103,8 @@ The `src/types/ome.ts` file was generated with:
 
 ## Release steps
 
- - Bump `package.json` version
+ - Fetch `origin/main`, checkout `main` and rebase
+ - Bump version in `package.json`
  - Update `CHANGELOG.md`
  - Commit changes
 
@@ -118,4 +119,5 @@ Then:
     $ npm pack
     $ npm publish
 
-- Finally, `$ git tag v0.0.9` and push tag and `main`
+    $ git tag v0.0.14
+    $ git push HEAD origin
