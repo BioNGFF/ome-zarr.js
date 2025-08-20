@@ -36,6 +36,7 @@ import Thumbnail from './components/Thumbnail.vue';
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" />
+<Thumbnail url="https://s3.janelia.org/funceworm/test-uint64.zarr/" />
 </ClientOnly>
 
 <div :class="$style.thumb_container"></div>
