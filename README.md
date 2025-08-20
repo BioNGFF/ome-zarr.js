@@ -120,4 +120,4 @@ Then:
     $ npm publish
 
     $ git tag v0.0.14
-    $ git push HEAD origin
+    $ git push origin HEAD v0.0.14
