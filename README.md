@@ -61,6 +61,12 @@ The `src/types/ome.ts` file was generated with:
     $ pydantic2ts --module src/ome_zarr_models/v04/image.py --output ome.ts
 
 
+## License
+
+Distributed under the terms of the [BSD](https://opensource.org/licenses/BSD-2-Clause)
+license, "ome-zarr.js" is free and open source software.
+
+
 ## Release steps
 
  - Fetch `origin/main`, checkout `main` and rebase
