@@ -19,62 +19,22 @@ The URL must point to a `multiscales` image (not a `plate` or `bioformats2raw.la
 
 ## Usage
 
-`renderThumbnail()` uses rendering settings from `omero`, metadata if the zarr image has it
+`renderThumbnail()` uses rendering settings from the `omero` metadata if the zarr image has it
 and the lowest resolution of the multiscales pyramid by default:
 
-    import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js@latest/+esm";
-    import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
+```javascript
+import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js@latest/+esm";
 
-    const source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
-    const store = new zarr.FetchStore(source);
-
-    let src = await omezarr.renderThumbnail(store);
-    document.getElementById("thumbnail").src = src;
+const url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
+let src = await omezarr.renderThumbnail(url);
+document.getElementById("thumbnail").src = src;
+```
 
 `renderImage()` uses the highest resolution dataset by default and allows you to
-specify rendering settings, Z/T indices
-
-    const store = new zarr.FetchStore(source);
-    // arr will be full-sized array by default
-    const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(store);
-
-    // turn on the channel we want to render... set color (or LUT which overrides color)
-    omero.channels[0].active = true;
-    omero.channels[0].color = "FF0000";
-    omero.channels[0].lut = "thermal.lut";
-    omero.channels[0].inverted = true;
-
-    // set rendering window, Z index
-    omero.channels[0].window.start = 100;
-    omero.channels[0].window.end = 500;
-    omero.rdefs.defaultZ = 50;
-    
-    // render whole image
-    let src = await omezarr.renderImage(arr, multiscale.axes, omero);
-    document.getElementById("image").src = src;
+specify rendering settings, Z/T indices.
 
 We can choose to use different resolutions of the multiscales pyramid and to render
-a smaller region
-
-    const store = new zarr.FetchStore(source);
-    // we get a bunch of info: shapes etc. Optional to choose datasetIndex:
-    let datasetIndex = 1
-    const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store, datasetIndex);
-
-    // Shapes are calculated from the datasets.coordinateTransformations 'scale' info and the
-    // dimensions of the array that was loaded (largest array is loaded by default)
-    // shapes [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
-    console.log("shapes", shapes);
-
-    // load array from chosen path, corresponding to the 'shape' we want
-    const paths = multiscale.datasets.map((d) => d.path);
-    const path = paths[1];
-    // zarr_version is optional, but it means zarrita.js doesn't have to guess
-    const arr1 = await omezarr.getArray(store, path, zarr_version);
-
-    // render a region
-    let sliceIndices = {"x": [10, 50], "y": [0, 100]};
-    let src = await omezarr.renderImage(arr1, multiscale.axes, omero, sliceIndices);
+a smaller region. See docs above for more details.
 
 
 ## Demo and Development
@@ -99,6 +59,12 @@ to generate typescript interfaces from https://github.com/ome-zarr-models/ome-za
 The `src/types/ome.ts` file was generated with:
 
     $ pydantic2ts --module src/ome_zarr_models/v04/image.py --output ome.ts
+
+
+## License
+
+Distributed under the terms of the [BSD](https://opensource.org/licenses/BSD-2-Clause)
+license, "ome-zarr.js" is free and open source software.
 
 
 ## Release steps
