@@ -1,4 +1,9 @@
 
+0.0.15 (October 2015)
+---------------------
+
+- Define path to types in package.json (Thanks to [Peyton Lee](https://github.com/ShrimpCryptid)) [#12](https://github.com/BioNGFF/ome-zarr.js/pull/12)
+
 0.0.14 (August 2015)
 --------------------
 
