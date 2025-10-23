@@ -91,7 +91,7 @@
         console.log("Rendering thumbnail for ", url);
         try {
           let thumbSrc = await omezarr.renderThumbnail(url, 100);
-          let html = `<img title="${url}" src="${thumbSrc}" />`;
+          let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
         } catch (error) {
           console.error("Error rendering thumbnail for ", url, error);
