@@ -74,6 +74,9 @@
       // https://github.com/BioNGFF/ome-zarr.js/issues/9
       const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64.zarr/";
 
+      // v0.6 (coordinateSystems instead of axes)
+      const V06_IDR067 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
+
       // Thumbnails...
       const urls = [
         IDR0077,
@@ -84,6 +87,7 @@
         // "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' has lots of white channels
         IDR0048,
         TEST_INT64,
+        V06_IDR067,
       ];
       document.getElementById("thumbnails").innerHTML = `<p>Expected ${urls.length} thumbnails...</p>`;
       urls.forEach(async (url) => {

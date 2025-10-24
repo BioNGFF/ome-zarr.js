@@ -43,6 +43,7 @@ export interface Multiscale {
   datasets: [Dataset, ...Dataset[]];
   version?: "0.4" | null;
   coordinateTransformations?: [unknown] | [unknown, unknown] | null;
+  coordinateSystems?: CoordinateSystem[] | null;
   metadata?: {
     [k: string]: unknown;
   };
@@ -52,6 +53,12 @@ export interface Multiscale {
   };
   [k: string]: unknown;
 }
+
+export interface CoordinateSystem {
+  name: string;
+  axes: Axis[];
+}
+
 /**
  * Model for an element of `Multiscale.axes`.
  *
