@@ -1,24 +1,30 @@
-0.0.16 (October 2015)
+
+0.0.17-0.6dev2 (October 2025)
+-----------------------------
+
+- Read axes from coordinateSystems [#16](https://github.com/BioNGFF/ome-zarr.js/pull/16)
+
+0.0.16 (October 2025)
 ---------------------
 
 - Handle omero.rdef.defaultZ with images downsampled in Z [#15](https://github.com/BioNGFF/ome-zarr.js/pull/15)
 
-0.0.15 (October 2015)
+0.0.15 (October 2025)
 ---------------------
 
 - Define path to types in package.json (Thanks to [Peyton Lee](https://github.com/ShrimpCryptid)) [#12](https://github.com/BioNGFF/ome-zarr.js/pull/12)
 
-0.0.14 (August 2015)
+0.0.14 (August 2025)
 --------------------
 
 - Support 64-bit data [#10](https://github.com/BioNGFF/ome-zarr.js/pull/10)
 
-0.0.13 (August 2015)
+0.0.13 (August 2025)
 --------------------
 
 - Update README
 
-0.0.12 (May 2015)
+0.0.12 (May 2025)
 -----------------
 
 - Export types used in public methods (Thanks to [Konrad Rokicki](https://github.com/krokicki)) [#7](https://github.com/BioNGFF/ome-zarr.js/pull/7)
