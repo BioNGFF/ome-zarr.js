@@ -1,3 +1,7 @@
+0.0.16 (October 2015)
+---------------------
+
+- Handle omero.rdef.defaultZ with images downsampled in Z [#15](https://github.com/BioNGFF/ome-zarr.js/pull/15)
 
 0.0.15 (October 2015)
 ---------------------
