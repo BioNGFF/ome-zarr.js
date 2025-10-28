@@ -32,11 +32,11 @@ import Thumbnail from './components/Thumbnail.vue';
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr" />
+<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" />
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" />
-<Thumbnail url="https://s3.janelia.org/funceworm/test-uint64.zarr/" />
+<Thumbnail url="https://s3.janelia.org/funceworm/test-uint64-small.zarr/" />
 </ClientOnly>
 
 <div :class="$style.thumb_container"></div>
