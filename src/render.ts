@@ -86,7 +86,9 @@ export async function renderThumbnail(
     });
   }
 
-  return renderImage(arr, multiscale.axes, omero, {}, autoBoost);
+  const originalShape = shapes?.[0];
+
+  return renderImage(arr, multiscale.axes, omero, {}, autoBoost, originalShape);
 }
 
 export async function renderImage(
@@ -94,7 +96,8 @@ export async function renderImage(
     axes: Axis[],
     omero: Omero | null | undefined,
     sliceIndices: {[k: string]: (number | [number, number] | undefined)}  = {},
-    autoBoost: boolean = false
+    autoBoost: boolean = false,
+    originalShape?: number[],
   ) {
     // Main rendering function...
     // We have the zarr Array already in hand, axes for dimensions
@@ -147,7 +150,8 @@ export async function renderImage(
     if (sliceIndices["t"] == undefined) {
       sliceIndices["t"] = omero?.rdefs?.defaultT;
     }
-    let chSlices = getSlices(activeChannelIndices, shape, axesNames, sliceIndices);
+    // sliceIndices are from originalShape if provided
+    let chSlices = getSlices(activeChannelIndices, shape, axesNames, sliceIndices, originalShape);
   
     // Wait for all chunks to be fetched...
     let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));

@@ -57,7 +57,7 @@
       const omezarr = await import("/src/index.ts");
 
       const IDR0062 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"; // OME-Zarr v0.4
+        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
       const IDR0048 =
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
       const IDR0083 =
@@ -72,7 +72,7 @@
       const IDR0079 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
 
       // https://github.com/BioNGFF/ome-zarr.js/issues/9
-      const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64.zarr/";
+      const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64-small.zarr/";
 
       // v0.6 (coordinateSystems instead of axes)
       const V06_IDR067 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
@@ -90,12 +90,18 @@
         V06_IDR067,
       ];
       document.getElementById("thumbnails").innerHTML = `<p>Expected ${urls.length} thumbnails...</p>`;
-      urls.forEach(async (url) => {
-        // Uses the smallest resolution by default
-        let thumbSrc = await omezarr.renderThumbnail(url);
-        let html = `<img src="${thumbSrc}" />`;
-        document.getElementById("thumbnails").innerHTML += html;
-      });
+
+      for (const url of urls) {
+        console.log("Rendering thumbnail for ", url);
+        try {
+          let thumbSrc = await omezarr.renderThumbnail(url, 100);
+          let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
+          document.getElementById("thumbnails").innerHTML += html;
+        } catch (error) {
+          console.error("Error rendering thumbnail for ", url, error);
+          alert(`Error rendering thumbnail for ${url}: ${error}`);
+        }
+      }
 
       let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
       let bigImg = `<img src="${thumbSrc}" />`;
@@ -177,14 +183,6 @@
         document.getElementById("luts").innerHTML += html;
       });
 
-      // After a couple of seconds, check various images have been rendered...
-      setTimeout(() => {
-        console.log("Checking thumbnails...");
-        let imgs = document.querySelectorAll("#thumbnails img");
-        if (imgs.length != urls.length) {
-          alert(`Expected ${urls.length} thumbnails, but found ${imgs.length}`);
-        }
-      }, 2000);
     </script>
   </body>
 </html>
