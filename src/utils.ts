@@ -225,6 +225,11 @@ export async function getMultiscale(store: zarr.FetchStore) {
     multiscale = attrs.multiscales[0];
     omero = attrs.omero;
   }
+  // v0.6 moved 'axes' into coordinateSystems
+  // In this case we "move it back" for compatibility
+  if (!multiscale.axes && multiscale.coordinateSystems?.[0]?.axes) {
+    multiscale.axes = multiscale.coordinateSystems[0].axes
+  }
   return { multiscale, omero, zarr_version };
 }
 
