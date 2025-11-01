@@ -261,14 +261,25 @@ export async function getMultiscaleWithArray(
   // calculate some useful values...
   const shape = arr.shape;
   const scales: Array<number[]> = multiscale.datasets.map((ds) => {
+    let scale: number[] | undefined = undefined;
     if (Array.isArray(ds.coordinateTransformations)) {
-      let ct = ds.coordinateTransformations.find(
-        (ct: any) => "scale" in ct
-      ) as { scale: number[] };
-      return ct.scale;
+      for (const ct of ds.coordinateTransformations) {
+        if ("scale" in ct) {
+          scale = (ct as { scale: number[] }).scale;
+          break;
+        } else if ("transformations" in ct) {
+          // handle nested transformations
+          for (const sct of (ct as { transformations: any[] }).transformations) {
+            if ("scale" in sct) {
+              scale = (sct as { scale: number[] }).scale;
+              break;
+            }
+          }
+        }
+      }
     }
     // handle missing coordinateTransformations below
-    return undefined;
+    return scale;
   }).filter((s) => s !== undefined) as number[][]; // remove undefined
 
   const arrayScale = scales[datasetIndex];
