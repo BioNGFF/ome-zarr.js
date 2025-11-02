@@ -21,6 +21,10 @@ const errorMsg = ref("");
 const maxSize = ref(1000);
 const setMaxSize = ref(false);
 
+const imgInfo = ref(null);
+const naturalWidth = ref(0);
+const naturalHeight = ref(0);
+
 const maxWidth = 450;
 
 let omezarr;
@@ -49,23 +53,41 @@ onMounted(async () => {
 
 
 async function render() {
+  // Render the Thumbnail()....
   imgSrc.value = null;
   errorMsg.value = "";
+  imgInfo.value = null;
+  naturalHeight.value = 0;
+  naturalWidth.value = 0;
+
+  let targetSz = undefined;
+  let maxSz = undefined;
+  if (setMaxSize.value) {
+    maxSz = parseInt(maxSize.value);
+  }
+  if (setTargetSize.value) {
+    targetSz = parseInt(targetSize.value);
+  }
+
   try {
-    let targetSz = undefined;
-    let maxSz = undefined;
-    if (setMaxSize.value) {
-      maxSz = parseInt(maxSize.value);
-    }
-    if (setTargetSize.value) {
-      targetSz = parseInt(targetSize.value);
-    }
-    console.log("MAX SIZE:", maxSz);
     imgSrc.value = await omezarr.renderThumbnail(url.value, targetSz, boostRef.value, maxSz);
+
+    // Use Image() to find intrinsic size
+    const img = new Image();
+    img.onload = () => {
+      naturalWidth.value = img.width;
+      naturalHeight.value = img.height;
+    };
+    img.src = imgSrc.value;
+
   } catch (error) {
     console.error("Error rendering thumbnail:", error);
     errorMsg.value = "Error rendering thumbnail: " + error;
   }
+
+  // Also load image info for debugging
+  imgInfo.value = await omezarr.getMultiscaleWithArray(url.value);
+  console.log("Image info:", imgInfo.value);
 };
 </script>
 
@@ -95,6 +117,16 @@ async function render() {
       <img :class="$style.renderedImage" :src="imgSrc" :style="{ maxWidth: maxWidth + 'px', float: 'none' }" />
     </div>
     <div v-if="errorMsg" :style="{ color: 'red' }">{{ errorMsg }}</div>
+    <div v-if="imgInfo">
+      <h4>Image Info:</h4>
+      <div>Thumbnail size: {{ naturalWidth }} x {{ naturalHeight }}</div>
+      <div>
+        Shapes (from scales info):
+        <code v-for="shape in imgInfo.shapes" :key="shape.join(', ')">
+          ({{ shape.join(", ") }})
+        </code>
+      </div>
+    </div>
   </div>
 
 </template>
