@@ -282,6 +282,10 @@ export async function getMultiscaleWithArray(
     return scale;
   }).filter((s) => s !== undefined) as number[][]; // remove undefined
 
+  if (scales.length !== multiscale.datasets.length) {
+    throw new Error("Could not determine scales for all datasets");
+  }
+
   const arrayScale = scales[datasetIndex];
 
   // we know the shape and scale of the chosen array, so we can calculate the
