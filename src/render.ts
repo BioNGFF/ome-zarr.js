@@ -13,6 +13,7 @@ import {
   renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
+import jsdom from "jsdom";
 
 
 export async function renderThumbnail(
@@ -168,15 +169,28 @@ export async function renderImage(
         return getMinMaxValues(ndChunks[i]);
     });
 
+    let canvas;
+    try {
+      canvas = document.createElement("canvas");
+      console.log("canvas created:", canvas);
+    } catch (error) {
+      const { JSDOM } = jsdom;
+      const { document } = (new JSDOM(`<!DOCTYPE html><p>Hello world</p>`)).window;
+      console.log("JSDOM document created", document);
+      canvas = document.createElement("canvas");
+      console.log("JSDOM canvas created:", canvas);
+    }
+
     // Render to 8bit rgb array
     let rbgData = renderTo8bitArray(ndChunks, minMaxValues, rgbColors, luts, inverteds, autoBoost);
     // Use a canvas element to convert the 8bit array to a dataUrl
-    const canvas = document.createElement("canvas");
+    // const canvas = document.createElement("canvas");
     const height = ndChunks[0].shape[0];
     const width = ndChunks[0].shape[1];
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");
+    console.log("context:", context);
     if (!context) {
       return "";
     }
