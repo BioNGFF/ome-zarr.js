@@ -75,7 +75,7 @@ export interface Axis {
  */
 export interface Dataset {
   path: string;
-  coordinateTransformations: [unknown] | [unknown, unknown];
+  coordinateTransformations: Array<Scale | Translation>;
   [k: string]: unknown;
 }
 /**
@@ -110,4 +110,23 @@ export interface Window {
   start?: number;
   end?: number;
   [k: string]: unknown;
+}
+
+/**
+ * Coordinate transformations....
+ */
+
+export interface Scale {
+    type: "scale";
+    scale: number[];
+}
+
+export interface Translation {
+    type: "translation";
+    translation: number[];
+}
+
+export interface Sequence {
+    type: "sequence";
+    transformations: Array<Scale | Translation>;
 }

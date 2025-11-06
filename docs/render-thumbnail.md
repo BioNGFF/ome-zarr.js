@@ -25,6 +25,7 @@ resolution for each `OME-Zarr` Image. Click the thumbnails to inspect each Image
 
 <script setup>
 import Thumbnail from './components/Thumbnail.vue';
+import ThumbnailTest from './components/ThumbnailTest.vue';
 </script>
 
 <!-- ClientOnly because ome-zarr.js uses browser API: document.createElement('canvas') -->
@@ -99,6 +100,12 @@ let maxSize = 1500;
 let targetSize = 500;
 let thumbSrc = await omezarr.renderThumbnail(url, targetSize, false, maxSize);
 ```
+
+## Test renderThumbnail()
+
+<ClientOnly>
+<ThumbnailTest />
+</ClientOnly>
 
 
 ## What's being loaded?
