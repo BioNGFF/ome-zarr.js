@@ -13,6 +13,7 @@ import {
   renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
+import jsdom from "jsdom";
 
 
 export async function renderThumbnail(
