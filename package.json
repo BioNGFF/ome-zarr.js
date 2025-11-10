@@ -39,6 +39,9 @@
     "test": "vitest"
   },
   "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pngjs": "^6.0.5",
+    "@vitest/coverage-v8": "^4.0.8",
     "pngjs": "^7.0.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.5",

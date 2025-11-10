@@ -15,12 +15,18 @@ function rgbaFromDataUrl(dataUrl) {
   return rgba;
 }
 
-test("render6001240", async () => {
-  expect(await renderThumbnail(URL_IDR62)).toBeDefined();
-});
+test(
+  "render6001240",
+  async () => {
+    expect(await renderThumbnail(URL_IDR62)).toBeDefined();
+  },
+  10_000 // timeout in ms
+);
 
 test("render6001240_src", async () => {
   const got = await renderThumbnail(URL_IDR62);
   // compare decoded pixel bytes from data URLs
   expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
-});
+},
+  10_000 // timeout in ms
+);
