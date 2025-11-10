@@ -39,6 +39,7 @@
     "test": "vitest"
   },
   "devDependencies": {
+    "pngjs": "^7.0.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.5",
     "vite-plugin-dts": "^4.5.0",

@@ -182,14 +182,31 @@ async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Ax
   return { ndChunks, rbgData };
 }
 
-function convertRbgDataToDataUrl(rbgData: Uint8ClampedArray, width: number, height: number): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  if (!context) {
-    return "";
+export async function convertRbgDataToDataUrl(
+  rbgData: Uint8ClampedArray,
+  width: number,
+  height: number
+): Promise<string> {
+  if (typeof document !== "undefined") {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    ctx.putImageData(new ImageData(rbgData, width, height), 0, 0);
+    return canvas.toDataURL("image/png");
+  } else {
+    const { PNG } = await import("pngjs");
+    const { Buffer } = await import("buffer");
+    const png = new PNG({ width, height });
+    png.data = Buffer.from(rbgData.buffer, rbgData.byteOffset, rbgData.byteLength); const chunks: Buffer[] = [];
+    const stream = png.pack();
+    return new Promise((resolve, reject) => {
+      stream.on("data", (c) => chunks.push(c));
+      stream.on("end", () => {
+        resolve(`data:image/png;base64,${Buffer.concat(chunks).toString("base64")}`);
+      });
+      stream.on("error", reject);
+    });
   }
-  context.putImageData(new ImageData(rbgData, width, height), 0, 0);
-  return canvas.toDataURL("image/png");
 }
