@@ -1,0 +1,47 @@
+name: CI
+
+on:
+    workflow_dispatch:
+    pull_request:
+    push:
+        branches:
+            - main
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    FORCE_COLOR: 3
+
+jobs:
+    ci:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4.2.2
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install
+              run: npm ci --no-audit --no-fund
+
+            - name: Build
+              run: npm run build
+
+            # Fast PRs: tests only, no coverage
+            - name: Test (PR, no coverage)
+              if: github.event_name == 'pull_request'
+              run: npm test -- --reporter=dot
+              env:
+                  CI: true
+
+            # Main/manual runs: include coverage
+            - name: Test (main & manual, with coverage)
+              if: github.event_name != 'pull_request'
+              run: npm test -- --coverage --reporter=dot --coverage.reporter=lcov
+              env:
+                  CI: true
