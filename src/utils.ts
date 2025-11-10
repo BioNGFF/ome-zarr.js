@@ -282,7 +282,7 @@ export async function getMultiscaleWithArray(
     return scale;
   }).filter((s) => s !== undefined) as number[][]; // remove undefined
 
-  if (scales.length !== multiscale.datasets.length) {
+  if (scales.length > 0 && scales.length !== multiscale.datasets.length) {
     throw new Error("Could not determine scales for all datasets");
   }
 

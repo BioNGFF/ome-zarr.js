@@ -1,4 +1,10 @@
 
+
+0.0.17 (November 2025)
+----------------------
+
+- Handle scale transforms nested in sequence transforms [#17](https://github.com/BioNGFF/ome-zarr.js/pull/17)
+
 0.0.17-0.6dev2 (October 2025)
 -----------------------------
 
