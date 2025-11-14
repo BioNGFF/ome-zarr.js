@@ -1,188 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ome-zarr.js</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-      }
-      img {
-        margin: 10px;
-      }
-      .lut {
-        display: inline-block;
-        margin: 2px;
-        text-align: center;
-      }
-      .lut img {
-        margin: 1px;
-        width: 256px;
-        height: 15px;
-      }
-    </style>
+    <title>OpenSeadragon Example</title>
   </head>
   <body>
-    <h2>renderTumbnail()</h2>
-    <p>Default thumbnail is smallest multiscales resolution:</p>
-    <code><pre>
-      let thumbSrc = await omezarr.renderThumbnail(url);
-      document.getElementById("thumbnail").src = thumbSrc;
-    </pre></code>
-    <div id="thumbnails"></div>
-    <p>We can specify a targetSize to pick a larger multiscales resolution to render.
-      If autoBoost" is true, contrast will be boosted if needed.</p>
-    <code><pre>
-      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
-      </pre>
-    </code>
-    <div id="bigThumbnails"></div>
-    <h2>renderImage()</h2>
-    <p>We can choose various rendering settings etc. "Inverted" is a orthogonal view</p>
-    <div id="splitview"></div>
-    <p>A smaller resolution "1", at various z-indeces with Look-up table "16_colors.lut"</p>
-    <div id="stack"></div>
-    <p>Thumbnail and region of the same big image</p>
-    <div>
-      <img id="bigThumb" />
-      <div id="bigImages"></div>
-    </div>
-    <h2>Look-up tables available to choose</h2>
-    <div id="luts"></div>
+    Image 115200 x 55296
+    <div id="openseadragon1" style="width: 800px; height: 600px"></div>
+
+    <script src="openseadragon-bin-5.0.1/openseadragon.min.js"></script>
+
     <script type="module">
+
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
+      // import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js@latest/+esm";
       const omezarr = await import("/src/index.ts");
 
-      const IDR0062 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
-      const IDR0048 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
-      const IDR0083 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr";
-      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"; // OME-Zarr v0.5
+      const ZARR_URL =
+        "https://storage.googleapis.com/jax-public-ngff/public/39287.zarr/0";
+      const WIDTH = 115200;
+      const HEIGHT = 55296;
+      const TILE_SIZE = 1024;
+      // NB: don't know how MAX_LEVEL is calculated, but for this image it's...
+      const MAX_LEVEL = 17;  // At this level 1:1 with original image
 
-      // v0.1 (no axes)
-      const IDR0077 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr";
-      // v0.2 (no axes)
-      const IDR0070 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/";
-      // v0.3
-      const IDR0079 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
 
-      // https://github.com/BioNGFF/ome-zarr.js/issues/9
-      const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64-small.zarr/";
+      const storeBig = new zarr.FetchStore(ZARR_URL);
 
-      // v0.6 (coordinateSystems instead of axes)
-      const V06_IDR067 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
+      let zarrArrays = {};
 
-      // Thumbnails...
-      const urls = [
-        IDR0077,
-        IDR0070,
-        IDR0079,
-        IDR0062,
-        IDR0066,
-        // "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/40.zarr", // 'omero' has lots of white channels
-        IDR0048,
-        TEST_INT64,
-        V06_IDR067,
-      ];
-      document.getElementById("thumbnails").innerHTML = `<p>Expected ${urls.length} thumbnails...</p>`;
-
-      for (const url of urls) {
-        console.log("Rendering thumbnail for ", url);
-        try {
-          let thumbSrc = await omezarr.renderThumbnail(url, 100);
-          let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
-          document.getElementById("thumbnails").innerHTML += html;
-        } catch (error) {
-          console.error("Error rendering thumbnail for ", url, error);
-          alert(`Error rendering thumbnail for ${url}: ${error}`);
-        }
+      for (let datasetResolution of [0, 1, 2, 3, 4, 5, 6]) {
+        let omeZarrInfo = await omezarr.getMultiscaleWithArray(storeBig, datasetResolution);
+        console.log("OME-Zarr info for resolution", datasetResolution, omeZarrInfo);
+        zarrArrays["" + datasetResolution] = omeZarrInfo;
       }
 
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
-      let bigImg = `<img src="${thumbSrc}" />`;
-      document.getElementById("bigThumbnails").innerHTML += bigImg;
-      thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
-      bigImg = `<img src="${thumbSrc}" />`;
-      document.getElementById("bigThumbnails").innerHTML += bigImg;
-
-      // For rendering Images, we want to keep the zarr array in hand...
-      const store62 = new zarr.FetchStore(IDR0062);
-      // arr will be full-sized array by default
-      const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
-      // turn OFF all channels
-      omero.channels.forEach((ch) => (ch.active = false));
-      // for each channel...
-      omero.channels.forEach(async (channel, index) => {
-        // deepcopy omero for each channel...
-        let omeroCopy = JSON.parse(JSON.stringify(omero));
-        // turn on the channel we want to render...
-        omeroCopy.channels[index].active = true;
-        let start = Date.now();
-        let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
-        console.log(`renderImage channel ${index} took ${Date.now() - start} ms   (Expect 60-80 ms)`);
-        let html = `<img src="${src}" />`;
-        document.getElementById("splitview").innerHTML += html;
-      });
-
-      // Inverted image - orthogonal view
-      let omeroChannel = JSON.parse(JSON.stringify(omero));
-      omeroChannel.channels[1].active = true;
-      omeroChannel.channels[1].inverted = true;
-      let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
-      omezarr.renderImage(arr, multiscale.axes, omeroChannel, slices62).then(src => {
-        let html = `<img src="${src}" />`;
-        document.getElementById("splitview").innerHTML += html;
-      });
-
-      // get a smaller array for Z-stack
-      console.log("idr0062 shapes", shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
-      const paths = multiscale.datasets.map((d) => d.path);
-      console.log("idr0062 paths", paths);
-      const path = paths[1];
-      const arr200 = await omezarr.getArray(store62, path, zarr_version);
-      // turn first channel ON, use LUT
-      omero.channels[0].active = true;
-      omero.channels[0].lut = "16_colors.lut";
-      // TODO: use dim names from multiscale
-      let sizeZ = arr200.shape.at(-3);
-      let interval = Math.ceil(sizeZ / 7);
-      for (let zSlice = interval; zSlice <= sizeZ; zSlice += interval) {
-        omero.rdefs = { defaultZ: zSlice };
-        let src = await omezarr.renderImage(arr200, multiscale.axes, omero);
-        let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
-        document.getElementById("stack").innerHTML += html;
+      function fetchTile(row, col, level) {
+        console.log("Fetching tile row", row, "col", col, "level", level);
+        let xStart = col * TILE_SIZE;
+        let yStart = row * TILE_SIZE;
+        let sliceIndices = {
+          "x": [xStart, Math.min(xStart + TILE_SIZE, WIDTH)],
+          "y": [yStart, Math.min(yStart + TILE_SIZE, HEIGHT)]
+        };
+        let omeZarrInfo = zarrArrays[(level).toString()];
+        // TODO: handle omeZarrInfo is undefined (level out of range)
+        let bigArray = omeZarrInfo.arr;
+        let promise = omezarr.renderImage(
+          bigArray,
+          omeZarrInfo.multiscale.axes,
+          omeZarrInfo.omero,
+          sliceIndices,
+          level
+        );
+        return promise;
       }
 
-      // BIG thumbnail (birds eye view)
-      const storeBig = new zarr.FetchStore(IDR0083);
-      let bigThumb = await omezarr.renderThumbnail(storeBig, 400);
-      document.getElementById("bigThumb").src = bigThumb;
-      // BIG image, Load full-resolution array
-      let big = await omezarr.getMultiscaleWithArray(storeBig);
-      const bigArray = big.arr;
-      // Full-sized image is 144384	x 93184
-      let sliceIndices = {"x": [50000, 50500], "y": [30000, 30500]};
-      let bigImageSrc = await omezarr.renderImage(
-        bigArray,
-        big.multiscale.axes,
-        big.omero,
-        sliceIndices
-      );
-      document.getElementById("bigImages").innerHTML += `<img src="${bigImageSrc}" />`;
+      //see https://stackoverflow.com/questions/41996814/how-to-abort-a-fetch-request
+      //we need to provide the possibility to abort fetch(...)
+      function myFetch(input, init) {
+        let controller = new AbortController();
+        let signal = controller.signal;
+        init = Object.assign({ signal }, init);
+        let promise = fetch(input, init);
+        promise.controller = controller;
+        return promise;
+      }
 
-      // show luts
-      omezarr.getLuts().forEach((lut) => {
-        let src = lut.png;
-        let html = `<div class="lut"><legend>${lut.name}</legend>
-          <img class="lut" src="${src}" title="${lut.name}" /></div>`;
-        document.getElementById("luts").innerHTML += html;
+      OpenSeadragon.extend(OpenSeadragon.TileSource.prototype, {
+        getTilePostData: function (level, x, y) {
+          //here we exploit the POST API, a handy shortcut to pass ourselves
+          //an instance to the tile object
+          //return tile;
+          return { width: this.getTileWidth(), height: this.getTileHeight() };
+        },
+        getTileAjaxHeaders: function (level, x, y) {
+          // to avoid CORS problems
+          return {
+            "Content-Type": "application/octet-stream",
+            "Access-Control-Allow-Origin": "*",
+          };
+        },
+        downloadTileStart: function (imageJob) {
+          //   console.log("Requesting tile imageJob", imageJob.src);
+
+          let info = imageJob.src.split("#")[1];
+          console.log("Requesting tile info", info);
+          // namespace where we attach our properties to avoid
+          // collision with API
+          let context = imageJob.userData;
+          context.image = new Image();
+
+          // in all scenarios, unless abort() is called, make
+          // sure imageJob.finish() gets executed!
+          context.image.onerror = context.image.onabort = function () {
+            imageJob.finish(
+              null,
+              context.promise,
+              "Failed to parse tile data as an Image"
+            );
+          };
+          context.image.onload = function () {
+            imageJob.finish(context.image, context.promise);
+          };
+
+          function createErrorImageURL(e) {
+            let canvas = document.createElement("canvas");
+            let context = canvas.getContext("2d");
+
+            //yay, postData = tile instance
+            let tile = imageJob.postData;
+            canvas.width = tile.width;
+            canvas.height = tile.height;
+            context.font = "24px Georgia";
+            context.fillStyle = "#00ff00";
+            context.fillText(info, 5, 120);
+            return canvas.toDataURL("image/jpeg");
+          }
+
+          // note we ignore some imageJob properties such as
+          // 'loadWithAjax'. This means preventing OSD from using
+          // ajax will have no effect as we force it to do so.
+          // Make sure you implement all the features the official
+          // implementation do if you want to keep them.
+        //   context.promise = myFetch(imageJob.src, {
+        //     method: "GET",
+        //     mode: "cors",
+        //     cache: "no-cache",
+        //     credentials: "same-origin",
+        //     headers: imageJob.ajaxHeaders || {},
+        //     body: null,
+        //   })
+        //     .then((data) => {
+        //       //to spice up things, emulate faulty source
+        //       if (Math.random() > 0.7) throw "Oh no!";
+        //       return data.blob();
+        //     })
+        //     .then((blob) => {
+        //       context.image.src = URL.createObjectURL(blob);
+        //     })
+        //     .catch((e) => {
+        //       console.error("Error fetching tile:", e);
+        //       context.image.src = createErrorImageURL(e);
+        //     });
+
+          fetchTile(
+            parseInt(info.split("/")[2]),
+            parseInt(info.split("/")[1]),
+            MAX_LEVEL - parseInt(info.split("/")[0])
+          )
+          .then((dataURL) => {
+            context.image.src = dataURL;
+          })
+          .catch((e) => {
+            console.error("Error fetching tile:", e);
+            context.image.src = createErrorImageURL(e);
+          });
+        },
+        downloadTileAbort: function (imageJob) {
+          //we can abort thanks to myFetch() implementation
+          imageJob.userData.promise.controller.abort();
+        },
       });
 
+      console.log("Creating viewer...");
+
+      OpenSeadragon({
+        id: "openseadragon1",
+        prefixUrl: "./openseadragon-bin-5.0.1/images/",
+        navigatorSizeRatio: 0.25,
+        wrapHorizontal: false,
+        loadTilesWithAjax: true, // no effect
+        tileSources: {
+          height: HEIGHT,
+          width: WIDTH,
+          tileSize: TILE_SIZE,
+          minLevel: 12,
+        //   maxLevel: 11,
+          getTileUrl: function (level, x, y) {
+            // The ZARR_URL is actually ignored.
+            return ZARR_URL + "#" + level + "/" + x + "/" + y;
+          },
+        },
+      });
     </script>
   </body>
 </html>
