@@ -28,3 +28,6 @@ dist-ssr
 
 # docs
 docs/.vitepress/cache/
+
+# Ignore temp openseadragon files
+public/
