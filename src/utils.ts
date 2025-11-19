@@ -213,12 +213,18 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
   return hist;
 }
 
-export async function getMultiscale(store: zarr.FetchStore): Promise<{
+export async function getMultiscale(
+  store: zarr.FetchStore,
+  options?: { signal?: AbortSignal }
+): Promise<{
   multiscale: Multiscale;
   omero: Omero | null | undefined;
   zarr_version: 2 | 3;
 }> {
-  const data = await zarr.open(store, { kind: "group" });
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
+  const data = await zarr.open(store, { kind: "group" }); // TODO https://github.com/manzt/zarrita.js/issues/317
+  signal?.throwIfAborted();
   let attrs: OmeAttrs = data.attrs as OmeAttrs;
 
   // Handle v0.4 or v0.5 to get the multiscale object
@@ -245,7 +251,8 @@ export async function getMultiscale(store: zarr.FetchStore): Promise<{
 
 export async function getMultiscaleWithArray(
   store: zarr.FetchStore | string,
-  datasetIndex: number = 0
+  datasetIndex: number = 0,
+  options?: { signal?: AbortSignal }
 ): Promise<{
   arr: zarr.Array<any>;
   shapes: number[][] | undefined;
@@ -254,10 +261,15 @@ export async function getMultiscaleWithArray(
   scales: number[][];
   zarr_version: 2 | 3;
 }> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
   if (typeof store === "string") {
     store = new zarr.FetchStore(store);
   }
-  const { multiscale, omero, zarr_version } = await getMultiscale(store);
+  const { multiscale, omero, zarr_version } = await getMultiscale(store, {
+    signal,
+  });
+  signal?.throwIfAborted();
 
   const paths: Array<string> = multiscale.datasets.map((d) => d.path);
   if (datasetIndex < 0) {
@@ -266,7 +278,8 @@ export async function getMultiscaleWithArray(
   const path = paths[datasetIndex];
 
   // Get the zarr array
-  const arr = await getArray(store, path, zarr_version);
+  const arr = await getArray(store, path, zarr_version, { signal });
+  signal?.throwIfAborted();
 
   // calculate some useful values...
   const shape = arr.shape;
@@ -318,8 +331,11 @@ export async function getMultiscaleWithArray(
 export async function getArray(
   store: zarr.FetchStore,
   path: string,
-  zarr_version: 2 | 3 | undefined
+  zarr_version: 2 | 3 | undefined,
+  options?: { signal?: AbortSignal }
 ): Promise<zarr.Array<any>> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
   // Open the zarr array and check size
   let root = zarr.root(store);
   const openFn =
@@ -329,7 +345,8 @@ export async function getArray(
         ? zarr.open.v2
         : zarr.open;
   let zarrLocation = root.resolve(path);
-  let arr = await openFn(zarrLocation, { kind: "array" });
+  let arr = await openFn(zarrLocation, { kind: "array" }); // TODO https://github.com/manzt/zarrita.js/issues/317
+  signal?.throwIfAborted();
 
   return arr;
 }
