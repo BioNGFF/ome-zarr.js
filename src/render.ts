@@ -6,6 +6,7 @@ import {
   getDefaultVisibilities,
   hexToRGB,
   getArray,
+  getGroup,
   getDefaultColors,
   getMinMaxValues,
   getMultiscaleWithArray,
@@ -16,18 +17,18 @@ import {
 
 
 export async function renderThumbnail(
-  store: zarr.FetchStore | string,
+  group: zarr.Group<zarr.Readable> | zarr.Readable | string,
   targetSize: number | undefined = undefined,
   autoBoost: boolean = false,
   maxSize: number = 1000
 ): Promise<string> {
-  if (typeof store === "string") {
-    store = new zarr.FetchStore(store);
+  if (!(group instanceof zarr.Group)) {
+    group = await getGroup(group);
   }
 
   // Lets load SMALLEST resolution and render it as a thumbnail
   const datasetIndex = -1;
-  let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(store, datasetIndex);
+  let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(group, datasetIndex);
 
   // targetSize is specified, may need to load a different resolution...
   // pick a different dataset level if we want a different size
@@ -72,7 +73,7 @@ export async function renderThumbnail(
       }
     }
     let path = paths[pathIndex];
-    arr = await getArray(store, path, zarr_version);
+    arr = await getArray(group, path, zarr_version);
   }
 
   // we want to remove any start/end values from window, to calculate min/max
@@ -92,13 +93,17 @@ export async function renderThumbnail(
 }
 
 export async function renderImage(
-    arr: zarr.Array<any>,
+    arr: zarr.Array<zarr.DataType> | zarr.Readable | string,
     axes: Axis[],
     omero: Omero | null | undefined,
     sliceIndices: {[k: string]: (number | [number, number] | undefined)}  = {},
     autoBoost: boolean = false,
     originalShape?: number[],
-  ) {
+  ): Promise<string> {
+    if (!(arr instanceof zarr.Array)) {
+      arr = await getArray(arr);
+    }
+
     // Main rendering function...
     // We have the zarr Array already in hand, axes for dimensions
     // and omero for rendering settings

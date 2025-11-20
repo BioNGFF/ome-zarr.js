@@ -207,9 +207,13 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5) {
   return hist;
 }
 
-export async function getMultiscale(store: zarr.FetchStore) {
-  const data = await zarr.open(store, { kind: "group" });
-  let attrs: OmeAttrs = data.attrs as OmeAttrs;
+export async function getMultiscale(
+  group: zarr.Group<zarr.Readable> | zarr.Readable | string
+) {
+  if (!(group instanceof zarr.Group)) {
+    group = await getGroup(group);
+  }
+  let attrs: OmeAttrs = group.attrs as OmeAttrs;
 
   // Handle v0.4 or v0.5 to get the multiscale object
   let multiscale: Multiscale;
@@ -234,7 +238,7 @@ export async function getMultiscale(store: zarr.FetchStore) {
 }
 
 export async function getMultiscaleWithArray(
-  store: zarr.FetchStore | string,
+  group: zarr.Group<zarr.Readable> | zarr.Readable | string,
   datasetIndex: number = 0
 ): Promise<{
   arr: zarr.Array<any>;
@@ -244,10 +248,10 @@ export async function getMultiscaleWithArray(
   scales: number[][];
   zarr_version: 2 | 3;
 }> {
-  if (typeof store === "string") {
-    store = new zarr.FetchStore(store);
+  if (!(group instanceof zarr.Group)) {
+    group = await getGroup(group);
   }
-  const { multiscale, omero, zarr_version } = await getMultiscale(store);
+  const { multiscale, omero, zarr_version } = await getMultiscale(group);
 
   const paths: Array<string> = multiscale.datasets.map((d) => d.path);
   if (datasetIndex < 0) {
@@ -256,7 +260,7 @@ export async function getMultiscaleWithArray(
   const path = paths[datasetIndex];
 
   // Get the zarr array
-  const arr = await getArray(store, path, zarr_version);
+  const arr = await getArray(group, path, zarr_version);
 
   // calculate some useful values...
   const shape = arr.shape;
@@ -297,23 +301,58 @@ export async function getMultiscaleWithArray(
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
 
-export async function getArray(
-  store: zarr.FetchStore,
-  path: string,
-  zarr_version: 2 | 3 | undefined
-): Promise<zarr.Array<any>> {
-  // Open the zarr array and check size
-  let root = zarr.root(store);
+export async function getArrayOrGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  kind: "array",
+  path?: string,
+  zarr_version?: 2 | 3
+): Promise<zarr.Array<zarr.DataType>>
+export async function getArrayOrGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  kind: "group",
+  path?: string,
+  zarr_version?: 2 | 3
+): Promise<zarr.Group<zarr.Readable>>
+export async function getArrayOrGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  kind: "array" | "group",
+  path?: string,
+  zarr_version?: 2 | 3
+): Promise<zarr.Array<zarr.DataType> | zarr.Group<zarr.Readable>> {
   const openFn =
     zarr_version === 3
       ? zarr.open.v3
       : zarr_version === 2
       ? zarr.open.v2
       : zarr.open;
-  let zarrLocation = root.resolve(path);
-  let arr = await openFn(zarrLocation, { kind: "array" });
+  let location;
+  if (src instanceof zarr.Group) {
+    location = src;
+  } else {
+    const store = typeof src === "string" ? new zarr.FetchStore(src) : src;
+    location = zarr.root(store);
+  }
+  if (path) {
+    location = location.resolve(path);
+  }
+  const arrayOrGroup = await openFn(location, { kind });
+  return arrayOrGroup;
+}
 
-  return arr;
+export async function getArray(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  path?: string,
+  zarr_version?: 2 | 3
+): Promise<zarr.Array<zarr.DataType>> {
+  return getArrayOrGroup(src, "array", path, zarr_version);
+}
+
+export async function getGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  path?: string,
+  zarr_version?: 2 | 3
+): Promise<zarr.Group<zarr.Readable>> {
+  return getArrayOrGroup(src, "group", path, zarr_version);
 }
 
 export function getSlices(
