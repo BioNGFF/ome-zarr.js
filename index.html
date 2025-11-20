@@ -28,6 +28,7 @@
 
       let zarrArrays = {};
 
+      // Create a bunch of OME-Zarr infos, one per resolution level
       for (let datasetResolution of [0, 1, 2, 3, 4, 5, 6]) {
         let omeZarrInfo = await omezarr.getMultiscaleWithArray(storeBig, datasetResolution);
         console.log("OME-Zarr info for resolution", datasetResolution, omeZarrInfo);
@@ -44,14 +45,22 @@
         };
         let omeZarrInfo = zarrArrays[(level).toString()];
         // TODO: handle omeZarrInfo is undefined (level out of range)
+        // could be created dynamically as above
         let bigArray = omeZarrInfo.arr;
+
+        let controller = new AbortController();
+        // let signal = controller.signal;
+
         let promise = omezarr.renderImage(
           bigArray,
           omeZarrInfo.multiscale.axes,
           omeZarrInfo.omero,
           sliceIndices,
-          level
+          level,
+          undefined,
+          { signal: controller.signal }
         );
+        promise.controller = controller;  // ???
         return promise;
       }
 
@@ -143,7 +152,7 @@
         //       context.image.src = createErrorImageURL(e);
         //     });
 
-          fetchTile(
+          context.promise = fetchTile(
             parseInt(info.split("/")[2]),
             parseInt(info.split("/")[1]),
             MAX_LEVEL - parseInt(info.split("/")[0])
@@ -158,6 +167,7 @@
         },
         downloadTileAbort: function (imageJob) {
           //we can abort thanks to myFetch() implementation
+          console.log("Aborting tile imageJob", imageJob.src);
           imageJob.userData.promise.controller.abort();
         },
       });
