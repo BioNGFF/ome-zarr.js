@@ -5,6 +5,7 @@ import {
   getDefaultVisibilities,
   hexToRGB,
   getArray,
+  getGroup,
   getDefaultColors,
   getMinMaxValues,
   getMultiscaleWithArray,
@@ -14,7 +15,7 @@ import {
 } from "./utils";
 
 export async function renderThumbnail(
-  store: zarr.FetchStore | string,
+  group: zarr.Group<zarr.Readable> | zarr.Readable | string,
   targetSize: number | undefined = undefined,
   autoBoost: boolean = false,
   maxSize: number = 1000,
@@ -22,14 +23,15 @@ export async function renderThumbnail(
 ): Promise<string> {
   const { signal } = options ?? {};
   signal?.throwIfAborted();
-  if (typeof store === "string") {
-    store = new zarr.FetchStore(store);
+  if (!(group instanceof zarr.Group)) {
+    group = await getGroup(group, undefined, undefined, { signal });
+    signal?.throwIfAborted();
   }
 
   // Lets load SMALLEST resolution and render it as a thumbnail
   const datasetIndex = -1;
   let { multiscale, omero, zarr_version, arr, shapes } =
-    await getMultiscaleWithArray(store, datasetIndex, { signal });
+    await getMultiscaleWithArray(group, datasetIndex, { signal });
   signal?.throwIfAborted();
 
   // targetSize is specified, may need to load a different resolution...
@@ -81,7 +83,7 @@ export async function renderThumbnail(
       }
     }
     let path = paths[pathIndex];
-    arr = await getArray(store, path, zarr_version, { signal });
+    arr = await getArray(group, path, zarr_version, { signal });
     signal?.throwIfAborted();
   }
 
@@ -102,7 +104,7 @@ export async function renderThumbnail(
 }
 
 export async function renderImage(
-  arr: zarr.Array<any>,
+  arr: zarr.Array<zarr.DataType> | zarr.Readable | string,
   axes: Axis[],
   omero: Omero | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
@@ -112,6 +114,10 @@ export async function renderImage(
 ): Promise<string> {
   const { signal } = options ?? {};
   signal?.throwIfAborted();
+  if (!(arr instanceof zarr.Array)) {
+    arr = await getArray(arr, undefined, undefined, { signal });
+    signal?.throwIfAborted();
+  }
 
   // Main rendering function...
   // We have the zarr Array already in hand, axes for dimensions
