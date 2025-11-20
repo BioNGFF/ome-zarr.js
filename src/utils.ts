@@ -335,7 +335,7 @@ export async function getArrayOrGroup(
   if (path) {
     location = location.resolve(path);
   }
-  const arrayOrGroup = openFn(location, { kind });
+  const arrayOrGroup = await openFn(location, { kind });
   return arrayOrGroup;
 }
 
