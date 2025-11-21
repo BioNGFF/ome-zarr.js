@@ -150,7 +150,7 @@ async function getChunksAndRbgData(
   let visibilities;
   // list of [r,g,b] colors
   let rgbColors: Array<[number, number, number]>;
-  let luts: Array<string | undefined> | undefined = undefined;
+  let luts: (string | undefined)[] = [];
   let inverteds: Array<boolean> | undefined = undefined;
 
   // If we have 'omero', use it for channel rgbColors and visibilities
@@ -172,10 +172,13 @@ async function getChunksAndRbgData(
     rgbColors = getDefaultColors(channel_count, visibilities);
   }
   // filter for active channels
-  let activeChannelIndices = visibilities.reduce((prev, active, index) => {
-    if (active) prev.push(index);
-    return prev;
-  }, []);
+  let activeChannelIndices: number[] = visibilities.reduce(
+    (prev: number[], active, index) => {
+      if (active) prev.push(index);
+      return prev;
+    },
+    []
+  );
   rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
   inverteds = activeChannelIndices.map((chIndex: number) =>
     Boolean(omero?.channels[chIndex].inverted)
@@ -205,18 +208,20 @@ async function getChunksAndRbgData(
   let ndChunks = await Promise.all(promises);
 
   // Use start/end values from 'omero' if available, otherwise calculate min/max
-  let minMaxValues = activeChannelIndices.map((chIndex: number, i: number) => {
-    if (omero && omero.channels[chIndex]) {
-      let chOmero = omero.channels[chIndex];
-      if (
-        chOmero?.window?.start !== undefined &&
-        chOmero?.window?.end !== undefined
-      ) {
-        return [chOmero.window.start, chOmero.window.end];
+  let minMaxValues = activeChannelIndices.map(
+    (chIndex: number, i: number): [number, number] => {
+      if (omero && omero.channels[chIndex]) {
+        let chOmero = omero.channels[chIndex];
+        if (
+          chOmero?.window?.start !== undefined &&
+          chOmero?.window?.end !== undefined
+        ) {
+          return [chOmero.window.start, chOmero.window.end];
+        }
       }
+      return getMinMaxValues(ndChunks[i]);
     }
-    return getMinMaxValues(ndChunks[i]);
-  });
+  );
 
   // Render to 8bit rgb array
   let rbgData = renderTo8bitArray(
