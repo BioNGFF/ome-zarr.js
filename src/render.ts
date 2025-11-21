@@ -108,7 +108,7 @@ export async function renderImage(
   // We have the zarr Array already in hand, axes for dimensions
   // and omero for rendering settings
   // if autoBoost is true, check histogram and boost contrast if needed
-  let { ndChunks, rbgData } = await getChunksAndRbgData(
+  let { data, width, height } = await getRgba(
     arr,
     axes,
     omero,
@@ -117,13 +117,10 @@ export async function renderImage(
     autoBoost
   );
 
-  const height = ndChunks[0].shape[0];
-  const width = ndChunks[0].shape[1];
-
-  return convertRbgDataToDataUrl(rbgData, width, height);
+  return convertRbgDataToDataUrl(data, width, height);
 }
 
-async function getChunksAndRbgData(
+async function getRgba(
   arr: zarr.Array<any, zarr.Readable>,
   axes: Axis[],
   omero: Omero | null | undefined,
@@ -131,8 +128,9 @@ async function getChunksAndRbgData(
   originalShape: number[] | undefined,
   autoBoost: boolean
 ): Promise<{
-  ndChunks: any[];
-  rbgData: Uint8ClampedArray;
+  data: Uint8ClampedArray;
+  width: number,
+  height: number
 }> {
   let shape = arr.shape;
 
@@ -224,7 +222,7 @@ async function getChunksAndRbgData(
   );
 
   // Render to 8bit rgb array
-  let rbgData = renderTo8bitArray(
+  let data = renderTo8bitArray(
     ndChunks,
     minMaxValues,
     rgbColors,
@@ -232,7 +230,10 @@ async function getChunksAndRbgData(
     inverteds,
     autoBoost
   );
-  return { ndChunks, rbgData };
+
+  const height = ndChunks[0].shape[0];
+  const width = ndChunks[0].shape[1];
+  return { data, width, height };
 }
 
 export async function convertRbgDataToDataUrl(
