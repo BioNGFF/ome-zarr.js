@@ -1,0 +1,6 @@
+# Ignore everything by default so Prettier focuses on src/ and tests/
+*
+!src/
+!src/**
+!tests/
+!tests/**

@@ -10,7 +10,6 @@
 /* AND window.start and window.end are now optional
 */
 
-
 /**
  * The base pydantic model for all metadata classes
  */
@@ -117,16 +116,16 @@ export interface Window {
  */
 
 export interface Scale {
-    type: "scale";
-    scale: number[];
+  type: "scale";
+  scale: number[];
 }
 
 export interface Translation {
-    type: "translation";
-    translation: number[];
+  type: "translation";
+  translation: number[];
 }
 
 export interface Sequence {
-    type: "sequence";
-    transformations: Array<Scale | Translation>;
+  type: "sequence";
+  transformations: Array<Scale | Translation>;
 }
