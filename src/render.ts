@@ -103,7 +103,7 @@ export async function renderImage(
   sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
   autoBoost: boolean = false,
   originalShape?: number[]
-) {
+): Promise<string> {
   // Main rendering function...
   // We have the zarr Array already in hand, axes for dimensions
   // and omero for rendering settings
@@ -130,7 +130,10 @@ async function getChunksAndRbgData(
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
   autoBoost: boolean
-) {
+): Promise<{
+  ndChunks: any[];
+  rbgData: Uint8ClampedArray;
+}> {
   let shape = arr.shape;
 
   // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'

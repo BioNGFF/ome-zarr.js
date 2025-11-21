@@ -39,8 +39,8 @@ export function hexToRGB(hex: string): [number, number, number] {
   return [r, g, b];
 }
 
-export function getDefaultVisibilities(n: number) {
-  let visibilities;
+export function getDefaultVisibilities(n: number): boolean[] {
+  let visibilities: boolean[];
   if (n <= MAX_CHANNELS) {
     // Default to all on if visibilities not specified and less than 6 channels.
     visibilities = Array(n).fill(true);
@@ -54,8 +54,11 @@ export function getDefaultVisibilities(n: number) {
   return visibilities;
 }
 
-export function getDefaultColors(n: number, visibilities: boolean[]) {
-  let colors = [];
+export function getDefaultColors(
+  n: number,
+  visibilities: boolean[]
+): [number, number, number][] {
+  let colors: string[] = [];
   if (n == 1) {
     colors = [COLORS.white];
   } else if (n == 2) {
@@ -91,7 +94,7 @@ export function getMinMaxValues(chunk2d: any): [number, number] {
   return [minV, maxV];
 }
 
-export function range(start: number, end: number) {
+export function range(start: number, end: number): number[] {
   // range(5, 10) -> [5, 6, 7, 8, 9]
   return Array.from({ length: end - start }, (_, i) => i + start);
 }
@@ -103,7 +106,7 @@ export function renderTo8bitArray(
   luts: Array<string | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
   autoBoost: boolean = false
-) {
+): Uint8ClampedArray {
   // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
   // if autoBoost is true, check histogram and boost contrast if needed
   // ndChunks is list of zarr arrays
@@ -176,7 +179,10 @@ export function renderTo8bitArray(
   return rgba;
 }
 
-function boostContrast(rgba: Uint8ClampedArray, factor: number) {
+function boostContrast(
+  rgba: Uint8ClampedArray,
+  factor: number
+): Uint8ClampedArray {
   // Increase contrast by factor
   for (let pixel = 0; pixel < rgba.length / 4; pixel++) {
     for (let i = 0; i < 3; i++) {
@@ -188,7 +194,7 @@ function boostContrast(rgba: Uint8ClampedArray, factor: number) {
   return rgba;
 }
 
-function getHistogram(uint8array: Uint8ClampedArray, bins = 5) {
+function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
   // Create histogram from uint8array.
   // Returns list of percentages in each bin
   let hist = new Array(bins).fill(0);
@@ -207,7 +213,11 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5) {
   return hist;
 }
 
-export async function getMultiscale(store: zarr.FetchStore) {
+export async function getMultiscale(store: zarr.FetchStore): Promise<{
+  multiscale: Multiscale;
+  omero: Omero | null | undefined;
+  zarr_version: 2 | 3;
+}> {
   const data = await zarr.open(store, { kind: "group" });
   let attrs: OmeAttrs = data.attrs as OmeAttrs;
 
