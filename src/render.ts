@@ -1,4 +1,3 @@
-
 import * as zarr from "zarrita";
 
 import { Axis, Omero, Channel } from "./types/ome";
@@ -14,7 +13,6 @@ import {
   MAX_CHANNELS,
 } from "./utils";
 
-
 export async function renderThumbnail(
   store: zarr.FetchStore | string,
   targetSize: number | undefined = undefined,
@@ -27,7 +25,8 @@ export async function renderThumbnail(
 
   // Lets load SMALLEST resolution and render it as a thumbnail
   const datasetIndex = -1;
-  let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(store, datasetIndex);
+  let { multiscale, omero, zarr_version, arr, shapes } =
+    await getMultiscaleWithArray(store, datasetIndex);
 
   // targetSize is specified, may need to load a different resolution...
   // pick a different dataset level if we want a different size
@@ -36,7 +35,9 @@ export async function renderThumbnail(
   let width = shape[dims - 1];
   let height = shape[dims - 2];
   if (height * width > maxSize * maxSize) {
-    throw new Error(`Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`);
+    throw new Error(
+      `Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`
+    );
   }
 
   let longestSide = Math.max(width, height);
@@ -44,11 +45,15 @@ export async function renderThumbnail(
     let longestSizes: number[] = [];
     // If we don't have shapes (v0.1, 0.2, 0.3), we "guess" scale of * 2 for each level
     if (shapes == undefined) {
-      longestSizes = multiscale.datasets.map((d, i) => d && longestSide * 2 ** i);
+      longestSizes = multiscale.datasets.map(
+        (d, i) => d && longestSide * 2 ** i
+      );
       longestSizes.reverse();
       // e.g. [1568, 784, 392, 196, 98, 49]
     } else {
-      longestSizes = shapes.map((shape) => Math.max(shape[dims - 1], shape[dims - 2]));
+      longestSizes = shapes.map((shape) =>
+        Math.max(shape[dims - 1], shape[dims - 2])
+      );
     }
     const paths: Array<string> = multiscale.datasets.map((d) => d.path);
 
@@ -95,15 +100,22 @@ export async function renderImage(
   arr: zarr.Array<any>,
   axes: Axis[],
   omero: Omero | null | undefined,
-  sliceIndices: { [k: string]: (number | [number, number] | undefined) } = {},
+  sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
   autoBoost: boolean = false,
-  originalShape?: number[],
+  originalShape?: number[]
 ) {
   // Main rendering function...
   // We have the zarr Array already in hand, axes for dimensions
   // and omero for rendering settings
   // if autoBoost is true, check histogram and boost contrast if needed
-  let { ndChunks, rbgData } = await getChunksAndRbgData(arr, axes, omero, sliceIndices, originalShape, autoBoost);
+  let { ndChunks, rbgData } = await getChunksAndRbgData(
+    arr,
+    axes,
+    omero,
+    sliceIndices,
+    originalShape,
+    autoBoost
+  );
 
   const height = ndChunks[0].shape[0];
   const width = ndChunks[0].shape[1];
@@ -111,12 +123,25 @@ export async function renderImage(
   return convertRbgDataToDataUrl(rbgData, width, height);
 }
 
-async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Axis[], omero: Omero | null | undefined, sliceIndices: { [k: string]: number | [number, number] | undefined; }, originalShape: number[] | undefined, autoBoost: boolean) {
+async function getChunksAndRbgData(
+  arr: zarr.Array<any, zarr.Readable>,
+  axes: Axis[],
+  omero: Omero | null | undefined,
+  sliceIndices: { [k: string]: number | [number, number] | undefined },
+  originalShape: number[] | undefined,
+  autoBoost: boolean
+) {
   let shape = arr.shape;
 
   // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'
   // v0.4 onwards is list of Axis objects
-  let axesNames = axes?.map((a) => a.name || a.toString()) || ['t', 'c', 'z', 'y', 'x'];
+  let axesNames = axes?.map((a) => a.name || a.toString()) || [
+    "t",
+    "c",
+    "z",
+    "y",
+    "x",
+  ];
   let chDim = axesNames.indexOf("c");
   let channel_count = shape[chDim] || 1;
   let visibilities;
@@ -136,7 +161,9 @@ async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Ax
       return ch.active && active_count <= MAX_CHANNELS;
     });
     rgbColors = omero.channels.map((ch) => hexToRGB(ch.color));
-    luts = omero.channels.map((ch) => "lut" in ch ? ch.lut as string : undefined);
+    luts = omero.channels.map((ch) =>
+      "lut" in ch ? (ch.lut as string) : undefined
+    );
   } else {
     visibilities = getDefaultVisibilities(channel_count);
     rgbColors = getDefaultColors(channel_count, visibilities);
@@ -147,7 +174,9 @@ async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Ax
     return prev;
   }, []);
   rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
-  inverteds = activeChannelIndices.map((chIndex: number) => Boolean(omero?.channels[chIndex].inverted));
+  inverteds = activeChannelIndices.map((chIndex: number) =>
+    Boolean(omero?.channels[chIndex].inverted)
+  );
   if (luts !== undefined) {
     luts = luts.filter((_, index) => activeChannelIndices.includes(index));
   }
@@ -160,7 +189,13 @@ async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Ax
     sliceIndices["t"] = omero?.rdefs?.defaultT;
   }
   // sliceIndices are from originalShape if provided
-  let chSlices = getSlices(activeChannelIndices, shape, axesNames, sliceIndices, originalShape);
+  let chSlices = getSlices(
+    activeChannelIndices,
+    shape,
+    axesNames,
+    sliceIndices,
+    originalShape
+  );
 
   // Wait for all chunks to be fetched...
   let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));
@@ -170,7 +205,10 @@ async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Ax
   let minMaxValues = activeChannelIndices.map((chIndex: number, i: number) => {
     if (omero && omero.channels[chIndex]) {
       let chOmero = omero.channels[chIndex];
-      if (chOmero?.window?.start !== undefined && chOmero?.window?.end !== undefined) {
+      if (
+        chOmero?.window?.start !== undefined &&
+        chOmero?.window?.end !== undefined
+      ) {
         return [chOmero.window.start, chOmero.window.end];
       }
     }
@@ -178,7 +216,14 @@ async function getChunksAndRbgData(arr: zarr.Array<any, zarr.Readable>, axes: Ax
   });
 
   // Render to 8bit rgb array
-  let rbgData = renderTo8bitArray(ndChunks, minMaxValues, rgbColors, luts, inverteds, autoBoost);
+  let rbgData = renderTo8bitArray(
+    ndChunks,
+    minMaxValues,
+    rgbColors,
+    luts,
+    inverteds,
+    autoBoost
+  );
   return { ndChunks, rbgData };
 }
 
@@ -199,12 +244,19 @@ export async function convertRbgDataToDataUrl(
     const { PNG } = await import("pngjs");
     const { Buffer } = await import("buffer");
     const png = new PNG({ width, height });
-    png.data = Buffer.from(rbgData.buffer, rbgData.byteOffset, rbgData.byteLength); const chunks: Buffer[] = [];
+    png.data = Buffer.from(
+      rbgData.buffer,
+      rbgData.byteOffset,
+      rbgData.byteLength
+    );
+    const chunks: Buffer[] = [];
     const stream = png.pack();
     return new Promise((resolve, reject) => {
       stream.on("data", (c) => chunks.push(c));
       stream.on("end", () => {
-        resolve(`data:image/png;base64,${Buffer.concat(chunks).toString("base64")}`);
+        resolve(
+          `data:image/png;base64,${Buffer.concat(chunks).toString("base64")}`
+        );
       });
       stream.on("error", reject);
     });

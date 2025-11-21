@@ -19,9 +19,9 @@ export const CYMRGB = Object.values(COLORS).slice(0, -2);
 
 // this duplicates Slice() from zarrita as I couldn't import it
 export interface Slice {
-	start: number | null;
-	stop: number | null;
-	step: number | null;
+  start: number | null;
+  stop: number | null;
+  step: number | null;
 }
 
 // For now, the only difference we care about between v0.4 and v0.5 is the nesting
@@ -228,7 +228,7 @@ export async function getMultiscale(store: zarr.FetchStore) {
   // v0.6 moved 'axes' into coordinateSystems
   // In this case we "move it back" for compatibility
   if (!multiscale.axes && multiscale.coordinateSystems?.[0]?.axes) {
-    multiscale.axes = multiscale.coordinateSystems[0].axes
+    multiscale.axes = multiscale.coordinateSystems[0].axes;
   }
   return { multiscale, omero, zarr_version };
 }
@@ -260,27 +260,30 @@ export async function getMultiscaleWithArray(
 
   // calculate some useful values...
   const shape = arr.shape;
-  const scales: Array<number[]> = multiscale.datasets.map((ds) => {
-    let scale: number[] | undefined = undefined;
-    if (Array.isArray(ds.coordinateTransformations)) {
-      for (const ct of ds.coordinateTransformations) {
-        if ("scale" in ct) {
-          scale = (ct as { scale: number[] }).scale;
-          break;
-        } else if ("transformations" in ct) {
-          // handle nested transformations
-          for (const sct of (ct as { transformations: any[] }).transformations) {
-            if ("scale" in sct) {
-              scale = (sct as { scale: number[] }).scale;
-              break;
+  const scales: Array<number[]> = multiscale.datasets
+    .map((ds) => {
+      let scale: number[] | undefined = undefined;
+      if (Array.isArray(ds.coordinateTransformations)) {
+        for (const ct of ds.coordinateTransformations) {
+          if ("scale" in ct) {
+            scale = (ct as { scale: number[] }).scale;
+            break;
+          } else if ("transformations" in ct) {
+            // handle nested transformations
+            for (const sct of (ct as { transformations: any[] })
+              .transformations) {
+              if ("scale" in sct) {
+                scale = (sct as { scale: number[] }).scale;
+                break;
+              }
             }
           }
         }
       }
-    }
-    // handle missing coordinateTransformations below
-    return scale;
-  }).filter((s) => s !== undefined) as number[][]; // remove undefined
+      // handle missing coordinateTransformations below
+      return scale;
+    })
+    .filter((s) => s !== undefined) as number[][]; // remove undefined
 
   if (scales.length > 0 && scales.length !== multiscale.datasets.length) {
     throw new Error("Could not determine scales for all datasets");
@@ -290,9 +293,14 @@ export async function getMultiscaleWithArray(
 
   // we know the shape and scale of the chosen array, so we can calculate the
   // shapes of other arrays in the multiscale pyramid...
-  const shapes = (scales.length === 0) ? undefined : scales.map((scale) => {
-    return shape.map((dim, i) => Math.ceil((dim * arrayScale[i]) / scale[i]));
-  });
+  const shapes =
+    scales.length === 0
+      ? undefined
+      : scales.map((scale) => {
+          return shape.map((dim, i) =>
+            Math.ceil((dim * arrayScale[i]) / scale[i])
+          );
+        });
 
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
@@ -308,8 +316,8 @@ export async function getArray(
     zarr_version === 3
       ? zarr.open.v3
       : zarr_version === 2
-      ? zarr.open.v2
-      : zarr.open;
+        ? zarr.open.v2
+        : zarr.open;
   let zarrLocation = root.resolve(path);
   let arr = await openFn(zarrLocation, { kind: "array" });
 
@@ -321,7 +329,7 @@ export function getSlices(
   shape: number[],
   axesNames: string[],
   indices: { [k: string]: number | [number, number] | undefined },
-  originalShape?: number[],
+  originalShape?: number[]
 ): (number | Slice | undefined)[][] {
   // Slice indices are with respect to originalShape if provided
   // For each active channel, get a multi-dimensional slice
@@ -342,7 +350,9 @@ export function getSlices(
         } else if (Number.isInteger(idx)) {
           // scale index if needed. e.g. Z-size of arr shape is 10, but originalShape is 50,
           // and idx is 25, we want to get slice 5 from this array
-          return idx !== undefined ? Math.floor((idx / origDimSize) * dimSize) : undefined;
+          return idx !== undefined
+            ? Math.floor((idx / origDimSize) * dimSize)
+            : undefined;
         }
       }
       // no valid indices supplied, use defaults...
