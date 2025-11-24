@@ -35,13 +35,22 @@
     "preview": "vite preview",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "test": "vitest",
+    "test:browser": "vitest --config=vitest.browser.config.js"
   },
   "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pngjs": "^6.0.5",
+    "@vitest/browser-playwright": "^4.0.12",
+    "@vitest/coverage-v8": "^4.0.8",
+    "playwright": "^1.56.1",
+    "pngjs": "^7.0.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.5",
     "vite-plugin-dts": "^4.5.0",
-    "vitepress": "^1.6.3"
+    "vitepress": "^1.6.3",
+    "vitest": "^4.0.6"
   },
   "packageManager": "pnpm@9.4.0+sha512.f549b8a52c9d2b8536762f99c0722205efc5af913e77835dbccc3b0b0b2ca9e7dc8022b78062c17291c48e88749c70ce88eb5a74f1fa8c4bf5e18bb46c8bd83a",
   "dependencies": {
