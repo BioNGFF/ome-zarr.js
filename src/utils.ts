@@ -1,7 +1,46 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
-import { ImageAttrs, Multiscale, Omero } from "./types/ome";
+import { ImageAttrs, Multiscale, Omero, Axis } from "./types/ome";
 import { getLutRgb } from "./luts";
+
+export class NgffImage {
+  /**
+   * The multiscale datasets for this image
+   *
+   * @minItems 1
+   */
+  attrs: OmeAttrs;
+  multiscales: [Multiscale, ...Multiscale[]];
+  omero?: Omero | null;
+  axes?: Axis[];
+  zarr_version: 2 | 3;
+  [k: string]: unknown;
+
+  constructor(attrs: OmeAttrs) {
+    // Handle v0.4 or v0.5 to get the multiscale object
+    if ("ome" in attrs) {
+      this.attrs = attrs as ImageAttrsV5;
+      this.multiscales = this.attrs.ome.multiscales;
+      this.omero = this.attrs.ome.omero;
+      this.zarr_version = 3;
+      // v0.6 moved 'axes' into coordinateSystems
+      // In this case we "move it back" for compatibility
+      // TODO: Don't just pick the first coordinateSystem - handle multiple coordinateSystems properly
+      for (const multiscale of this.multiscales) {
+        if (!multiscale.axes && multiscale.coordinateSystems?.[0]?.axes) {
+          multiscale.axes = multiscale.coordinateSystems[0].axes;
+        }
+      }
+    } else {
+      // Just copy over the fields for v0.4
+      this.attrs = attrs as ImageAttrs;
+      this.multiscales = this.attrs.multiscales;
+      this.omero = this.attrs.omero;
+      this.zarr_version = 2;
+    }
+  }
+}
+
 
 export const MAX_CHANNELS = 3;
 export const COLORS = {
@@ -213,34 +252,29 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
   return hist;
 }
 
+// For backwards compatibility - keep this function
 export async function getMultiscale(store: zarr.FetchStore): Promise<{
   multiscale: Multiscale;
   omero: Omero | null | undefined;
   zarr_version: 2 | 3;
 }> {
+  const img = await loadImage(store);
+  return {
+    multiscale: img.multiscales[0],
+    omero: img.omero,
+    zarr_version: img.zarr_version,
+  };
+}
+
+export async function loadImage(store: zarr.FetchStore | string): Promise<NgffImage> {
+
+  if (typeof store === "string") {
+    store = new zarr.FetchStore(store);
+  }
   const data = await zarr.open(store, { kind: "group" });
   let attrs: OmeAttrs = data.attrs as OmeAttrs;
 
-  // Handle v0.4 or v0.5 to get the multiscale object
-  let multiscale: Multiscale;
-  let omero: Omero | null | undefined;
-  let zarr_version: 2 | 3 = 2;
-  if ("ome" in attrs) {
-    attrs = attrs as ImageAttrsV5;
-    multiscale = attrs.ome.multiscales[0];
-    omero = attrs.ome.omero;
-    zarr_version = 3;
-  } else {
-    attrs = attrs as ImageAttrs;
-    multiscale = attrs.multiscales[0];
-    omero = attrs.omero;
-  }
-  // v0.6 moved 'axes' into coordinateSystems
-  // In this case we "move it back" for compatibility
-  if (!multiscale.axes && multiscale.coordinateSystems?.[0]?.axes) {
-    multiscale.axes = multiscale.coordinateSystems[0].axes;
-  }
-  return { multiscale, omero, zarr_version };
+  return new NgffImage(attrs);
 }
 
 export async function getMultiscaleWithArray(
