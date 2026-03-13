@@ -15,7 +15,6 @@ export {
   getSlices,
   getMinMaxValues,
 } from "./utils";
-export { renderImage } from "./render";
 export { LUTS, getLuts } from "./luts";
 export { NgffImage } from "./image";
-export { renderThumbnail } from "./api";
+export { renderThumbnail, renderImage } from "./api";

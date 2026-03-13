@@ -2,7 +2,7 @@
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel } from "./types/ome";
 import { getArray } from "./utils";
-import { renderImage } from "./render";
+import { renderImage } from "./api";
 
 export class NgffImage {
   /**
