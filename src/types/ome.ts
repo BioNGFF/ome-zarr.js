@@ -31,6 +31,13 @@ export interface ImageAttrs {
   omero?: Omero | null;
   [k: string]: unknown;
 }
+// For now, the only difference we care about between v0.4 and v0.5 is the nesting
+// of the ImageAttrs object within an 'ome' key.
+export interface ImageAttrsV5 {
+  ome: ImageAttrs;
+}
+export type OmeAttrs = ImageAttrs | ImageAttrsV5;
+
 /**
  * An element of multiscales metadata.
  */
