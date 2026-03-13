@@ -14,7 +14,9 @@ export class NgffImage {
   attrs: OmeAttrs;
   store: zarr.FetchStore;
   multiscales: [Multiscale, ...Multiscale[]];
-  shapes: number[][] | undefined;
+  paths: string[];
+  scales: number[][];
+  arrays: { [key: string]: zarr.Array<any> } = {};
   omero?: Omero | null;
   axes?: Axis[];
   zarr_version: 2 | 3;
@@ -44,21 +46,91 @@ export class NgffImage {
       this.omero = this.attrs.omero;
       this.zarr_version = 2;
     }
+    // for convenience, we also add top-level keys for the most commonly used fields
+    this.paths = this.multiscales[0].datasets.map((d) => d.path);
+    // TODO: handle v0.1-v0.3 axes
+    this.axes = this.multiscales[0].axes;
+    this.scales = this.getScales();
   }
 
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
     let path: string;
     if (typeof pathOrIndex === "number") {
-      const datasets = this.multiscales[0].datasets;
       if (pathOrIndex < 0) {
-        pathOrIndex = datasets.length + pathOrIndex;
+        pathOrIndex = this.paths.length + pathOrIndex;
       }
-      path = datasets[pathOrIndex].path;
+      path = this.paths[pathOrIndex];
     } else {
       path = pathOrIndex;
     }
+    if (this.arrays[path]) {
+      return this.arrays[path];
+    }
     let arr = await getArray(this.store, path, this.zarr_version);
+    // cache the array for future use
+    this.arrays[path] = arr;
     return arr;
+  }
+
+  async calcShapes(datasetIndex?: number): Promise<number[][]> {
+    // if we're not given an index, find first cached arrays...
+    if (datasetIndex === undefined) {
+      for (let i=0; i < this.paths.length; i++) {
+        if (this.arrays[this.paths[i]]) {
+          datasetIndex = i;
+          break;
+        }
+      }
+    }
+    if (datasetIndex === undefined) {
+      datasetIndex = 0;
+    }
+    let arr = await this.openArray(datasetIndex);
+    const shape = arr.shape;
+    const scales: number[][] = this.scales;
+    const arrayScale = scales[datasetIndex];
+
+    // we know the shape and scale of the chosen array, so we can calculate the
+    // shapes of other arrays in the multiscale pyramid...
+    const shapes = scales.map((scale) => {
+      return shape.map((dim, i) =>
+        Math.ceil((dim * arrayScale[i]) / scale[i])
+      );
+    });
+    return shapes;
+  }
+
+  // private method to get scales for each level, if they exist. Returns undefined if no scales are found.
+  getScales() {
+    const scales = this.multiscales[0].datasets
+      .map((ds) => {
+        let scale: number[] | undefined = undefined;
+        if (Array.isArray(ds.coordinateTransformations)) {
+          for (const ct of ds.coordinateTransformations) {
+            if ("scale" in ct) {
+              scale = (ct as { scale: number[] }).scale;
+              break;
+            } else if ("transformations" in ct) {
+              // handle nested transformations
+              for (const sct of (ct as { transformations: any[] })
+                .transformations) {
+                if ("scale" in sct) {
+                  scale = (sct as { scale: number[] }).scale;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        // handle missing coordinateTransformations below
+        return scale;
+      })
+      .filter((s) => s !== undefined) as number[][]; // remove undefined
+
+    if (scales.length > 0 && scales.length !== this.multiscales[0].datasets.length) {
+      throw new Error("Could not determine scales for all datasets");
+    }
+    return scales;
   }
 }

@@ -245,64 +245,16 @@ export async function getMultiscaleWithArray(
   zarr_version: 2 | 3;
 }> {
 
-  // const { multiscale, omero, zarr_version } = await getMultiscale(store);
   const img = await loadImage(store);
   const multiscale = img.multiscales[0];
   const omero = img.omero;
   const zarr_version = img.zarr_version;
+  const scales = img.scales;
 
-  const paths: Array<string> = multiscale.datasets.map((d) => d.path);
-  if (datasetIndex < 0) {
-    datasetIndex = paths.length + datasetIndex;
-  }
-  const path = paths[datasetIndex];
-
-  // Get the zarr array
-  const arr = await getArray(img.store, path, zarr_version);
-
-  // calculate some useful values...
-  const shape = arr.shape;
-  const scales: Array<number[]> = multiscale.datasets
-    .map((ds) => {
-      let scale: number[] | undefined = undefined;
-      if (Array.isArray(ds.coordinateTransformations)) {
-        for (const ct of ds.coordinateTransformations) {
-          if ("scale" in ct) {
-            scale = (ct as { scale: number[] }).scale;
-            break;
-          } else if ("transformations" in ct) {
-            // handle nested transformations
-            for (const sct of (ct as { transformations: any[] })
-              .transformations) {
-              if ("scale" in sct) {
-                scale = (sct as { scale: number[] }).scale;
-                break;
-              }
-            }
-          }
-        }
-      }
-      // handle missing coordinateTransformations below
-      return scale;
-    })
-    .filter((s) => s !== undefined) as number[][]; // remove undefined
-
-  if (scales.length > 0 && scales.length !== multiscale.datasets.length) {
-    throw new Error("Could not determine scales for all datasets");
-  }
-
-  const arrayScale = scales[datasetIndex];
-
-  // we know the shape and scale of the chosen array, so we can calculate the
-  // shapes of other arrays in the multiscale pyramid...
-  const shapes =
-    scales.length === 0
-      ? undefined
-      : scales.map((scale) => {
-          return shape.map((dim, i) =>
-            Math.ceil((dim * arrayScale[i]) / scale[i])
-          );
-        });
+  // Get the specified zarr array
+  const arr = await img.openArray(datasetIndex);
+  // This uses the cached array to calculate shapes from scales
+  const shapes = await img.calcShapes();
 
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
