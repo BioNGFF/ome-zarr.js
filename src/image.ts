@@ -1,7 +1,8 @@
 
 import * as zarr from "zarrita";
-import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
+import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel } from "./types/ome";
 import { getArray } from "./utils";
+import { renderImage } from "./render";
 
 export class NgffImage {
   /**
@@ -16,6 +17,7 @@ export class NgffImage {
   multiscales: [Multiscale, ...Multiscale[]];
   paths: string[];
   scales: number[][];
+  shapes?: number[][];
   arrays: { [key: string]: zarr.Array<any> } = {};
   omero?: Omero | null;
   axes?: Axis[];
@@ -54,6 +56,17 @@ export class NgffImage {
     this.scales = this.getScales();
   }
 
+  // static method to load an image from a zarr store or url
+  static async load(store: zarr.FetchStore | string): Promise<NgffImage> {
+    if (typeof store === "string") {
+      store = new zarr.FetchStore(store);
+    }
+    const data = await zarr.open(store, { kind: "group" });
+    let attrs: OmeAttrs = data.attrs as OmeAttrs;
+    
+    return new NgffImage(attrs, store);
+  }
+
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
     let path: string;
@@ -76,8 +89,13 @@ export class NgffImage {
 
   async calcShapes(datasetIndex?: number): Promise<number[][]> {
     // NB: can return empty list for v0.1-v0.3 (no scales)
-    // if we're not given an index, find first cached arrays...
+
+    if (this.shapes !== undefined) {
+      // return cached shapes if we have them
+      return this.shapes;
+    }
     if (datasetIndex === undefined) {
+      // if we're not given an index, find first cached arrays...
       for (let i=0; i < this.paths.length; i++) {
         if (this.arrays[this.paths[i]]) {
           datasetIndex = i;
@@ -100,6 +118,8 @@ export class NgffImage {
         Math.ceil((dim * arrayScale[i]) / scale[i])
       );
     });
+    // cache the result
+    this.shapes = shapes
     return shapes;
   }
 
@@ -134,5 +154,90 @@ export class NgffImage {
       throw new Error("Could not determine scales for all datasets");
     }
     return scales;
+  }
+
+  async getPathForTargetSize(targetSize: number): Promise<string> {
+
+    let longestSizes: number[] = [];
+    if (this.scales.length == 0) {
+      // for v0.1-v0.3, we "guess" scale of * 2 for each level
+      // find biggest array we have cached or load the first one to get shape
+      let datasetIndex = 0;
+      for (let i=0; i < this.paths.length; i++) {
+        if (this.arrays[this.paths[i]]) {
+          datasetIndex = i;
+          break;
+        }
+      }
+      let arr = await this.openArray(datasetIndex);
+      let shape = arr.shape;
+      let dims = shape.length;
+      let width = shape[dims - 1];
+      let height = shape[dims - 2];
+      let longestSide = Math.max(width, height);
+
+      longestSizes = this.paths.map(
+        (_, i) => longestSide * 2 ** (datasetIndex - i)
+      );
+    } else {
+      // TODO: cache shapes?
+      let shapes = await this.calcShapes();
+      let dims = shapes[0].length;
+      longestSizes = shapes.map((shape) =>
+        Math.max(shape[dims - 1], shape[dims - 2])
+      );
+    }
+
+    let pathIndex;
+    for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
+      let size = longestSizes[pathIndex];
+      let nextSize = longestSizes[pathIndex + 1];
+      if (!nextSize) {
+        // we have reached smallest
+        break;
+      } else if (nextSize > targetSize) {
+        // go smaller
+        continue;
+      } else {
+        // is targetSize closer to this or next?
+        let avg = (size + nextSize) / 2;
+        if (targetSize < avg) {
+          pathIndex += 1;
+        }
+        break;
+      }
+    }
+    let path = this.paths[pathIndex];
+    return path;
+  }
+
+  async render(targetSize?: number, autoBoost = false): Promise<string> {
+
+    let path: string;
+    if (targetSize !== undefined) {
+      path = await this.getPathForTargetSize(targetSize);
+    } else {
+      // check for cached arrays
+      path = this.paths.find((p) => this.arrays[p]) || this.paths[0];
+    }
+    let arr = await this.openArray(path);
+
+    let omero = this.omero;
+    
+    // we want to remove any start/end values from window, to calculate min/max
+    if (omero && "channels" in omero) {
+      omero.channels = omero.channels.map((ch: Channel) => {
+        if (ch.window) {
+          ch.window.start = undefined;
+          ch.window.end = undefined;
+        }
+        return ch;
+      });
+    }
+
+    let shapes = await this.calcShapes();
+    const originalShape = shapes?.[0];
+
+    return renderImage(arr, this.multiscales[0].axes, omero, {}, autoBoost, originalShape);
   }
 }

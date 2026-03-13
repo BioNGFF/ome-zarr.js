@@ -1,100 +1,15 @@
 import * as zarr from "zarrita";
 
-import { Axis, Omero, Channel } from "./types/ome";
+import { Axis, Omero } from "./types/ome";
 import {
   getDefaultVisibilities,
   hexToRGB,
-  getArray,
   getDefaultColors,
   getMinMaxValues,
-  getMultiscaleWithArray,
   getSlices,
   renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
-
-export async function renderThumbnail(
-  store: zarr.FetchStore | string,
-  targetSize: number | undefined = undefined,
-  autoBoost: boolean = false,
-  maxSize: number = 1000
-): Promise<string> {
-  if (typeof store === "string") {
-    store = new zarr.FetchStore(store);
-  }
-
-  // Lets load SMALLEST resolution and render it as a thumbnail
-  const datasetIndex = -1;
-  let { multiscale, omero, zarr_version, arr, shapes } =
-    await getMultiscaleWithArray(store, datasetIndex);
-
-  // targetSize is specified, may need to load a different resolution...
-  // pick a different dataset level if we want a different size
-  let shape = arr.shape;
-  let dims = shape.length;
-  let width = shape[dims - 1];
-  let height = shape[dims - 2];
-  if (height * width > maxSize * maxSize) {
-    throw new Error(
-      `Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`
-    );
-  }
-
-  let longestSide = Math.max(width, height);
-  if (targetSize !== undefined && targetSize > longestSide) {
-    let longestSizes: number[] = [];
-    // If we don't have shapes (v0.1, 0.2, 0.3), we "guess" scale of * 2 for each level
-    if (shapes == undefined) {
-      longestSizes = multiscale.datasets.map(
-        (_, i) => longestSide * 2 ** i
-      );
-      longestSizes.reverse();
-      // e.g. [1568, 784, 392, 196, 98, 49]
-    } else {
-      longestSizes = shapes.map((shape) =>
-        Math.max(shape[dims - 1], shape[dims - 2])
-      );
-    }
-    const paths: Array<string> = multiscale.datasets.map((d) => d.path);
-
-    let pathIndex;
-    for (pathIndex = 0; pathIndex < longestSizes.length; pathIndex++) {
-      let size = longestSizes[pathIndex];
-      let nextSize = longestSizes[pathIndex + 1];
-      if (!nextSize) {
-        // we have reached smallest
-        break;
-      } else if (nextSize > targetSize) {
-        // go smaller
-        continue;
-      } else {
-        // is targetSize closer to this or next?
-        let avg = (size + nextSize) / 2;
-        if (targetSize < avg) {
-          pathIndex += 1;
-        }
-        break;
-      }
-    }
-    let path = paths[pathIndex];
-    arr = await getArray(store, path, zarr_version);
-  }
-
-  // we want to remove any start/end values from window, to calculate min/max
-  if (omero && "channels" in omero) {
-    omero.channels = omero.channels.map((ch: Channel) => {
-      if (ch.window) {
-        ch.window.start = undefined;
-        ch.window.end = undefined;
-      }
-      return ch;
-    });
-  }
-
-  const originalShape = shapes?.[0];
-
-  return renderImage(arr, multiscale.axes, omero, {}, autoBoost, originalShape);
-}
 
 export async function renderImage(
   arr: zarr.Array<any>,

@@ -214,23 +214,12 @@ export async function getMultiscale(store: zarr.FetchStore): Promise<{
   omero: Omero | null | undefined;
   zarr_version: 2 | 3;
 }> {
-  const img = await loadImage(store);
+  const img = await NgffImage.load(store);
   return {
     multiscale: img.multiscales[0],
     omero: img.omero,
     zarr_version: img.zarr_version,
   };
-}
-
-export async function loadImage(store: zarr.FetchStore | string): Promise<NgffImage> {
-
-  if (typeof store === "string") {
-    store = new zarr.FetchStore(store);
-  }
-  const data = await zarr.open(store, { kind: "group" });
-  let attrs: OmeAttrs = data.attrs as OmeAttrs;
-
-  return new NgffImage(attrs, store);
 }
 
 export async function getMultiscaleWithArray(
@@ -245,7 +234,7 @@ export async function getMultiscaleWithArray(
   zarr_version: 2 | 3;
 }> {
 
-  const img = await loadImage(store);
+  const img = await NgffImage.load(store);
   const multiscale = img.multiscales[0];
   const omero = img.omero;
   const zarr_version = img.zarr_version;
