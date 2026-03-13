@@ -6,7 +6,39 @@ import { getRgba, convertRbgDataToDataUrl } from "./render";
 import { NgffImage } from "./image";
 
 
+export async function render(
+  store: zarr.FetchStore | string,
+  options: {
+    targetSize?: number, 
+    autoBoost?: boolean,
+    maxSize?: number
+  } = {},
+): Promise<string> {
 
+  let maxSize = options.maxSize || 1000;
+  let ngffImg = await NgffImage.load(store);
+  let path: string | number = -1;
+  if (options.targetSize !== undefined) {
+    path = await ngffImg.getPathForTargetSize(options.targetSize);
+  }
+  let arr = await ngffImg.openArray(path);
+  let shape = arr.shape;
+  let dims = shape.length;
+  let width = shape[dims - 1];
+  let height = shape[dims - 2];
+  // ...and it also allows us to check size up front
+  if (height * width > maxSize * maxSize) {
+    throw new Error(
+      `Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`
+    );
+  }
+  let src = await ngffImg.render({targetSize: options.targetSize, autoBoost: options.autoBoost});
+  // return renderImage(arr, ngffImg.axes!, ngffImg.omero, {}, options.autoBoost);
+  return src;
+}
+
+
+// Legacy API
 export async function renderThumbnail(
   store: zarr.FetchStore | string,
   targetSize: number | undefined = undefined,
@@ -29,11 +61,12 @@ export async function renderThumbnail(
       `Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`
     );
   }
-  let src = await ngffImg.render(targetSize, autoBoost);
+  let src = await ngffImg.render({targetSize, autoBoost});
   return src;
 }
 
 
+// legacy API
 export async function renderImage(
   arr: zarr.Array<any>,
   axes: Axis[],
@@ -42,10 +75,6 @@ export async function renderImage(
   autoBoost: boolean = false,
   originalShape?: number[]
 ): Promise<string> {
-  // Main rendering function...
-  // We have the zarr Array already in hand, axes for dimensions
-  // and omero for rendering settings
-  // if autoBoost is true, check histogram and boost contrast if needed
   let { data, width, height } = await getRgba(
     arr,
     axes,
@@ -54,6 +83,5 @@ export async function renderImage(
     originalShape,
     autoBoost
   );
-
   return convertRbgDataToDataUrl(data, width, height);
 }

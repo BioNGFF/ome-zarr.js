@@ -17,4 +17,4 @@ export {
 } from "./utils";
 export { LUTS, getLuts } from "./luts";
 export { NgffImage } from "./image";
-export { renderThumbnail, renderImage } from "./api";
+export { renderThumbnail, renderImage, render } from "./api";

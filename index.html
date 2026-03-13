@@ -94,7 +94,7 @@
       for (const url of urls) {
         console.log("Rendering thumbnail for ", url);
         try {
-          let thumbSrc = await omezarr.renderThumbnail(url, 100);
+          let thumbSrc = await omezarr.render(url, {targetSize: 100});
           let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
         } catch (error) {

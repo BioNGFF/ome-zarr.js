@@ -211,11 +211,11 @@ export class NgffImage {
     return path;
   }
 
-  async render(targetSize?: number, autoBoost = false): Promise<string> {
+  async render(options: {targetSize?: number, autoBoost?: boolean} = {}): Promise<string> {
 
     let path: string;
-    if (targetSize !== undefined) {
-      path = await this.getPathForTargetSize(targetSize);
+    if (options.targetSize !== undefined) {
+      path = await this.getPathForTargetSize(options.targetSize);
     } else {
       // check for cached arrays
       path = this.paths.find((p) => this.arrays[p]) || this.paths[0];
@@ -238,6 +238,6 @@ export class NgffImage {
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    return renderImage(arr, this.multiscales[0].axes, omero, {}, autoBoost, originalShape);
+    return renderImage(arr, this.multiscales[0].axes, omero, {}, options.autoBoost, originalShape);
   }
 }
