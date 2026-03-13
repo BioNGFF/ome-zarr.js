@@ -254,8 +254,10 @@ export async function getMultiscaleWithArray(
   // Get the specified zarr array
   const arr = await img.openArray(datasetIndex);
   // This uses the cached array to calculate shapes from scales
-  const shapes = await img.calcShapes();
-
+  let shapes: number[][] | undefined = await img.calcShapes();
+  if (shapes.length == 0) {
+    shapes = undefined;
+  }
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
 

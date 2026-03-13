@@ -50,6 +50,7 @@ export class NgffImage {
     this.paths = this.multiscales[0].datasets.map((d) => d.path);
     // TODO: handle v0.1-v0.3 axes
     this.axes = this.multiscales[0].axes;
+    // NB: scales can be empty list for v0.1-v0.3
     this.scales = this.getScales();
   }
 
@@ -74,6 +75,7 @@ export class NgffImage {
   }
 
   async calcShapes(datasetIndex?: number): Promise<number[][]> {
+    // NB: can return empty list for v0.1-v0.3 (no scales)
     // if we're not given an index, find first cached arrays...
     if (datasetIndex === undefined) {
       for (let i=0; i < this.paths.length; i++) {

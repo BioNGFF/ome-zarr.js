@@ -46,7 +46,7 @@ export async function renderThumbnail(
     // If we don't have shapes (v0.1, 0.2, 0.3), we "guess" scale of * 2 for each level
     if (shapes == undefined) {
       longestSizes = multiscale.datasets.map(
-        (d, i) => d && longestSide * 2 ** i
+        (_, i) => longestSide * 2 ** i
       );
       longestSizes.reverse();
       // e.g. [1568, 784, 392, 196, 98, 49]
