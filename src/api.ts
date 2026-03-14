@@ -8,8 +8,8 @@ import { NgffImage } from "./image";
 
 export async function render(
   store: zarr.FetchStore | string,
+  targetSize?: number, 
   options: {
-    targetSize?: number, 
     autoBoost?: boolean,
     maxSize?: number
   } = {},
@@ -20,8 +20,8 @@ export async function render(
 
   // We render lowest resolution, unless targetSize is specified
   let path: string | number = -1;
-  if (options.targetSize !== undefined) {
-    path = await ngffImg.getPathForTargetSize(options.targetSize);
+  if (targetSize !== undefined) {
+    path = await ngffImg.getPathForTargetSize(targetSize);
   }
   let arr = await ngffImg.openArray(path);
   let shape = arr.shape;
@@ -34,7 +34,7 @@ export async function render(
       `Lowest resolution (${width} * ${height}) is larger than 'maxSize'. Limit is ${maxSize} * ${maxSize}`
     );
   }
-  let src = await ngffImg.render({targetSize: options.targetSize, autoBoost: options.autoBoost});
+  let src = await ngffImg.render({targetSize: targetSize, autoBoost: options.autoBoost});
   // return renderImage(arr, ngffImg.axes!, ngffImg.omero, {}, options.autoBoost);
   return src;
 }
@@ -47,7 +47,7 @@ export async function renderThumbnail(
   autoBoost: boolean = false,
   maxSize: number = 1000
 ): Promise<string> {
-  return render(store, {targetSize, autoBoost, maxSize});
+  return render(store, targetSize, {autoBoost, maxSize});
 }
 
 

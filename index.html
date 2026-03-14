@@ -27,7 +27,7 @@
     <h2>renderTumbnail()</h2>
     <p>Default thumbnail is smallest multiscales resolution:</p>
     <code><pre>
-      let thumbSrc = await omezarr.renderThumbnail(url);
+      let thumbSrc = await omezarr.render(url);
       document.getElementById("thumbnail").src = thumbSrc;
     </pre></code>
     <div id="thumbnails"></div>
@@ -35,12 +35,12 @@
       If autoBoost" is true, contrast will be boosted if needed.</p>
     <code><pre>
       const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
+      let thumbSrc = await omezarr.render(IDR0066, 300);
+      let thumbSrc = await omezarr.render(IDR0066, 300, {autoBoost: true});
       </pre>
     </code>
     <div id="bigThumbnails"></div>
-    <h2>renderImage()</h2>
+
     <p>We can choose various rendering settings etc. "Inverted" is a orthogonal view</p>
     <div id="splitview"></div>
     <p>A smaller resolution "1", at various z-indeces with Look-up table "16_colors.lut"</p>
@@ -94,9 +94,7 @@
       for (const url of urls) {
         console.log("Rendering thumbnail for ", url);
         try {
-          let thumbSrc = await omezarr.render(url, {targetSize: 100});
-          // legacy API:
-          // let thumbSrc = await omezarr.renderThumbnail(url, 100);
+          let thumbSrc = await omezarr.render(url, 100);
           let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
         } catch (error) {
@@ -105,10 +103,11 @@
         }
       }
 
-      let thumbSrc = await omezarr.render(IDR0066, {targetSize: 300});
+      let thumbSrc = await omezarr.render(IDR0066, 300);
       let bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
-      thumbSrc = await omezarr.render(IDR0066, {targetSize: 300, autoBoost: true});
+      // legacy API - keep a single test for this...
+      thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
       bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
 
@@ -162,7 +161,7 @@
 
       // BIG thumbnail (birds eye view)
       const storeBig = new zarr.FetchStore(IDR0083);
-      let bigThumb = await omezarr.renderThumbnail(storeBig, 400);
+      let bigThumb = await omezarr.render(storeBig, 400);
       document.getElementById("bigThumb").src = bigThumb;
       // BIG image, Load full-resolution array
       let big = await omezarr.getMultiscaleWithArray(storeBig);

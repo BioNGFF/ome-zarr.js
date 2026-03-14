@@ -15,7 +15,7 @@ ome-zarr.js is not yet stable and the API may change in patch releases.
 
 ## Rendering settings
 
-For rending images with default rendering settings, we can use `renderThumbnail()` but if we
+For rending images with default rendering settings, we can use `render()` but if we
 want more control then we need to use `renderImage()`. The rendering settings are defined
 by the [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md) object.
 
@@ -69,10 +69,11 @@ When updating Z and T, we keep the same `arr` object in hand. `renderImage()` on
 Image is from [idr0051-fulton-tailbudlightsheet](https://idr.openmicroscopy.org/webclient/?show=project-552).
 
 
-## getMultiscaleWithArray
+<!-- TODO: replace? -->
+<!-- ## getMultiscaleWithArray
 
 The first call in the `renderImage()` example above is `getMultiscaleWithArray()` and this is also used
-by `renderThumbnail()`. By default, this loads the first (highest resolution) `multiscale.dataset` of the pyramid,
+by `render()`. By default, this loads the first (highest resolution) `multiscale.dataset` of the pyramid,
 but the `datasetIndex` can be used to specify a different one. 
 
 It loads both the first `multiscale` metadata for the Image, as well as one of the zarr arrays from the
@@ -92,4 +93,4 @@ const paths = multiscale.datasets.map((d) => d.path);
 // zarr_version (2 or 3) saves an extra call for zarrita to look this up
 arr = await omezarr.getArray(store, paths[2], zarr_version);
 // now we can use the `arr` array in renderImage() as above.
-```
+``` -->

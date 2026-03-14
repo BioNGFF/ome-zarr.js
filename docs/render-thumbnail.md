@@ -6,7 +6,7 @@ ome-zarr.js is not yet stable and the API may change in patch releases.
 
 ## Default usage
 
-By default, `renderThumbnail(url)` will use the smallest resolution `dataset` from the
+By default, `render(url)` will use the smallest resolution `dataset` from the
 `multiscales` pyramid.
 
 It will also use any [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md)
@@ -16,7 +16,7 @@ rendering settings in the image metadata to choose active channels and colors.
 import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js/+esm";
 
 let url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
-let thumbSrc = await omezarr.renderThumbnail(url);
+let thumbSrc = await omezarr.render(url);
 document.getElementById("thumbnail").src = thumbSrc;
 ```
 
@@ -48,7 +48,7 @@ You can choose a preferred `targetSize` and the `dataset` where the longest side
 is closest to the `targetSize` will be chosen.
 
 ```js
-let thumbSrc = await omezarr.renderThumbnail(url, 300);
+let thumbSrc = await omezarr.render(url, 300);
 ```
 
 <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" targetSize=300 />
