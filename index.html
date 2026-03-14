@@ -95,6 +95,8 @@
         console.log("Rendering thumbnail for ", url);
         try {
           let thumbSrc = await omezarr.render(url, {targetSize: 100});
+          // legacy API:
+          // let thumbSrc = await omezarr.renderThumbnail(url, 100);
           let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
         } catch (error) {
@@ -103,10 +105,10 @@
         }
       }
 
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
+      let thumbSrc = await omezarr.render(IDR0066, {targetSize: 300});
       let bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
-      thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
+      thumbSrc = await omezarr.render(IDR0066, {targetSize: 300, autoBoost: true});
       bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
 

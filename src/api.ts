@@ -17,6 +17,8 @@ export async function render(
 
   let maxSize = options.maxSize || 1000;
   let ngffImg = await NgffImage.load(store);
+
+  // We render lowest resolution, unless targetSize is specified
   let path: string | number = -1;
   if (options.targetSize !== undefined) {
     path = await ngffImg.getPathForTargetSize(options.targetSize);
@@ -29,7 +31,7 @@ export async function render(
   // ...and it also allows us to check size up front
   if (height * width > maxSize * maxSize) {
     throw new Error(
-      `Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`
+      `Lowest resolution (${width} * ${height}) is larger than 'maxSize'. Limit is ${maxSize} * ${maxSize}`
     );
   }
   let src = await ngffImg.render({targetSize: options.targetSize, autoBoost: options.autoBoost});
@@ -45,28 +47,11 @@ export async function renderThumbnail(
   autoBoost: boolean = false,
   maxSize: number = 1000
 ): Promise<string> {
-
-  let ngffImg = await NgffImage.load(store);
-
-  // force loading of smallest resolution...
-  // for renderThumbnail() there's a good chance it's the one we want to render
-  let arr = await ngffImg.openArray(-1);
-  let shape = arr.shape;
-  let dims = shape.length;
-  let width = shape[dims - 1];
-  let height = shape[dims - 2];
-  // ...and it also allows us to check size up front
-  if (height * width > maxSize * maxSize) {
-    throw new Error(
-      `Lowest resolution (${width} * ${height}) is too large for Thumbnail. Limit is ${maxSize} * ${maxSize}`
-    );
-  }
-  let src = await ngffImg.render({targetSize, autoBoost});
-  return src;
+  return render(store, {targetSize, autoBoost, maxSize});
 }
 
 
-// legacy API
+// API, but also used under the hood by NgffImage.render()
 export async function renderImage(
   arr: zarr.Array<any>,
   axes: Axis[],
