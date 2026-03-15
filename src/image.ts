@@ -211,7 +211,11 @@ export class NgffImage {
     return path;
   }
 
-  async render(options: {targetSize?: number, autoBoost?: boolean} = {}): Promise<string> {
+  async render(options: {
+    targetSize?: number,
+    slices?: { [k: string]: number | [number, number] | undefined },
+    autoBoost?: boolean} = {}
+  ): Promise<string> {
 
     let path: string;
     if (options.targetSize !== undefined) {
@@ -235,9 +239,11 @@ export class NgffImage {
       });
     }
 
+    let slices = options.slices || {};
+    // We need originalShape 
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    return renderImage(arr, this.multiscales[0].axes, omero, {}, options.autoBoost, originalShape);
+    return renderImage(arr, this.multiscales[0].axes, omero, slices, options.autoBoost, originalShape);
   }
 }

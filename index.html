@@ -112,30 +112,26 @@
       document.getElementById("bigThumbnails").innerHTML += bigImg;
 
       // For rendering Images, we want to keep the zarr array in hand...
-      const store62 = new zarr.FetchStore(IDR0062);
+      // const store62 = new zarr.FetchStore(IDR0062);
+      const img = await omezarr.NgffImage.load(IDR0062);
       // arr will be full-sized array by default
-      const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
+      // const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
       // turn OFF all channels
-      omero.channels.forEach((ch) => (ch.active = false));
-      // for each channel...
-      omero.channels.forEach(async (channel, index) => {
-        // deepcopy omero for each channel...
-        let omeroCopy = JSON.parse(JSON.stringify(omero));
-        // turn on the channel we want to render...
-        omeroCopy.channels[index].active = true;
-        let start = Date.now();
-        let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
-        console.log(`renderImage channel ${index} took ${Date.now() - start} ms   (Expect 60-80 ms)`);
+      img.omero.channels.forEach((ch) => (ch.active = false));
+      img.omero.channels[0].color = "00FF00"
+      img.omero.channels[1].color = "FF00FF"
+      // progressively turn channels on and render...
+      for (let channel in img.omero.channels) {
+        img.omero.channels[channel].active = true;
+        let src = await img.render();
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
-      });
+      };
 
       // Inverted image - orthogonal view
-      let omeroChannel = JSON.parse(JSON.stringify(omero));
-      omeroChannel.channels[1].active = true;
-      omeroChannel.channels[1].inverted = true;
+      img.omero.channels[0].inverted = true;
       let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
-      omezarr.renderImage(arr, multiscale.axes, omeroChannel, slices62).then(src => {
+      img.render({slices: slices62}).then(src => {
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
       });
