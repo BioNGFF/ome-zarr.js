@@ -68,7 +68,7 @@ If `autoBoost` is `true`, then a histogram is calculated and if the top `20%` of
 histogram has less than `1%` of pixels then we double the intensity of all pixels.
 
 ```js
-let thumbSrc = await omezarr.renderThumbnail(url, 200, true);
+let thumbSrc = await omezarr.render(url, 200, {autoBoost: true});
 ```
 
 Here we show the same Image thumbnail, with `autoBoost = false` and with `autoBoost = true`.
@@ -89,8 +89,8 @@ as not to cause performance issues with larger images.
 
 ## Max Size
 
-We want to avoid attempts to render massive images. If the smallest resolution level
-has `width x height` greater than `maxSize x maxSize` then `renderThumbnail()` will throw an `Error`,
+We want to avoid attempts to render massive images. If the chosen resolution level
+has `width x height` greater than `maxSize x maxSize` then `render()` will throw an `Error`,
 with the default `maxSize` being `1000`.
 
 To change that threshold, we can specify a different value:
@@ -98,12 +98,12 @@ To change that threshold, we can specify a different value:
 ```js
 let maxSize = 1500;
 let targetSize = 500;
-let thumbSrc = await omezarr.renderThumbnail(url, targetSize, false, maxSize);
+let thumbSrc = await omezarr.render(url, targetSize, {maxSize: maxSize});
 ```
 
-## Test renderThumbnail()
+## Test render()
 
-Here you can test `renderThumbnail()` with your own images.
+Here you can test `render()` with your own images.
 
 <ClientOnly>
 <ThumbnailTest />
@@ -112,7 +112,7 @@ Here you can test `renderThumbnail()` with your own images.
 
 ## What's being loaded?
 
-Under the hood, `renderThumbnail()` makes several calls to fetch `zarr` metadata and chunks:
+Under the hood, `render()` makes several calls to fetch `zarr` metadata and chunks:
 
  - When we open the `multiscales` group with `zarr.open(store, { kind: "group" })` then `zarrita.js` will
  attempt to fetch the `.zgroup` and `.zattrs`. If these are not found (for `zarr v3` data) then it will
