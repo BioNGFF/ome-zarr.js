@@ -15,27 +15,18 @@ export async function render(
   } = {},
 ): Promise<string> {
 
-  let maxSize = options.maxSize || 1000;
   let ngffImg = await NgffImage.load(store);
+  // by default we render smallest resolution
+  let arrayPathOrIndex: string | number | undefined = undefined;
+  if (targetSize == undefined) {
+    arrayPathOrIndex = -1;
+  }
 
-  // We render lowest resolution, unless targetSize is specified
-  let path: string | number = -1;
-  if (targetSize !== undefined) {
-    path = await ngffImg.getPathForTargetSize(targetSize);
-  }
-  let arr = await ngffImg.openArray(path);
-  let shape = arr.shape;
-  let dims = shape.length;
-  let width = shape[dims - 1];
-  let height = shape[dims - 2];
-  // ...and it also allows us to check size up front
-  if (height * width > maxSize * maxSize) {
-    throw new Error(
-      `Lowest resolution (${width} * ${height}) is larger than 'maxSize'. Limit is ${maxSize} * ${maxSize}`
-    );
-  }
-  let src = await ngffImg.render({targetSize: targetSize, autoBoost: options.autoBoost});
-  // return renderImage(arr, ngffImg.axes!, ngffImg.omero, {}, options.autoBoost);
+  let src = await ngffImg.render({
+    targetSize,
+    arrayPathOrIndex,
+    autoBoost: options.autoBoost,
+    maxSize: options.maxSize});
   return src;
 }
 

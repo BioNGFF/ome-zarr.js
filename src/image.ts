@@ -156,19 +156,21 @@ export class NgffImage {
     return scales;
   }
 
-  async getPathForTargetSize(targetSize: number): Promise<string> {
+  async getPathForTargetSize(targetSize: number, datasetIndex?: number): Promise<string> {
 
     let longestSizes: number[] = [];
-    if (this.scales.length == 0) {
-      // for v0.1-v0.3, we "guess" scale of * 2 for each level
-      // find biggest array we have cached or load the first one to get shape
-      let datasetIndex = 0;
+    if (datasetIndex == undefined) {
+      datasetIndex = 0;
+      // if we're not given an index, find first cached arrays...
       for (let i=0; i < this.paths.length; i++) {
         if (this.arrays[this.paths[i]]) {
           datasetIndex = i;
           break;
         }
       }
+    }
+    if (this.scales.length == 0) {
+      // for v0.1-v0.3, we "guess" scale of * 2 for each level
       let arr = await this.openArray(datasetIndex);
       let shape = arr.shape;
       let dims = shape.length;
@@ -180,7 +182,7 @@ export class NgffImage {
         (_, i) => longestSide * 2 ** (datasetIndex - i)
       );
     } else {
-      // TODO: cache shapes?
+      // This caches shapes
       let shapes = await this.calcShapes();
       let dims = shapes[0].length;
       longestSizes = shapes.map((shape) =>
@@ -212,35 +214,70 @@ export class NgffImage {
   }
 
   async render(options: {
+    // Array can be provided directly, or we will load based on targetSize or arrayPathOrIndex
+    arr?: zarr.Array<any> | string,
     targetSize?: number,
+    arrayPathOrIndex?: string | number, 
     slices?: { [k: string]: number | [number, number] | undefined },
-    autoBoost?: boolean} = {}
+    autoBoost?: boolean,
+    omero?: Omero,
+    maxSize?: number
+  } = {}
   ): Promise<string> {
 
-    let path: string;
-    if (options.targetSize !== undefined) {
-      path = await this.getPathForTargetSize(options.targetSize);
+    let arr;
+    if (options.arr) {
+      if (typeof options.arr === "string") {
+        const store = new zarr.FetchStore(options.arr);
+        arr = await zarr.open(store, { kind: "array" });
+      } else {
+        arr = options.arr;
+      }
     } else {
-      // check for cached arrays
-      path = this.paths.find((p) => this.arrays[p]) || this.paths[0];
+      let path: string | number;
+      if (options.arrayPathOrIndex !== undefined) {
+        path = options.arrayPathOrIndex;
+      } else if (options.targetSize !== undefined) {
+        path = await this.getPathForTargetSize(options.targetSize);
+      } else {
+        throw new Error("Need to specify arr OR targetSize OR arrayPathOrIndex ")
+      }
+      arr = await this.openArray(path);
     }
-    let arr = await this.openArray(path);
 
-    let omero = this.omero;
-    
-    // we want to remove any start/end values from window, to calculate min/max
-    if (omero && "channels" in omero) {
-      omero.channels = omero.channels.map((ch: Channel) => {
-        if (ch.window) {
-          ch.window.start = undefined;
-          ch.window.end = undefined;
-        }
-        return ch;
-      });
+    // TODO: decide when to ignore maxSize? 
+    // E.g. if targetSize is specified, use maxSize = 2 x targetSize?
+    let maxSize = options.maxSize ?? 1000;
+    let shape = arr.shape;
+    let dims = shape.length;
+    let width = shape[dims - 1];
+    let height = shape[dims - 2];
+    // Reject if whole plane is too big and no slices are provided.
+    if (height * width > maxSize * maxSize && !options.slices) {
+      // TODO: if we have slices, we should check the size of the sliced region
+      throw new Error(
+        `Array size (${width} * ${height}) is larger than specified 'maxSize' of ${maxSize} * ${maxSize}`
+      );
+    }
+
+    let omero = options.omero;
+    if (omero == undefined && this.omero) {
+      // if omero is not provided in options, use the one from the image (if it exists)
+      // and we want to remove any start/end values from window, to calculate min/max
+      omero = this.omero;
+      if ("channels" in omero) {
+        omero.channels = omero.channels.map((ch: Channel) => {
+          if (ch.window) {
+            ch.window.start = undefined;
+            ch.window.end = undefined;
+          }
+          return ch;
+        });
+      }
     }
 
     let slices = options.slices || {};
-    // We need originalShape 
+    // We need originalShape to know if we have Z-downsampling.
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
