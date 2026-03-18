@@ -1,6 +1,6 @@
 
 import * as zarr from "zarrita";
-import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel } from "./types/ome";
+import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
 import { getArray } from "./utils";
 import { renderImage } from "./api";
 
@@ -260,22 +260,7 @@ export class NgffImage {
       );
     }
 
-    let omero = options.omero;
-    if (omero == undefined && this.omero) {
-      // if omero is not provided in options, use the one from the image (if it exists)
-      // and we want to remove any start/end values from window, to calculate min/max
-      omero = this.omero;
-      if ("channels" in omero) {
-        omero.channels = omero.channels.map((ch: Channel) => {
-          if (ch.window) {
-            ch.window.start = undefined;
-            ch.window.end = undefined;
-          }
-          return ch;
-        });
-      }
-    }
-
+    let omero = options.omero || this.omero;
     let slices = options.slices || {};
     // We need originalShape to know if we have Z-downsampling.
     let shapes = await this.calcShapes();

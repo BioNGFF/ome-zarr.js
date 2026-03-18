@@ -1,9 +1,5 @@
 # renderThumbnail
 
-::: warning
-ome-zarr.js is not yet stable and the API may change in patch releases.
-:::
-
 ## Default usage
 
 By default, `render(url)` will use the smallest resolution `dataset` from the

@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 
-import { Axis, Omero } from "./types/ome";
+import { Axis, Channel, Omero } from "./types/ome";
 import { getRgba, convertRbgDataToDataUrl } from "./render";
 import { NgffImage } from "./image";
 
@@ -20,6 +20,19 @@ export async function render(
   let arrayPathOrIndex: string | number | undefined = undefined;
   if (targetSize == undefined) {
     arrayPathOrIndex = -1;
+  }
+
+  if (ngffImg.omero) {
+    // we want to remove any start/end values from window, to calculate min/max
+    if ("channels" in ngffImg.omero) {
+      ngffImg.omero.channels = ngffImg.omero.channels.map((ch: Channel) => {
+        if (ch.window) {
+          ch.window.start = undefined;
+          ch.window.end = undefined;
+        }
+        return ch;
+      });
+    }
   }
 
   let src = await ngffImg.render({

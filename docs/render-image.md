@@ -9,34 +9,26 @@ import ImageViewer from './components/ImageViewer.vue';
 
 # renderImage
 
-::: warning
-ome-zarr.js is not yet stable and the API may change in patch releases.
-:::
-
 ## Rendering settings
 
 For rending images with default rendering settings, we can use `render()` but if we
 want more control then we need to use `renderImage()`. The rendering settings are defined
 by the [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md) object.
 
-::: tip
-If you don't *know* the size of the `arr` array, you should check before you try to `renderImage()`
-:::
-
 ```js
-// For rendering Images, we want to keep the zarr array in hand...
-// `arr` will be the multiscale highest resolution array by default
+// We create a NgffImage, update rendering settings and render()
 let url = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
-const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(url);
+let img = await omezarr.NgffImage.load(url);
+let omero = img.omero;
 // turn channel on/off
-omero.channels[0].active = true;
+img.omero.channels[0].active = true;
 // set channel color
-omero.channels[0].color = "FFFFFF";
+img.omero.channels[0].color = "FFFFFF";
 // set start/end range
-omero.channels[0].window.start = 100;
-omero.channels[0].window.end = 200;
+img.omero.channels[0].window.start = 100;
+img.omero.channels[0].window.end = 200;
 // This call will load the chunks and render to rgb image
-let src = await omezarr.renderImage(arr, multiscale.axes, omero);
+let src = await img.render({targetSize: 500});
 document.getElementById("image").src = src;
 ```
 

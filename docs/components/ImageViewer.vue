@@ -10,9 +10,8 @@ const imgSrc = ref(null);
 const props = defineProps(['url']);
 
 // We store image array and metadata in these refs
-let arrRef = null;
+let img = null;
 const omeroRef = ref({ channels: [] });
-const multiscaleRef = ref(null);
 
 const maxWidth = 450;
 
@@ -21,24 +20,32 @@ let omezarr;
 function toggleChannel(index) {
   console.log('toggleChannel', index);
   omeroRef.value.channels[index].active = !omeroRef.value.channels[index].active;
+  // update the image itself
+  img.omero.channels[index].active = omeroRef.value.channels[index].active;
   render();
 }
 
 function handleColor(index, event) {
   console.log('handleColor', index, event.target.value);
   omeroRef.value.channels[index].color = event.target.value.replace("#", "");
+  // update the image itself
+  img.omero.channels[index].color = omeroRef.value.channels[index].color;
   render();
 }
 
 function handleWindowStart(index, event) {
   console.log('handleWindowStart', index, event.target.value);
   omeroRef.value.channels[index].window.start = parseInt(event.target.value);
+  // update the image itself
+  img.omero.channels[index].window.start = omeroRef.value.channels[index].window.start;
   render();
 }
 
 function handleWindowEnd(index, event) {
   console.log('handleWindowEnd', index, event.target.value);
   omeroRef.value.channels[index].window.end = parseInt(event.target.value);
+  // update the image itself
+  img.omero.channels[index].window.end = omeroRef.value.channels[index].window.end;
   render();
 }
 
@@ -47,21 +54,17 @@ onMounted(async () => {
   // NB: needs `npm run build` first!
   omezarr = await import('ome-zarr.js');
 
-  // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-  const { arr, omero, multiscale } = await omezarr.getMultiscaleWithArray(props.url);
-  arrRef = arr;
-  omeroRef.value = omero;
-  multiscaleRef.value = multiscale;
+  img = await omezarr.NgffImage.load(props.url);
+  // make a deep copy so we don't mix Vue refs with the original image object
+  omeroRef.value = JSON.parse(JSON.stringify(img.omero));
 
   console.log("onMounted omero", omeroRef.value);
   render();
 });
 
-
 async function render() {
-
-  // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-  imgSrc.value = await omezarr.renderImage(arrRef, multiscaleRef.value.axes, omeroRef.value);
+  // Simply render with the current image settings
+  imgSrc.value = await img.render({targetSize: 500});
 };
 </script>
 
@@ -81,10 +84,12 @@ async function render() {
         </label>
         <br>
         <div>
-          <label>Start:</label> <input type="range" :min="ch.window.min" :max="ch.window.max" :value="ch.window.start" @change="(event) => { handleWindowStart(index, event) }" />
+          <label>Start: {{ ch.window.start }}</label>
+          <input type="range" :min="ch.window.min" :max="ch.window.max" :value="ch.window.start" @change="(event) => { handleWindowStart(index, event) }" />
         </div>
         <div>
-          <label>End:</label> <input type="range" :min="ch.window.min" :max="ch.window.max" :value="ch.window.end" @change="(event) => { handleWindowEnd(index, event) }" />
+          <label>End: {{ ch.window.end }}</label>
+          <input type="range" :min="ch.window.min" :max="ch.window.max" :value="ch.window.end" @change="(event) => { handleWindowEnd(index, event) }" />
         </div>
       </div>
     </div>
