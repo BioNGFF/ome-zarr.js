@@ -29,6 +29,7 @@ export interface ImageAttrs {
    */
   multiscales: [Multiscale, ...Multiscale[]];
   omero?: Omero | null;
+  version: string;
   [k: string]: unknown;
 }
 // For now, the only difference we care about between v0.4 and v0.5 is the nesting
@@ -47,7 +48,7 @@ export interface Multiscale {
    * @minItems 1
    */
   datasets: [Dataset, ...Dataset[]];
-  version?: "0.4" | null;
+  version?: string;
   coordinateTransformations?: [unknown] | [unknown, unknown] | null;
   coordinateSystems?: CoordinateSystem[] | null;
   metadata?: {

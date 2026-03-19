@@ -20,38 +20,43 @@ export class NgffImage {
   shapes?: number[][];
   arrays: { [key: string]: zarr.Array<any> } = {};
   omero?: Omero | null;
-  axes?: Axis[];
+  axes: Axis[];
   zarr_version: 2 | 3;
+  omezarr_version?: string;
   [k: string]: unknown;
 
   constructor(attrs: OmeAttrs, store: zarr.FetchStore) {
     // Handle v0.4 or v0.5 to get the multiscale object
     // attrs is just the dictionary we get from zarr
     this.store = store;
+    let imgAttrs: ImageAttrs;
     if ("ome" in attrs) {
       this.attrs = attrs as ImageAttrsV5;
-      this.multiscales = this.attrs.ome.multiscales;
-      this.omero = this.attrs.ome.omero;
+      // deep copy to avoid mutating original attrs object
+      imgAttrs = JSON.parse(JSON.stringify(this.attrs.ome));
       this.zarr_version = 3;
+      this.omezarr_version = imgAttrs.version;
+      this.axes = imgAttrs.multiscales[0].axes;
       // v0.6 moved 'axes' into coordinateSystems
-      // In this case we "move it back" for compatibility
       // TODO: Don't just pick the first coordinateSystem - handle multiple coordinateSystems properly
-      for (const multiscale of this.multiscales) {
-        if (!multiscale.axes && multiscale.coordinateSystems?.[0]?.axes) {
-          multiscale.axes = multiscale.coordinateSystems[0].axes;
-        }
+      if (!this.axes && imgAttrs.multiscales[0].coordinateSystems?.[0]?.axes) {
+        this.axes = imgAttrs.multiscales[0].coordinateSystems[0].axes;
       }
     } else {
       // Just copy over the fields for v0.4
       this.attrs = attrs as ImageAttrs;
-      this.multiscales = this.attrs.multiscales;
-      this.omero = this.attrs.omero;
+      // deep copy to avoid mutating original attrs object
+      imgAttrs = JSON.parse(JSON.stringify(this.attrs));
       this.zarr_version = 2;
+      this.omezarr_version = imgAttrs.multiscales[0].version;
+      // check v0.1-v0.3 axes - default to 'tczyx' if not found
+      this.axes = imgAttrs.multiscales[0].axes || ['t', 'c', 'z', 'y', 'x'].map((name) => ({ name }));
     }
+    this.multiscales = imgAttrs.multiscales;
+    this.omero = imgAttrs.omero;
+
     // for convenience, we also add top-level keys for the most commonly used fields
     this.paths = this.multiscales[0].datasets.map((d) => d.path);
-    // TODO: handle v0.1-v0.3 axes
-    this.axes = this.multiscales[0].axes;
     // NB: scales can be empty list for v0.1-v0.3
     this.scales = this.getScales();
   }
@@ -266,6 +271,6 @@ export class NgffImage {
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    return renderImage(arr, this.multiscales[0].axes, omero, slices, options.autoBoost, originalShape);
+    return renderImage(arr, this.axes, omero, slices, options.autoBoost, originalShape);
   }
 }
