@@ -8,8 +8,8 @@ hero:
   tagline: Load data with zarrita.js, and render to rgb image
   actions:
     - theme: brand
-      text: renderThumbnail
-      link: /render-thumbnail
+      text: render
+      link: /render
     - theme: alt
       text: renderImage
       link: /render-image

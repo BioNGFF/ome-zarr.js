@@ -1,9 +1,9 @@
-# renderThumbnail
+# render
 
 ## Default usage
 
 By default, `render(url)` will use the smallest resolution `dataset` from the
-`multiscales` pyramid.
+`multiscales` pyramid and return a thumbnail image `src`.
 
 It will also use any [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md)
 rendering settings in the image metadata to choose active channels and colors.
@@ -40,7 +40,7 @@ import ThumbnailTest from './components/ThumbnailTest.vue';
 
 ## Target Size
 
-You can choose a preferred `targetSize` and the `dataset` where the longest side (`x` or `y`)
+You can choose a preferred `targetSize` and the resolution level where the longest side (`x` or `y`)
 is closest to the `targetSize` will be chosen.
 
 ```js
@@ -111,8 +111,8 @@ Here you can test `render()` with your own images.
 Under the hood, `render()` makes several calls to fetch `zarr` metadata and chunks:
 
  - When we open the `multiscales` group with `zarr.open(store, { kind: "group" })` then `zarrita.js` will
- attempt to fetch the `.zgroup` and `.zattrs`. If these are not found (for `zarr v3` data) then it will
- fetch the `zarr.json` for `zarr v3`.
+ attempt to fetch the `.zgroup` and `.zattrs`. If these are not found (if the image is `zarr v3` data) then it will
+ fetch the `zarr.json` for `zarr v3` instead.
  - We then fetch the array metadata for the lowest resolution dataset. Since we now know whether the
  data is `zarr v2` or `v3`, we directly load the `.zarray` or `zarr.json`. This gives us the `shape` of
  the lowest resolution array and so we can calculate the sizes of the other arrays in the multiscales pyramid.
