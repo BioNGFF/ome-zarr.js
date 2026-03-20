@@ -30,11 +30,8 @@ let src = await omezarr.render(url);
 document.getElementById("thumbnail").src = src;
 ```
 
-`renderImage()` uses the highest resolution dataset by default and allows you to
-specify rendering settings, Z/T indices.
-
-We can choose to use different resolutions of the multiscales pyramid and to render
-a smaller region. See docs above for more details.
+We can choose to use different resolutions of the multiscales pyramid, to apply rendering settings
+and to render a smaller region of the image. See docs above for more details.
 
 
 ## Demo and Development

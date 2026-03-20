@@ -7,26 +7,30 @@ import Image from './components/Image.vue';
 import ImageViewer from './components/ImageViewer.vue';
 </script>
 
-# renderImage
+# Rendering settings
 
-## Rendering settings
-
-For rending images with default rendering settings, we can use `render()` but if we
-want more control then we need to use `renderImage()`. The rendering settings are defined
-by the [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md) object.
+We can apply various rendering settings (color, levels, inverted) to each `Channel` in the
+image and turn channels on and off.
+If any [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-metadata-transitional) metadata
+is found on the image, this will form the initial settings, otherwise default settings
+will be created.
 
 ```js
 // We create a NgffImage, update rendering settings and render()
 let url = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
+
+// This loads the first array, so we know the channel count and can
+// create default settings if needed
 let img = await omezarr.NgffImage.load(url);
-let omero = img.omero;
-// turn channel on/off
-img.omero.channels[0].active = true;
-// set channel color
-img.omero.channels[0].color = "FFFFFF";
-// set start/end range
-img.omero.channels[0].window.start = 100;
-img.omero.channels[0].window.end = 200;
+
+// turn first channel off
+img.setChannelActive(0, false)
+// set 2nd channel to blue
+img.setChannelColor(1, "0000FF");
+// set start/end range of 2nd channel
+img.setChannelStart(1, 100);
+img.setChannelEnd(1, 300);
+
 // This call will load the chunks and render to rgb image
 let src = await img.render({targetSize: 500});
 document.getElementById("image").src = src;

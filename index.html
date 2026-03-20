@@ -141,19 +141,21 @@
       // arr will be full-sized array by default
       // const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
       // turn OFF all channels
-      img.omero.channels.forEach((ch) => (ch.active = false));
-      img.omero.channels[0].color = "00FF00"
-      img.omero.channels[1].color = "FF00FF"
+      for (let channel in img.omero.channels) {
+        img.setChannelActive(channel, false);
+      }
+      img.setChannelColor(0, "00FF00");
+      img.setChannelColor(1, "FF00FF");
       // progressively turn channels on and render...
       for (let channel in img.omero.channels) {
-        img.omero.channels[channel].active = true;
+        img.setChannelActive(channel, true);
         let src = await img.render({targetSize: 300});
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
       };
 
       // Inverted image - orthogonal view
-      img.omero.channels[0].inverted = true;
+      img.setChannelInverted(0, true);
       let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
       let orthSrc = await img.render({targetSize: 300, slices: slices62});
       let html = `<img src="${orthSrc}" />`;
@@ -166,10 +168,10 @@
       const pathOrIndex = 1;
       const arr200 = await img.openArray(pathOrIndex);
       // turn first channel ON, use LUT
-      img.omero.channels[0].active = true;
-      img.omero.channels[1].active = false;
-      img.omero.channels[0].lut = "16_colors.lut";
-      img.omero.channels[0].inverted = false;
+      img.setChannelActive(0, true);
+      img.setChannelActive(1, false);
+      img.setChannelLut(0, "16_colors.lut");
+      img.setChannelInverted(0, false);
       // TODO: use dim names from multiscale
       let sizeZ = arr200.shape.at(-3);
       let interval = Math.ceil(sizeZ / 7);

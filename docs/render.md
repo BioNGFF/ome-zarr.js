@@ -1,11 +1,14 @@
 # render
 
+The `render(url)` function takes an OME-Zarr url and returns a `data:` string
+for the `src` attribute of an html image.
+
 ## Default usage
 
 By default, `render(url)` will use the smallest resolution `dataset` from the
-`multiscales` pyramid and return a thumbnail image `src`.
+`multiscales` pyramid.
 
-It will also use any [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-md)
+It will also use any [omero](https://ngff.openmicroscopy.org/latest/index.html#omero-metadata-transitional)
 rendering settings in the image metadata to choose active channels and colors.
 
 ```js
@@ -108,16 +111,34 @@ Here you can test `render()` with your own images.
 
 ## What's being loaded?
 
-Under the hood, `render()` makes several calls to fetch `zarr` metadata and chunks:
+Under the hood, `render()` makes several calls to fetch `zarr` metadata and chunks.
 
- - When we open the `multiscales` group with `zarr.open(store, { kind: "group" })` then `zarrita.js` will
- attempt to fetch the `.zgroup` and `.zattrs`. If these are not found (if the image is `zarr v3` data) then it will
- fetch the `zarr.json` for `zarr v3` instead.
- - We then fetch the array metadata for the lowest resolution dataset. Since we now know whether the
- data is `zarr v2` or `v3`, we directly load the `.zarray` or `zarr.json`. This gives us the `shape` of
- the lowest resolution array and so we can calculate the sizes of the other arrays in the multiscales pyramid.
- - If we have chosen a `targetSize` which specifies a different dataset, we also fetch that array metadata.
- - Finally we fetch the array chunks required to render an image plane for each active channel.
+When we specify `targetSize` the calls go like this:
+
+```js
+// This loads the multiscales zarr.json or .zattrs and then
+// loads the FIRST (largest) array by default, so we know the
+// dimensions of the full-size image and can calculate the others
+let ngffImg = await omezarr.NgffImage.load(store);
+
+// This will load the appropriate array for the targetSize, then
+// load chunks needed to render
+let src = await ngffImg.render({targetSize, autoBoost});
+```
+
+If we *don't* specify `targetSize`, we save one extra `fetch` as we only need to load
+one array instead of 2.
+
+```js
+// This loads the image and then loads the LAST (smallest) array
+let datasetIndex = -1;  // last index
+let ngffImg = await omezarr.NgffImage.load(store, datasetIndex);
+
+// We use the array at datasetIndex that we have alredy loaded.
+let src = await ngffImg.render({datasetIndex, autoBoost});
+```
+
+
 
 <style module>
 .thumb_container {

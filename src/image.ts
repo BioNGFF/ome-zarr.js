@@ -78,14 +78,39 @@ export class NgffImage {
     return img;
   }
 
-  setActiveChannel(channelIndex: number, active: boolean) {
+  checkChannelIndex(channelIndex: number): Omero {
     if (!this.omero) {
       throw new Error("No Omero metadata found in image");
     }
     if (channelIndex < 0 || channelIndex >= this.omero.channels.length) {
       throw new Error(`Invalid channel index: ${channelIndex} for image with ${this.omero.channels.length} channels`);
     }
-    this.omero.channels[channelIndex].active = active;
+    return this.omero;
+  }
+
+  setChannelActive(channelIndex: number, active: boolean) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].active = active;
+  }
+
+  setChannelColor(channelIndex: number, color: string) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].color = color;
+  }
+
+  setChannelStart(channelIndex: number, start: number) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].window.start = start;
+  }
+
+  setChannelEnd(channelIndex: number, end: number) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].window.end = end;
+  }
+
+  setChannelInverted(channelIndex: number, inverted: boolean) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].inverted = inverted;
   }
 
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {

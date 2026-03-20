@@ -1,6 +1,6 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
-import { Channel, Multiscale, Omero } from "./types/ome";
+import { Multiscale, Omero } from "./types/ome";
 import { getLutRgb } from "./luts";
 import { NgffImage } from "./image";
 

@@ -17,11 +17,11 @@ const maxWidth = 450;
 
 let omezarr;
 
-function toggleChannel(index) {
+function toggleChannel(index, active) {
   console.log('toggleChannel', index);
-  omeroRef.value.channels[index].active = !omeroRef.value.channels[index].active;
+  omeroRef.value.channels[index].active = active;
   // update the image itself
-  img.omero.channels[index].active = omeroRef.value.channels[index].active;
+  img.setChannelActive(index, active);
   render();
 }
 
@@ -29,7 +29,7 @@ function handleColor(index, event) {
   console.log('handleColor', index, event.target.value);
   omeroRef.value.channels[index].color = event.target.value.replace("#", "");
   // update the image itself
-  img.omero.channels[index].color = omeroRef.value.channels[index].color;
+  img.setChannelColor(index, omeroRef.value.channels[index].color);
   render();
 }
 
@@ -37,7 +37,7 @@ function handleWindowStart(index, event) {
   console.log('handleWindowStart', index, event.target.value);
   omeroRef.value.channels[index].window.start = parseInt(event.target.value);
   // update the image itself
-  img.omero.channels[index].window.start = omeroRef.value.channels[index].window.start;
+  img.setChannelStart(index, omeroRef.value.channels[index].window.start);
   render();
 }
 
@@ -45,7 +45,7 @@ function handleWindowEnd(index, event) {
   console.log('handleWindowEnd', index, event.target.value);
   omeroRef.value.channels[index].window.end = parseInt(event.target.value);
   // update the image itself
-  img.omero.channels[index].window.end = omeroRef.value.channels[index].window.end;
+  img.setChannelEnd(index, omeroRef.value.channels[index].window.end);
   render();
 }
 
@@ -79,7 +79,7 @@ async function render() {
       <div v-for="(ch, index) in omeroRef.channels">
         <input type="color" @change="(event) => { handleColor(index, event) }" :value="'#' + ch.color" />
         <label>
-          <input type="checkbox" :checked="ch.active" @click="() => { toggleChannel(index) }" />
+          <input type="checkbox" :checked="ch.active" @click="() => { toggleChannel(index, !ch.active) }" />
           {{ ch.label }}
         </label>
         <br>
