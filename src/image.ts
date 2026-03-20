@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
-import { getArray } from "./utils";
+import { getArray, createOmero } from "./utils";
 import { renderImage } from "./api";
 
 export class NgffImage {
@@ -19,7 +19,7 @@ export class NgffImage {
   scales: number[][];
   shapes?: number[][];
   arrays: { [key: string]: zarr.Array<any> } = {};
-  omero?: Omero | null;
+  omero?: Omero;
   axes: Axis[];
   zarr_version: 2 | 3;
   omezarr_version?: string;
@@ -62,14 +62,30 @@ export class NgffImage {
   }
 
   // static method to load an image from a zarr store or url
-  static async load(store: zarr.FetchStore | string): Promise<NgffImage> {
+  static async load(store: zarr.FetchStore | string, datasetIndex: number = 0): Promise<NgffImage> {
     if (typeof store === "string") {
       store = new zarr.FetchStore(store);
     }
     const data = await zarr.open(store, { kind: "group" });
     let attrs: OmeAttrs = data.attrs as OmeAttrs;
     
-    return new NgffImage(attrs, store);
+    const img = new NgffImage(attrs, store);
+
+    // default behaviour is to open first array (or specified datasetIndex); populates `omero` if missing.
+    if (datasetIndex !== undefined) {
+      await img.openArray(datasetIndex);
+    }
+    return img;
+  }
+
+  setActiveChannel(channelIndex: number, active: boolean) {
+    if (!this.omero) {
+      throw new Error("No Omero metadata found in image");
+    }
+    if (channelIndex < 0 || channelIndex >= this.omero.channels.length) {
+      throw new Error(`Invalid channel index: ${channelIndex} for image with ${this.omero.channels.length} channels`);
+    }
+    this.omero.channels[channelIndex].active = active;
   }
 
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
@@ -89,6 +105,18 @@ export class NgffImage {
     let arr = await getArray(this.store, path, this.zarr_version);
     // cache the array for future use
     this.arrays[path] = arr;
+    // since we now have array shape and dtype, we can create `omero` if doesn't exist yet
+    if (!this.omero) {
+      let shapes = await this.calcShapes();
+      let shape0 = shapes?.[0] || arr.shape;
+      let axesNames = this.axes.map((a) => a.name || a.toString());
+      let sizeC = shape0[axesNames.findIndex(a => a === 'c')] || 1;
+      this.omero = createOmero(sizeC, arr.dtype);
+      if (axesNames.includes('z')) {
+        let sizeZ = shape0[axesNames.findIndex(a => a === 'z')] || 1;
+        this.omero.rdefs.defaultZ = Math.floor(sizeZ / 2);
+      }
+    }
     return arr;
   }
 

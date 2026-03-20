@@ -4,7 +4,7 @@ import { Axis, Omero } from "./types/ome";
 import {
   getDefaultVisibilities,
   hexToRGB,
-  getDefaultColors,
+  getDefaultRgbColors,
   getMinMaxValues,
   getSlices,
   renderTo8bitArray,
@@ -59,7 +59,7 @@ export async function getRgba(
     );
   } else {
     visibilities = getDefaultVisibilities(channel_count);
-    rgbColors = getDefaultColors(channel_count, visibilities);
+    rgbColors = getDefaultRgbColors(channel_count, visibilities);
   }
   // filter for active channels
   let activeChannelIndices: number[] = visibilities.reduce(

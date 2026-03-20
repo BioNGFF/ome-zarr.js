@@ -28,7 +28,7 @@ export interface ImageAttrs {
    * @minItems 1
    */
   multiscales: [Multiscale, ...Multiscale[]];
-  omero?: Omero | null;
+  omero?: Omero;
   version: string;
   [k: string]: unknown;
 }

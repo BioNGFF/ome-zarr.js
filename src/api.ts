@@ -14,12 +14,18 @@ export async function render(
     maxSize?: number
   } = {},
 ): Promise<string> {
+  
+  let arrayPathOrIndex: number | undefined = undefined;
+  let ngffImg: NgffImage;
 
-  let ngffImg = await NgffImage.load(store);
-  // by default we render smallest resolution
-  let arrayPathOrIndex: string | number | undefined = undefined;
+  // If no targetSize, we ONLY load the smallest array, and render same array below...
   if (targetSize == undefined) {
     arrayPathOrIndex = -1;
+    ngffImg = await NgffImage.load(store, arrayPathOrIndex);
+  } else {
+    // ...but if we know the targetSize, we load the largest array here (default),
+    // then use targetSize below to pick right resolution
+    ngffImg = await NgffImage.load(store);
   }
 
   if (ngffImg.omero) {

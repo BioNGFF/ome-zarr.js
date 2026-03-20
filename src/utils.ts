@@ -1,6 +1,6 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
-import { Multiscale, Omero } from "./types/ome";
+import { Channel, Multiscale, Omero } from "./types/ome";
 import { getLutRgb } from "./luts";
 import { NgffImage } from "./image";
 
@@ -17,7 +17,7 @@ export const COLORS = {
 };
 export const MAGENTA_GREEN = [COLORS.magenta, COLORS.green];
 export const RGB = [COLORS.red, COLORS.green, COLORS.blue];
-export const CYMRGB = Object.values(COLORS).slice(0, -2);
+export const CYMRGB = Object.values(COLORS);
 
 // this duplicates Slice() from zarrita as I couldn't import it
 export interface Slice {
@@ -49,10 +49,27 @@ export function getDefaultVisibilities(n: number): boolean[] {
   return visibilities;
 }
 
+export function createOmero(channelCount: number, dtype: string): Omero {
+  let visibilities = getDefaultVisibilities(channelCount);
+  let colors = getDefaultColors(channelCount, visibilities);
+  let minMax = getPixelValueRange(dtype);
+  let channels = visibilities.map((active, i) => ({
+    active,
+    color: colors[i],
+    window: { min: minMax.min, max: minMax.max },
+  }));
+  let rdefs = {
+    defaultT: 0,
+    defaultZ: 0,
+    model: "color",
+  };
+  return { channels, rdefs } as Omero;
+}
+
 export function getDefaultColors(
   n: number,
   visibilities: boolean[]
-): [number, number, number][] {
+): string[] {
   let colors: string[] = [];
   if (n == 1) {
     colors = [COLORS.white];
@@ -72,6 +89,18 @@ export function getDefaultColors(
       colors[visibleIndex] = CYMRGB[i];
     }
   }
+  colors = colors.map(color => {
+    if (color.startsWith("#")) color = color.slice(1);
+    return color;
+  });
+  return colors;
+}
+
+export function getDefaultRgbColors(
+  n: number,
+  visibilities: boolean[]
+): [number, number, number][] {
+  let colors = getDefaultColors(n, visibilities);
   return colors.map(hexToRGB);
 }
 
