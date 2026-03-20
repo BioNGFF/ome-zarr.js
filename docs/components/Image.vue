@@ -23,6 +23,7 @@ const multiscaleRef = ref(null);
 
 const luts = ref([]);
 const lut = ref("fire.lut");
+const playing = ref(false);
 
 // hard-coded for now
 const theZ = ref(100);
@@ -61,6 +62,24 @@ function handleLut(lutName) {
   render();
 }
 
+function play() {
+  playing.value = !playing.value;
+  let t = theT.value;
+  async function next() {
+    theT.value = t;
+    t = (t + 1) % 79;
+    await render();
+    if (playing.value) {
+      setTimeout(next, 0);
+    }
+  }
+  if (playing.value) {
+    next();
+  }
+}
+
+
+
 async function render() {
   // This loads from http://localhost:5173/ome-zarr.js/@fs/Users/wmoore/Desktop/ZARR/ome-zarr.js/dist/ome-zarr.js
   // NB: needs `npm run build` first!
@@ -75,7 +94,8 @@ async function render() {
   // turn OFF all channels
   omeroRef.value.channels.forEach((ch) => (ch.active = false));
   // for each channel...
-  omeroRef.value.channels.forEach(async (channel, index) => {
+  // omeroRef.value.channels.forEach(async (channel, index) => {
+  for (let index = 0; index < omeroRef.value.channels.length; index++) {
     // deepcopy omero for each channel...
     let omeroCopy = JSON.parse(JSON.stringify(omeroRef.value));
     // turn on the channel we want to render...
@@ -96,7 +116,7 @@ async function render() {
 
     // replace the src
     imgSrcList.value[index] = src;
-  });
+  };
 };
 </script>
 
@@ -124,6 +144,9 @@ async function render() {
     T:
     <input @change="handleZ" type="range" min="0" max="79" v-model="theT" />
     {{ theT }}
+
+    <hr >
+    <button @click="()=>{play()}">{{ playing ? '■ Stop Movie' : '► Play Movie' }}</button>
   </div>
 
 <div :class="$style.clear_left"></div>
@@ -151,6 +174,14 @@ async function render() {
 
 .clear_left {
   clear: left;
+}
+
+button {
+  border: solid 1px #ccc;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: white;
+  cursor: pointer;
 }
 
 </style>
