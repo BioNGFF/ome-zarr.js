@@ -89,6 +89,57 @@ export function getMinMaxValues(chunk2d: any): [number, number] {
   return [minV, maxV];
 }
 
+function getPixelValueRange(dtype: string): { min: number; max: number } {
+  // Code migrated from Fileglancer
+  // Default values
+  let dtypeMin = 0;
+  let dtypeMax = 65535;
+
+  if (dtype) {
+    // const dtype;
+    console.log('Parsing dtype:', dtype);
+    // Parse numpy-style dtype strings (int8, int16, uint8, etc.)
+    if (dtype.includes('int') || dtype.includes('uint')) {
+      // Extract the numeric part for bit depth
+      const bitMatch = dtype.match(/\d+/);
+      if (bitMatch) {
+        const bitCount = parseInt(bitMatch[0]);
+        if (dtype.startsWith('u')) {
+          // Unsigned integer (uint8, uint16, etc.)
+          dtypeMin = 0;
+          dtypeMax = 2 ** bitCount - 1;
+        } else {
+          // Signed integer (int8, int16, etc.)
+          dtypeMin = -(2 ** (bitCount - 1));
+          dtypeMax = 2 ** (bitCount - 1) - 1;
+        }
+      } else {
+        // Try explicit endianness format: <byteorder><type><bytes>
+        const oldFormatMatch = dtype.match(/^[<>|]([iuf])(\d+)$/);
+        if (oldFormatMatch) {
+          const typeCode = oldFormatMatch[1];
+          const bytes = parseInt(oldFormatMatch[2], 10);
+          const bitCount = bytes * 8;
+          if (typeCode === 'i') {
+            // Signed integer
+            dtypeMin = -(2 ** (bitCount - 1));
+            dtypeMax = 2 ** (bitCount - 1) - 1;
+          } else if (typeCode === 'u') {
+            // Unsigned integer
+            dtypeMin = 0;
+            dtypeMax = 2 ** bitCount - 1;
+          }
+        } else {
+          console.warn('Could not determine min/max values for dtype: ', dtype);
+        }
+      }
+    } else {
+      console.warn('Unrecognized dtype format: ', dtype);
+    }
+  }
+  return { min: dtypeMin, max: dtypeMax };
+}
+
 export function range(start: number, end: number): number[] {
   // range(5, 10) -> [5, 6, 7, 8, 9]
   return Array.from({ length: end - start }, (_, i) => i + start);
