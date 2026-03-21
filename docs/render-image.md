@@ -30,6 +30,8 @@ img.setChannelColor(1, "0000FF");
 // set start/end range of 2nd channel
 img.setChannelStart(1, 100);
 img.setChannelEnd(1, 300);
+// set first channel inverted
+img.setChannelInvertes(0, true);
 
 // This call will load the chunks and render to rgb image
 let src = await img.render({targetSize: 500});

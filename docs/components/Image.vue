@@ -103,7 +103,6 @@ async function render() {
 
     // for Z/T slider example, set the Z/T...
     if (props.example == 'ztSliders') {
-      omeroCopy.rdefs = { defaultZ: parseInt(theZ.value), defaultT: parseInt(theT.value) };
       // we know the image is greyscale...
       omeroCopy.channels[index].color = "FFFFFF";
       omeroCopy.channels[index].window.end = 2000;

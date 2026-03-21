@@ -25,6 +25,14 @@ function toggleChannel(index, active) {
   render();
 }
 
+function invertChannel(index, inverted) {
+  console.log('invertChannel', index, inverted);
+  omeroRef.value.channels[index].inverted = inverted;
+  // update the image itself
+  img.setChannelInverted(index, inverted);
+  render();
+}
+
 function handleColor(index, event) {
   console.log('handleColor', index, event.target.value);
   omeroRef.value.channels[index].color = event.target.value.replace("#", "");
@@ -81,6 +89,10 @@ async function render() {
         <label>
           <input type="checkbox" :checked="ch.active" @click="() => { toggleChannel(index, !ch.active) }" />
           {{ ch.label }}
+        </label> |
+        <label>
+          Inverted
+          <input type="checkbox" :checked="ch.inverted" @click="() => { invertChannel(index, !ch.inverted) }" />
         </label>
         <br>
         <div>
