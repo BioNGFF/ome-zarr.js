@@ -113,6 +113,16 @@ export class NgffImage {
     omero.channels[channelIndex].inverted = inverted;
   }
 
+  setZIndex(zIndex: number) {
+    if (!this.omero) {throw new Error("No Omero metadata found in image");}
+    this.omero.rdefs.defaultZ = zIndex;
+  }
+
+  setTIndex(tIndex: number) {
+    if (!this.omero) {throw new Error("No Omero metadata found in image");}
+    this.omero.rdefs.defaultT = tIndex;
+  }
+
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
     let path: string;
@@ -136,7 +146,9 @@ export class NgffImage {
       let shape0 = shapes?.[0] || arr.shape;
       let axesNames = this.axes.map((a) => a.name || a.toString());
       let sizeC = shape0[axesNames.findIndex(a => a === 'c')] || 1;
-      this.omero = createOmero(sizeC, arr.dtype);
+      let sizeZ = shape0[axesNames.findIndex(a => a === 'z')] || 1;
+      let sizeT = shape0[axesNames.findIndex(a => a === 't')] || 1;
+      this.omero = createOmero({sizeC, sizeZ, sizeT}, arr.dtype);
       if (axesNames.includes('z')) {
         let sizeZ = shape0[axesNames.findIndex(a => a === 'z')] || 1;
         this.omero.rdefs.defaultZ = Math.floor(sizeZ / 2);

@@ -176,7 +176,7 @@
       let sizeZ = arr200.shape.at(-3);
       let interval = Math.ceil(sizeZ / 7);
       for (let zSlice = interval; zSlice <= sizeZ; zSlice += interval) {
-        img.omero.rdefs = { defaultZ: zSlice };
+        img.setIndex(zSlice);
         let src = await img.render({arr: arr200});
         let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
         document.getElementById("stack").innerHTML += html;

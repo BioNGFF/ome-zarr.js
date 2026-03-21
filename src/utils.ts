@@ -49,9 +49,12 @@ export function getDefaultVisibilities(n: number): boolean[] {
   return visibilities;
 }
 
-export function createOmero(channelCount: number, dtype: string): Omero {
-  let visibilities = getDefaultVisibilities(channelCount);
-  let colors = getDefaultColors(channelCount, visibilities);
+export function createOmero(
+  {sizeC, sizeZ, sizeT}: {sizeC: number, sizeZ?: number, sizeT?: number},
+  dtype: string
+): Omero {
+  let visibilities = getDefaultVisibilities(sizeC);
+  let colors = getDefaultColors(sizeC, visibilities);
   let minMax = getPixelValueRange(dtype);
   let channels = visibilities.map((active, i) => ({
     active,
@@ -59,8 +62,8 @@ export function createOmero(channelCount: number, dtype: string): Omero {
     window: { min: minMax.min, max: minMax.max },
   }));
   let rdefs = {
-    defaultT: 0,
-    defaultZ: 0,
+    defaultT: sizeT !== undefined ? Math.floor(sizeT / 2) : 0,
+    defaultZ: sizeZ !== undefined ? Math.floor(sizeZ / 2) : 0,
     model: "color",
   };
   return { channels, rdefs } as Omero;
