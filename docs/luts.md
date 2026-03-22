@@ -8,10 +8,6 @@ import Image from './components/Image.vue';
 
 # Look-up Tables
 
-::: warning
-ome-zarr.js is not yet stable and the API may change in patch releases.
-:::
-
 Over 40 LUTs are included in `ome-zarr.js`. Each `lut.png` is a png of `256 x 1` pixels.
 Below these are displayed with a height of `15px`:
 
@@ -25,8 +21,9 @@ omezarr.getLuts().forEach((lut) => {
 To `renderImage()` with a LUT, we can set the `lut` attribute of `omero.channels`:
 
 ```js
-omero.channels[0].lut = "fire.lut";
-let src = await omezarr.renderImage(arr, multiscale.axes, omero);
+let img = await omezarr.NgffImage.load(url);
+img.setChannelLut("fire.lut");
+let src = await img.render({targetSize: 300});
 ```
 
 Click on a LUT below to re-render the image:

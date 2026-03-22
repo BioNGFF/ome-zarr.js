@@ -111,7 +111,7 @@ async function render() {
       img.setChannelColor(index, "FFFFFF");
       img.setChannelEnd(index, 2000);
     } else if (props.example == 'luts') {
-      img.omero.channels[index].lut = lut.value;
+      img.setChannelLut(index, lut.value);
     }
 
     // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
@@ -183,7 +183,7 @@ button {
   border: solid 1px #ccc;
   padding: 5px;
   border-radius: 5px;
-  background-color: white;
+  background-color: transparent;
   cursor: pointer;
 }
 

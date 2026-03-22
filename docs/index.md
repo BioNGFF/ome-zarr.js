@@ -11,8 +11,8 @@ hero:
       text: render
       link: /render
     - theme: alt
-      text: renderImage
-      link: /render-image
+      text: Rendering Settings
+      link: /rendering-settings
 
 features:
   - title: Minimal dependencies
