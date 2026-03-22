@@ -9,7 +9,7 @@ const imgSrc = ref(null);
 
 const props = defineProps(['url']);
 
-// We store image array and metadata in these refs
+// We store image and metadata in these refs
 let img = null;
 const omeroRef = ref({ channels: [] });
 
@@ -78,12 +78,15 @@ async function render() {
 
 <template>
 
+  <!-- contains 2 divs that wrap when necessary -->
   <div :class="$style.viewer">
-    <a :href="VURL + props.url" target="_blank">
-      <img :class="$style.renderedImage" :src="imgSrc" :style="{ maxWidth: maxWidth + 'px' }" />
-    </a>
-
     <div>
+      <a :href="VURL + props.url" target="_blank">
+        <img :class="$style.renderedImage" :src="imgSrc" :style="{ maxWidth: maxWidth + 'px' }" />
+      </a>
+    </div>
+
+    <div style="width: 300px">
       <div v-for="(ch, index) in omeroRef.channels">
         <input type="color" @change="(event) => { handleColor(index, event) }" :value="'#' + ch.color" />
         <label>
@@ -120,6 +123,13 @@ label {
 .viewer {
   display: flex;
   flex-direction: row;
+}
+
+/* when screen is small */
+@media (max-width: 600px) {
+  .viewer {
+    flex-direction: column;
+  }
 }
 
 /* Range input for channel sliders */
