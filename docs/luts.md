@@ -22,7 +22,7 @@ To `renderImage()` with a LUT, we can set the `lut` attribute of `omero.channels
 
 ```js
 let img = await omezarr.NgffImage.load(url);
-img.setChannelLut("fire.lut");
+img.setChannelLut(0, "fire.lut");
 let src = await img.render({targetSize: 300});
 ```
 

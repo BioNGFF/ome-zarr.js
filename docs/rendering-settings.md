@@ -5,6 +5,7 @@ outline: deep
 <script setup>
 import Image from './components/Image.vue';
 import ImageViewer from './components/ImageViewer.vue';
+import Thumbnail from './components/Thumbnail.vue';
 </script>
 
 # Rendering settings
@@ -68,28 +69,54 @@ When updating Z and T, we keep the same Zarr array in hand. `render()` only need
 Image is from [idr0051-fulton-tailbudlightsheet](https://idr.openmicroscopy.org/webclient/?show=project-552).
 
 
-<!-- TODO: replace? -->
-<!-- ## getMultiscaleWithArray
+## Slices
 
-The first call in the `renderImage()` example above is `getMultiscaleWithArray()` and this is also used
-by `render()`. By default, this loads the first (highest resolution) `multiscale.dataset` of the pyramid,
-but the `datasetIndex` can be used to specify a different one. 
-
-It loads both the first `multiscale` metadata for the Image, as well as one of the zarr arrays from the
-`multiscale.datasets` pyramid which is used to calculate the `shapes` of all the other arrays, using the
-`scale` information from each `dataset.coordinateTransforms`. The `coordinateTransforms` metadata is not
-found in `OME-Zarr < v0.4` so in that case `shapes` will be `undefined`.
-
-The first argument can be a URL as above, or a `zarrita` store, which may be useful if you want to re-use the store:
+We can render a tile or region of an array by specifying `slices`.
 
 ```js
-let store = new zarr.FetchStore(url);
-let datasetIndex = -1;  // will load the smallest dataset array
-let { multiscale, omero, zarr_version, arr, shapes } = await omezarr.getMultiscaleWithArray(store, datasetIndex);
-// shapes is e.g. [[3, 50, 512, 512], [3, 50, 256, 256], [3, 50, 128, 128]]
-// We can use the shapes to choose our preferred array, then open it with:
-const paths = multiscale.datasets.map((d) => d.path);
-// zarr_version (2 or 3) saves an extra call for zarrita to look this up
-arr = await omezarr.getArray(store, paths[2], zarr_version);
-// now we can use the `arr` array in renderImage() as above.
-``` -->
+let url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
+// This loads the first dataset array, so we know it's shape...
+let img = await omezarr.NgffImage.load(url);
+// Calulate the shape of other arrays using 'scale' transforms
+let shapes = await img.calcShapes();
+// [8978, 6510]
+// [4489, 3255]
+// [2244, 1627]
+// [1122, 813]
+// [561, 406]
+// [280, 203]
+// [140, 101]
+// [70, 50]
+
+// render 4 tiles from the first dataset array
+let src1 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3000,3200], "y":[4000, 4200]}})
+let src2 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3200,3400], "y":[4000, 4200]}})
+let src3 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3000,3200], "y":[4200, 4400]}})
+let src4 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3200,3400], "y":[4200, 4400]}})
+```
+
+<ClientOnly>
+<table>
+<tbody>
+<tr>
+<td style="padding: 0">
+<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4000, 4200]}' arrayPathOrIndex=0 />
+</td>
+<td style="padding: 0">
+<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4000, 4200]}' arrayPathOrIndex=0 />
+</td>
+</tr>
+<tr>
+<td style="padding: 0">
+<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4200, 4400]}' arrayPathOrIndex=0 />
+</td>
+<td style="padding: 0">
+<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4200, 4400]}' arrayPathOrIndex=0 />
+</td>
+</tr>
+</tbody>
+</table>
+</ClientOnly>
+
+This functionality is used by the <a href="https://github.com/TissUUmaps/OMEZarrTileSource">OMEZarrTileSource</a> for OpenSeadragon.
+

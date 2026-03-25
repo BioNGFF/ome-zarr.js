@@ -29,14 +29,14 @@ import ThumbnailTest from './components/ThumbnailTest.vue';
 
 <!-- ClientOnly because ome-zarr.js uses browser API: document.createElement('canvas') -->
 <ClientOnly>
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" />
-<Thumbnail url="https://s3.janelia.org/funceworm/test-uint64-small.zarr/" />
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://s3.janelia.org/funceworm/test-uint64-small.zarr/" /></div>
 </ClientOnly>
 
 <div :class="$style.thumb_container"></div>
@@ -49,9 +49,12 @@ is closest to the `targetSize` will be chosen.
 ```js
 let thumbSrc = await omezarr.render(url, 300);
 ```
-
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" targetSize=300 />
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" targetSize=300 />
+<div style="float:left; margin:3px">
+  <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/" targetSize=300 />
+</div>
+<div style="float:left; margin:3px">
+  <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" targetSize=300 />
+</div>
 
 <!-- Thumbnail are float:left so we need to clear that -->
 <div :class="$style.thumb_container"></div>
@@ -72,11 +75,14 @@ let thumbSrc = await omezarr.render(url, 200, {autoBoost: true});
 
 Here we show the same Image thumbnail, with `autoBoost = false` and with `autoBoost = true`.
 
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
+<div style="float:left; margin:3px">
+  <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
  targetSize=200 />
-
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
+</div>
+<div style="float:left; margin:3px">
+  <Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
  targetSize=200 autoBoost=true />
+</div>
 
 <div :class="$style.thumb_container"></div>
 
