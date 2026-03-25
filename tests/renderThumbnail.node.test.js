@@ -1,7 +1,9 @@
 import { expect, test } from "vitest";
+import { render } from "../src/api.js";
 import { renderThumbnail } from "../src/index.js";
 import { NgffImage } from "../src/image.js";
 import { data6001240 } from "./imagesAsData.js";
+import { getPixelValueRange } from "../src/utils.js";
 
 import { PNG } from "pngjs";
 import { Buffer } from "buffer";
@@ -17,17 +19,47 @@ function rgbaFromDataUrl(dataUrl) {
   return rgba;
 }
 
-test("render6001240", async () => {
-  expect(await renderThumbnail(URL_IDR62)).toBeDefined();
-}, 10_000); // timeout in ms
-
-test("render6001240_src", async () => {
+test("old_api_render6001240_src", async () => {
   const got = await renderThumbnail(URL_IDR62);
   // compare decoded pixel bytes from data URLs
   expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
 }, 10_000); // timeout in ms
 
+test("render6001240_src", async () => {
+  const got = await render(URL_IDR62);
+  expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
+}, 10_000);
+
 test("version6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);
   expect(img.getVersion()).toEqual("0.4");
-}, 10_000);
+});
+
+test("shapes6001240", async () => {
+  const img = await NgffImage.load(URL_IDR62);
+  expect(await img.calcShapes()).toEqual([
+    [2, 236, 275, 271],
+    [2, 236, 137, 135],
+    [2, 236, 68, 67]]);
+  // If we load the SMALLEST array, calculated shapes are less accurate
+  let datasetIndex = -1;
+  const imgThumb = await NgffImage.load(URL_IDR62, datasetIndex);
+  expect(await imgThumb.calcShapes()).toEqual([
+    [2, 236, 272, 268],
+    [2, 236, 136, 134],
+    [2, 236, 68, 67]]);
+});
+
+test("getPixelValueRange", () => {
+  // test some common dtypes
+  expect(getPixelValueRange("int8")).toEqual({ min: -128, max: 127 });
+  expect(getPixelValueRange("int16")).toEqual({ min: -32768, max: 32767 });
+  expect(getPixelValueRange("int32")).toEqual({ min: -2147483648, max: 2147483647 });
+  expect(getPixelValueRange("int64")).toEqual({ min: -9223372036854775808, max: 9223372036854775807 });
+  expect(getPixelValueRange("uint8")).toEqual({ min: 0, max: 255 });
+  expect(getPixelValueRange("uint16")).toEqual({ min: 0, max: 65535 });
+  expect(getPixelValueRange("uint32")).toEqual({ min: 0, max: 4294967295 });
+  expect(getPixelValueRange("uint64")).toEqual({ min: 0, max: 18446744073709551615 });
+  expect(getPixelValueRange("float32")).toEqual({ min: 0, max: 65535 });
+  expect(getPixelValueRange("foo_bar")).toEqual({ min: 0, max: 65535 }); // default case
+});

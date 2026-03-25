@@ -194,7 +194,7 @@ export class NgffImage {
     // shapes of other arrays in the multiscale pyramid...
     const shapes = scales.map((scale) => {
       return shape.map((dim, i) =>
-        Math.ceil((dim * arrayScale[i]) / scale[i])
+        Math.floor((dim * arrayScale[i]) / scale[i])
       );
     });
     // cache the result

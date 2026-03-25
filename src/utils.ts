@@ -121,7 +121,7 @@ export function getMinMaxValues(chunk2d: any): [number, number] {
   return [minV, maxV];
 }
 
-function getPixelValueRange(dtype: string): { min: number; max: number } {
+export function getPixelValueRange(dtype: string): { min: number; max: number } {
   // Code migrated from Fileglancer
   // Default values
   let dtypeMin = 0;
