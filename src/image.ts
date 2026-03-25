@@ -22,7 +22,7 @@ export class NgffImage {
   omero?: Omero;
   axes: Axis[];
   zarr_version: 2 | 3;
-  omezarr_version?: string;
+  omezarr_version: string;
   [k: string]: unknown;
 
   constructor(attrs: OmeAttrs, store: zarr.FetchStore) {
@@ -48,7 +48,7 @@ export class NgffImage {
       // deep copy to avoid mutating original attrs object
       imgAttrs = JSON.parse(JSON.stringify(this.attrs));
       this.zarr_version = 2;
-      this.omezarr_version = imgAttrs.multiscales[0].version;
+      this.omezarr_version = imgAttrs.multiscales[0].version || "0.4";
       // check v0.1-v0.3 axes - default to 'tczyx' if not found
       this.axes = imgAttrs.multiscales[0].axes || ['t', 'c', 'z', 'y', 'x'].map((name) => ({ name }));
     }
@@ -126,6 +126,10 @@ export class NgffImage {
   setTIndex(tIndex: number) {
     if (!this.omero) {throw new Error("No Omero metadata found in image");}
     this.omero.rdefs.defaultT = tIndex;
+  }
+
+  getVersion() {
+    return this.omezarr_version;
   }
 
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {

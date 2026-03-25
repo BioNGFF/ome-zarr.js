@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { renderThumbnail } from "../src/index.js";
+import { NgffImage } from "../src/image.js";
 import { data6001240 } from "./imagesAsData.js";
 
 import { PNG } from "pngjs";
@@ -25,3 +26,8 @@ test("render6001240_src", async () => {
   // compare decoded pixel bytes from data URLs
   expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
 }, 10_000); // timeout in ms
+
+test("version6001240", async () => {
+  const img = await NgffImage.load(URL_IDR62);
+  expect(img.getVersion()).toEqual("0.4");
+}, 10_000);
