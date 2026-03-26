@@ -132,6 +132,10 @@ export class NgffImage {
     return this.omezarr_version;
   }
 
+  getZarrVersion() {
+    return this.zarr_version;
+  }
+
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
     let path: string;

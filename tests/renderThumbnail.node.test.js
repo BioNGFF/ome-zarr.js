@@ -33,6 +33,7 @@ test("render6001240_src", async () => {
 test("version6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);
   expect(img.getVersion()).toEqual("0.4");
+  expect(img.getZarrVersion()).toEqual(2);
 });
 
 test("shapes6001240", async () => {
