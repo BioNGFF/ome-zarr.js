@@ -129,7 +129,6 @@ export function getPixelValueRange(dtype: string): { min: number; max: number } 
 
   if (dtype) {
     // const dtype;
-    console.log('Parsing dtype:', dtype);
     // Parse numpy-style dtype strings (int8, int16, uint8, etc.)
     if (dtype.includes('int') || dtype.includes('uint')) {
       // Extract the numeric part for bit depth

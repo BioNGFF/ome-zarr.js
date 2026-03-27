@@ -14,6 +14,7 @@ export {
   renderTo8bitArray,
   getSlices,
   getMinMaxValues,
+  getPixelValueRange,
 } from "./utils";
 export { LUTS, getLuts } from "./luts";
 export { NgffImage } from "./image";
