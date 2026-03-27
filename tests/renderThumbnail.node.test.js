@@ -10,6 +10,10 @@ import { Buffer } from "buffer";
 
 const URL_IDR62 =
   "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
+// labels
+const URL_IDR52 =
+  "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0052A/5514375.zarr";
+const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
 
 function rgbaFromDataUrl(dataUrl) {
   // turn a data URL into decoded RGBA bytes
@@ -77,4 +81,14 @@ test("getPixelValueRange", () => {
   expect(getPixelValueRange("uint64")).toEqual({ min: 0, max: 18446744073709551615 });
   expect(getPixelValueRange("float32")).toEqual({ min: 0, max: 65535 });
   expect(getPixelValueRange("foo_bar")).toEqual({ min: 0, max: 65535 }); // default case
+});
+
+test("getLabelPaths", async () => {
+  const img = await NgffImage.load(URL_IDR52);
+  const labelPaths = await img.getLabelsPaths();
+  expect(labelPaths).toEqual(["Cell", "Chromosomes"]);
+
+  const imgNoLabels = await NgffImage.load(IDR0066);
+  const noPaths = await imgNoLabels.getLabelsPaths();
+  expect(noPaths).toEqual([]);
 });

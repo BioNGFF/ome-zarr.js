@@ -8,7 +8,8 @@ export type {
   Window,
 } from "./types/ome";
 export {
-  getArray,
+  getArray, // deprecated, use openArray instead
+  openArray,
   getMultiscale,
   getMultiscaleWithArray,
   renderTo8bitArray,

@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
-import { getArray, createOmero } from "./utils";
+import { openArray, openGroup, createOmero } from "./utils";
 import { renderImage } from "./api";
 
 export class NgffImage {
@@ -150,6 +150,21 @@ export class NgffImage {
     return this.zarr_version;
   }
 
+  async getLabelsPaths(): Promise<string[]> {
+    // Load 'labels' group and return list of labels paths, if it exists. Otherwise return empty list.
+    let labelPaths: string[] = [];
+
+    try {
+      let labelsGroup = await openGroup(this.store, "labels", this.zarr_version);
+      if (labelsGroup && labelsGroup.attrs?.labels) {
+        labelPaths = labelsGroup.attrs.labels as string[];
+      }
+    } catch (error) {
+      console.info("Failed to load labels group:", error);
+    }
+    return labelPaths;
+  }
+
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
     let path: string;
@@ -164,7 +179,7 @@ export class NgffImage {
     if (this.arrays[path]) {
       return this.arrays[path];
     }
-    let arr = await getArray(this.store, path, this.zarr_version);
+    let arr = await openArray(this.store, path, this.zarr_version);
     // cache the array for future use
     this.arrays[path] = arr;
     // since we now have array shape and dtype, we can create `omero` if doesn't exist yet

@@ -332,12 +332,42 @@ export async function getMultiscaleWithArray(
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
 
+// For backwards compatibility - keep this function
 export async function getArray(
   store: zarr.FetchStore,
   path: string,
   zarr_version: 2 | 3 | undefined
 ): Promise<zarr.Array<any>> {
-  // Open the zarr array and check size
+  // deprecation warning
+  console.warn(
+    "getArray is deprecated and will be removed in future versions. Please use openArray() instead."
+  );
+  return openArray(store, path, zarr_version);
+}
+
+export async function openArray(
+  store: zarr.FetchStore,
+  path: string,
+  zarr_version: 2 | 3 | undefined
+): Promise<zarr.Array<any>> {
+  return openZarr(store, path, zarr_version) as Promise<zarr.Array<any>>;
+}
+
+export async function openGroup(
+  store: zarr.FetchStore,
+  path: string,
+  zarr_version: 2 | 3 | undefined
+): Promise<zarr.Group<any>> {
+  return openZarr(store, path, zarr_version, "group") as Promise<zarr.Group<any>>;
+}
+
+async function openZarr(
+  store: zarr.FetchStore,
+  path: string,
+  zarr_version: 2 | 3 | undefined,
+  kind: "array" | "group" = "array"
+): Promise<zarr.Array<any> | zarr.Group<any>> {
+  // Open the zarr array or group
   let root = zarr.root(store);
   const openFn =
     zarr_version === 3
@@ -346,8 +376,7 @@ export async function getArray(
         ? zarr.open.v2
         : zarr.open;
   let zarrLocation = root.resolve(path);
-  let arr = await openFn(zarrLocation, { kind: "array" });
-
+  let arr = await openFn(zarrLocation, { kind: kind });
   return arr;
 }
 
