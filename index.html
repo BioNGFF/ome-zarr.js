@@ -37,6 +37,9 @@
     </p>
     <div id="wells"></div>
 
+    <p>We can find a labels image, render it with glasbey_inverted.lut and overlay it on the original image.</p>
+    <div id="labels"></div>
+
     <p>We can specify a targetSize to pick a larger multiscales resolution to render.
       If autoBoost" is true, contrast will be boosted if needed.</p>
     <code><pre>
@@ -75,8 +78,49 @@
         }
       }
 
+      function addRgbaArrays(imgArr, labelArr) {
+        if (imgArr.length !== labelArr.length) {
+          throw new Error("Arrays must have the same length");
+        }
+        let result = new Uint8ClampedArray(imgArr.length);
+        for (let i = 0; i < imgArr.length; i++) {
+          result[i] = Math.min(labelArr[i] || imgArr[i], 255);
+        }
+        return result;
+      }
+
+      async function renderLabels() {
+        let imgUrl = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
+        let img = await omezarr.NgffImage.load(imgUrl);
+        let datasetIndex = 0; // Specify the dataset index
+        let {data, width, height} = await img.renderRgba({targetSize: 300, autoBoost: true});
+        console.log("img renderRgba", {data, width, height});
+
+        let imgSrc = await omezarr.convertRbgDataToDataUrl(data, width, height);
+        let html = `<img src="${imgSrc}" />`;
+        document.getElementById("labels").innerHTML += html;
+
+        let labelPaths = await img.getLabelsPaths();
+        console.log("labelPaths", labelPaths);
+        let labelImage = await omezarr.NgffImage.load(imgUrl + "labels/" + labelPaths[0]);
+        labelImage.setChannelActive(0, true);
+        labelImage.setChannelLut(0, "glasbey_inverted.lut");
+        let labelRgba = await labelImage.renderRgba({targetSize: 300});
+
+        let labelSrc = await omezarr.convertRbgDataToDataUrl(labelRgba.data, labelRgba.width, labelRgba.height);
+        html = `<img src="${labelSrc}" />`;
+        document.getElementById("labels").innerHTML += html;
+
+        let overlay = addRgbaArrays(data, labelRgba.data);
+        let overlaySrc = await omezarr.convertRbgDataToDataUrl(overlay, width, height);
+        html = `<img src="${overlaySrc}" />`;
+        document.getElementById("labels").innerHTML += html;
+      }
+
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
       const omezarr = await import("/src/index.ts");
+
+      renderLabels();
 
       renderSimilarThumbs();
 
