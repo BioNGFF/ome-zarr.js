@@ -3,6 +3,7 @@ import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
 import { openArray, openGroup, createOmero } from "./utils";
 import { renderImage } from "./api";
+import { convertRbgDataToDataUrl, getRgba } from "./render";
 
 export class NgffImage {
   /**
@@ -325,7 +326,7 @@ export class NgffImage {
     return path;
   }
 
-  async render(options: {
+  async renderRgba(options: {
     // Array can be provided directly, or we will load based on targetSize or arrayPathOrIndex
     arr?: zarr.Array<any> | string,
     targetSize?: number,
@@ -335,8 +336,11 @@ export class NgffImage {
     omero?: Omero,
     maxSize?: number
   } = {}
-  ): Promise<string> {
-
+  ): Promise<{
+    data: Uint8ClampedArray;
+    width: number,
+    height: number
+  }> {
     let arr;
     if (options.arr) {
       if (typeof options.arr === "string") {
@@ -362,13 +366,13 @@ export class NgffImage {
     let maxSize = options.maxSize ?? 1000;
     let shape = arr.shape;
     let dims = shape.length;
-    let width = shape[dims - 1];
-    let height = shape[dims - 2];
+    let shape_w = shape[dims - 1];
+    let shape_h = shape[dims - 2];
     // Reject if whole plane is too big and no slices are provided.
-    if (height * width > maxSize * maxSize && !options.slices) {
+    if (shape_h * shape_w > maxSize * maxSize && !options.slices) {
       // TODO: if we have slices, we should check the size of the sliced region
       throw new Error(
-        `Array size (${width} * ${height}) is larger than specified 'maxSize' of ${maxSize} * ${maxSize}`
+        `Array size (${shape_w} * ${shape_h}) is larger than specified 'maxSize' of ${maxSize} * ${maxSize}`
       );
     }
 
@@ -378,6 +382,31 @@ export class NgffImage {
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    return renderImage(arr, this.axes, omero, slices, options.autoBoost, originalShape);
+    let { data, width, height } = await getRgba(
+      arr,
+      this.axes,
+      omero,
+      slices,
+      originalShape,
+      Boolean(options.autoBoost)
+    );
+
+    return { data, width, height };
+  }
+
+  async render(options: {
+    // Array can be provided directly, or we will load based on targetSize or arrayPathOrIndex
+    arr?: zarr.Array<any> | string,
+    targetSize?: number,
+    arrayPathOrIndex?: string | number, 
+    slices?: { [k: string]: number | [number, number] | undefined },
+    autoBoost?: boolean,
+    omero?: Omero,
+    maxSize?: number
+  } = {}
+  ): Promise<string> {
+
+    let { data, width, height } = await this.renderRgba(options);
+    return convertRbgDataToDataUrl(data, width, height);
   }
 }
