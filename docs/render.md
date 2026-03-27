@@ -138,12 +138,23 @@ one array instead of 2.
 ```js
 // This loads the image and then loads the LAST (smallest) array
 let datasetIndex = -1;  // last index
-let ngffImg = await omezarr.NgffImage.load(store, datasetIndex);
+let ngffImg = await omezarr.NgffImage.load(store, {datasetIndex});
 
 // We use the array at datasetIndex that we have alredy loaded.
-let src = await ngffImg.render({datasetIndex, autoBoost});
+let src = await ngffImg.render({arrayPathOrIndex: datasetIndex, autoBoost});
 ```
 
+If we have already have the zarr attributes in hand, then we can provide
+these and save the `NgffImage` from loading them itself:
+
+```js
+// load the zarr.json manually (or our application already has this)
+let zarrJson = await fetch("https://url/to/image.zarr/zarr.json").then((res) => res.json());
+attrs = zarrJson.attributes; // v0.6 (zarr v3) nested attributes
+
+// This won't need to load the zarr group again
+let ngffImg = await omezarr.NgffImage.load(store, {attrs});
+```
 
 
 <style module>

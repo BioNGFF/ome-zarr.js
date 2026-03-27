@@ -44,11 +44,25 @@ test("shapes6001240", async () => {
     [2, 236, 68, 67]]);
   // If we load the SMALLEST array, calculated shapes are less accurate
   let datasetIndex = -1;
-  const imgThumb = await NgffImage.load(URL_IDR62, datasetIndex);
+  const imgThumb = await NgffImage.load(URL_IDR62, {datasetIndex});
   expect(await imgThumb.calcShapes()).toEqual([
     [2, 236, 272, 268],
     [2, 236, 136, 134],
     [2, 236, 68, 67]]);
+});
+
+test("attrs6001240", async () => {
+  let zarrJson = await fetch(`${URL_IDR62}/.zattrs`).then((res) => res.json());
+  // Hack the scale (z downsampling) to test that attrs can be passed in directly
+  zarrJson.multiscales[0].datasets[0].coordinateTransformations[0].scale = [1, 1, 1, 1];
+  zarrJson.multiscales[0].datasets[1].coordinateTransformations[0].scale = [1, 2, 2, 2];
+  zarrJson.multiscales[0].datasets[2].coordinateTransformations[0].scale = [1, 4, 4, 4];
+  // This won't need to load the zarr group again
+  const img = await NgffImage.load(URL_IDR62, {attrs: zarrJson});
+  expect(await img.calcShapes()).toEqual([
+    [2, 236, 275, 271],
+    [2, 118, 137, 135],
+    [2, 59, 68, 67]]);
 });
 
 test("getPixelValueRange", () => {

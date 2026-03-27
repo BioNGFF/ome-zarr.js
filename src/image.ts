@@ -62,19 +62,33 @@ export class NgffImage {
   }
 
   // static method to load an image from a zarr store or url
-  static async load(store: zarr.FetchStore | string, datasetIndex: number = 0): Promise<NgffImage> {
+  static async load(
+    store: zarr.FetchStore | string,
+    options: {
+      datasetIndex?: number,
+      attrs?: OmeAttrs
+    } = {}
+  ): Promise<NgffImage> {
+
     if (typeof store === "string") {
       store = new zarr.FetchStore(store);
     }
-    const data = await zarr.open(store, { kind: "group" });
-    let attrs: OmeAttrs = data.attrs as OmeAttrs;
+
+    let attrs: OmeAttrs;
+    // If attrs are provided in options, use them. Otherwise, load from zarr store.
+    if (options.attrs) {
+      attrs = options.attrs;
+    } else {
+      const data = await zarr.open(store, { kind: "group" });
+      attrs = data.attrs as OmeAttrs;
+    }
     
     const img = new NgffImage(attrs, store);
 
-    // default behaviour is to open first array (or specified datasetIndex); populates `omero` if missing.
-    if (datasetIndex !== undefined) {
-      await img.openArray(datasetIndex);
-    }
+    // open first array (or specified datasetIndex); populates `omero` if missing.
+    const datasetIndex = options.datasetIndex ?? 0;
+    await img.openArray(datasetIndex);
+
     return img;
   }
 

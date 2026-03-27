@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 
-import { Axis, Channel, Omero } from "./types/ome";
+import { Axis, Channel, OmeAttrs, Omero } from "./types/ome";
 import { getRgba, convertRbgDataToDataUrl } from "./render";
 import { NgffImage } from "./image";
 
@@ -11,7 +11,8 @@ export async function render(
   targetSize?: number, 
   options: {
     autoBoost?: boolean,
-    maxSize?: number
+    maxSize?: number,
+    attrs?: OmeAttrs
   } = {},
 ): Promise<string> {
   
@@ -21,11 +22,11 @@ export async function render(
   // If no targetSize, we ONLY load the smallest array, and render same array below...
   if (targetSize == undefined) {
     arrayPathOrIndex = -1;
-    ngffImg = await NgffImage.load(store, arrayPathOrIndex);
+    ngffImg = await NgffImage.load(store, {datasetIndex: arrayPathOrIndex, attrs: options.attrs});
   } else {
     // ...but if we know the targetSize, we load the largest array here (default),
     // then use targetSize below to pick right resolution
-    ngffImg = await NgffImage.load(store);
+    ngffImg = await NgffImage.load(store, {attrs: options.attrs});
   }
 
   if (ngffImg.omero) {
