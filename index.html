@@ -97,7 +97,7 @@
         console.log("img renderRgba", {data, width, height});
 
         let imgSrc = await omezarr.convertRbgDataToDataUrl(data, width, height);
-        let html = `<img src="${imgSrc}" />`;
+        let html = `<a href="${imgUrl}"><img src="${imgSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
 
         let labelPaths = await img.getLabelsPaths();
@@ -108,12 +108,12 @@
         let labelRgba = await labelImage.renderRgba({targetSize: 300});
 
         let labelSrc = await omezarr.convertRbgDataToDataUrl(labelRgba.data, labelRgba.width, labelRgba.height);
-        html = `<img src="${labelSrc}" />`;
+        html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img src="${labelSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
 
         let overlay = addRgbaArrays(data, labelRgba.data);
         let overlaySrc = await omezarr.convertRbgDataToDataUrl(overlay, width, height);
-        html = `<img src="${overlaySrc}" />`;
+        html = `<a href="${imgUrl}"><img src="${overlaySrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
       }
 
@@ -178,6 +178,12 @@
       thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
       bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
+
+      // Check we can set channel setting on 2D image (no "c" axis)
+      let imgChick = await omezarr.NgffImage.load(IDR0066);
+      imgChick.setChannelLut(0, "fire.lut");
+      let chickSrc = await imgChick.render({targetSize: 300});
+      document.getElementById("bigThumbnails").innerHTML += `<img src="${chickSrc}" />`;
 
       // For rendering Images, we want to keep the zarr array in hand...
       // const store62 = new zarr.FetchStore(IDR0062);
