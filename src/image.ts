@@ -2,7 +2,7 @@
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
 import { openArray, openGroup, createOmero } from "./utils";
-import { renderImage } from "./api";
+// import { renderImage } from "./api";
 import { convertRbgDataToDataUrl, getRgba } from "./render";
 
 export class NgffImage {
@@ -406,7 +406,7 @@ export class NgffImage {
   } = {}
   ): Promise<string> {
 
-    let { data, width, height } = await this.renderRgba(options);
-    return convertRbgDataToDataUrl(data, width, height);
+    let { data, width } = await this.renderRgba(options);
+    return convertRbgDataToDataUrl(data, width);
   }
 }

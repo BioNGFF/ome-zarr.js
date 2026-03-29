@@ -130,21 +130,21 @@ export async function getRgba(
 
 export async function convertRbgDataToDataUrl(
   rbgData: Uint8ClampedArray,
-  width: number,
-  height: number
+  width: number
 ): Promise<string> {
+  let h = rbgData.length / (width * 4);
   if (typeof document !== "undefined") {
     const canvas = document.createElement("canvas");
     canvas.width = width;
-    canvas.height = height;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
-    ctx.putImageData(new ImageData(rbgData, width, height), 0, 0);
+    ctx.putImageData(new ImageData(rbgData, width, h), 0, 0);
     return canvas.toDataURL("image/png");
   } else {
     const { PNG } = await import("pngjs");
     const { Buffer } = await import("buffer");
-    const png = new PNG({ width, height });
+    const png = new PNG({ width, height: h });
     png.data = Buffer.from(
       rbgData.buffer,
       rbgData.byteOffset,

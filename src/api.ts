@@ -71,7 +71,7 @@ export async function renderImage(
   autoBoost: boolean = false,
   originalShape?: number[]
 ): Promise<string> {
-  let { data, width, height } = await getRgba(
+  let { data, width } = await getRgba(
     arr,
     axes,
     omero,
@@ -79,5 +79,5 @@ export async function renderImage(
     originalShape,
     autoBoost
   );
-  return convertRbgDataToDataUrl(data, width, height);
+  return convertRbgDataToDataUrl(data, width);
 }

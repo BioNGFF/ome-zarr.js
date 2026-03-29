@@ -21,6 +21,22 @@
         width: 256px;
         height: 15px;
       }
+      .checquers {
+        /* background pattern for transparency */
+        background: linear-gradient(45deg, #ccc 25%, transparent 25%),
+          linear-gradient(-45deg, #ccc 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #ccc 75%),
+          linear-gradient(-45deg, transparent 75%, #ccc 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;  
+      }
+      .fadeInOut {
+        animation: fadeInOut 3s ease-in-out infinite;
+      }
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.1; }
+      }
     </style>
   </head>
   <body>
@@ -89,32 +105,39 @@
         return result;
       }
 
+      function blackToTransparentRgba(d) {
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] === 0 && d[i + 1] === 0 && d[i + 2] === 0) {
+            d[i + 3] = 0;
+          }
+        }
+      }
+
       async function renderLabels() {
         let imgUrl = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
         let img = await omezarr.NgffImage.load(imgUrl);
-        let datasetIndex = 0; // Specify the dataset index
-        let {data, width, height} = await img.renderRgba({targetSize: 300, autoBoost: true});
-        console.log("img renderRgba", {data, width, height});
-
-        let imgSrc = await omezarr.convertRbgDataToDataUrl(data, width, height);
-        let html = `<a href="${imgUrl}"><img src="${imgSrc}" /></a>`;
+        let imsSrc = await img.render({targetSize: 300, autoBoost: true});
+        let html = `<a href="${imgUrl}"><img src="${imsSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
 
         let labelPaths = await img.getLabelsPaths();
-        console.log("labelPaths", labelPaths);
         let labelImage = await omezarr.NgffImage.load(imgUrl + "labels/" + labelPaths[0]);
         labelImage.setChannelActive(0, true);
         labelImage.setChannelLut(0, "glasbey_inverted.lut");
         let labelRgba = await labelImage.renderRgba({targetSize: 300});
+        blackToTransparentRgba(labelRgba.data);
 
-        let labelSrc = await omezarr.convertRbgDataToDataUrl(labelRgba.data, labelRgba.width, labelRgba.height);
-        html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img src="${labelSrc}" /></a>`;
+        let labelSrc = await omezarr.convertRbgDataToDataUrl(labelRgba.data, labelRgba.width);
+        html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
 
-        let overlay = addRgbaArrays(data, labelRgba.data);
-        let overlaySrc = await omezarr.convertRbgDataToDataUrl(overlay, width, height);
-        html = `<a href="${imgUrl}"><img src="${overlaySrc}" /></a>`;
-        document.getElementById("labels").innerHTML += html;
+        let overlayHtml = `<div style="position: relative; display: inline-block;">
+          <a href="${imgUrl}">
+            <img src="${imsSrc}" />
+            <img src="${labelSrc}" class="fadeInOut" style="position: absolute; top: 0; left: 0;" />
+          </a>
+        </div>`;
+        document.getElementById("labels").innerHTML += overlayHtml;
       }
 
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
@@ -148,6 +171,7 @@
       // Thumbnails...
       const urls = [
         IDR0077,
+        IDR0083,
         IDR0070,
         IDR0079,
         IDR0062,

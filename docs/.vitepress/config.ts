@@ -15,10 +15,11 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: 'Examples',
+        // text: 'Examples',
         items: [
           { text: 'render', link: '/render' },
           { text: 'Rendering Settings', link: '/rendering-settings' },
+          { text: 'Labels', link: '/labels' },
           { text: 'LUTs', link: '/luts' }
         ]
       }
