@@ -143,6 +143,16 @@
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
       const omezarr = await import("/src/index.ts");
 
+
+      let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
+      // This loads the first dataset array, so we know the image dimensions
+      let i = await omezarr.NgffImage.load(url);
+      console.log("VERSION", i.getVersion());
+      console.log("ZARR VERSION", i.getZarrVersion());
+      console.log("SCALES", i.getScales());
+      console.log("SHAPES", await i.calcShapes());
+
+
       renderLabels();
 
       renderSimilarThumbs();

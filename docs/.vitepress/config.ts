@@ -18,7 +18,7 @@ export default defineConfig({
         // text: 'Examples',
         items: [
           { text: 'render', link: '/render' },
-          { text: 'Rendering Settings', link: '/rendering-settings' },
+          { text: 'NgffImage', link: '/image' },
           { text: 'Labels', link: '/labels' },
           { text: 'LUTs', link: '/luts' }
         ]

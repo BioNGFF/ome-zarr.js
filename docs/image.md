@@ -8,7 +8,41 @@ import ImageViewer from './components/ImageViewer.vue';
 import Thumbnail from './components/Thumbnail.vue';
 </script>
 
-# Rendering settings
+# NgffImage
+
+If we want to get image metadata or set the state of an image, we can use the `NgffImage` class.
+
+```js
+let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
+
+// This loads the multiscales image and the first dataset array,
+// so we know the image dimensions
+let img = await omezarr.NgffImage.load(url);
+
+// Get the OME-Zarr version
+img.getVersion()
+// 0.5
+
+// Get the zarr_version (2 or 3)
+img.getZarrVersion()
+// 3
+
+// Use dataset coordinateTransformations to find scales for each dataset
+img.getScales()
+//   [[1, 0.5002025531914894, 0.3603981534640209, 0.3603981534640209]
+//    [1, 0.5002025531914894, 0.7207963069280418, 0.7207963069280418]
+//    [1, 0.5002025531914894, 1.4415926138560835, 1.4415926138560835]]
+
+// Shapes are calculated from the first array shape and the scales above
+await img.calcShapes()
+//   [[2, 236, 275, 271]
+//    [2, 236, 137, 135]
+//    [2, 236, 68, 67]]
+
+```
+
+
+## Rendering settings
 
 We can apply various rendering settings (color, levels, inverted) to each `Channel` in the
 image and turn channels on and off.
@@ -20,8 +54,8 @@ will be created.
 // We create a NgffImage, update rendering settings and render()
 let url = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
 
-// This loads the first array, so we know the channel count and can
-// create default settings if needed
+// When the image is loaded, default rendering settings are created
+// if there is no "omero" metadata found
 let img = await omezarr.NgffImage.load(url);
 
 // turn first channel off
