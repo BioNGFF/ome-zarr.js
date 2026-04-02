@@ -6,6 +6,7 @@ import { ref } from 'vue'
 const VURL = "https://ome.github.io/ome-ngff-validator/?source=";
 
 const imgSrc = ref(null);
+const neuroglancerUrl = ref(null);
 
 // const props = defineProps(['url']);
 
@@ -80,6 +81,11 @@ async function render() {
     };
     img.src = imgSrc.value;
 
+    // Load image for neuroglancer link and info
+    const imgForInfo = await omezarr.NgffImage.load(url.value);
+    neuroglancerUrl.value = await imgForInfo.getNeuroglancerUrl();
+
+
   } catch (error) {
     console.error("Error rendering thumbnail:", error);
     errorMsg.value = "Error rendering thumbnail: " + error;
@@ -124,6 +130,11 @@ async function render() {
     <div v-if="imgInfo">
       <h4>Image Info:</h4>
       <div>Thumbnail size: {{ naturalWidth }} x {{ naturalHeight }}</div>
+      <div>
+        <a target="_blank" :href="neuroglancerUrl">
+          Link to neuroglancer
+        </a>
+      </div>
       <div>
         Shapes (from scales info):
         <code v-for="shape in imgInfo.shapes" :key="shape.join(', ')">

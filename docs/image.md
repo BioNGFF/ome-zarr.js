@@ -33,14 +33,20 @@ img.getScales()
 //    [1, 0.5002025531914894, 0.7207963069280418, 0.7207963069280418]
 //    [1, 0.5002025531914894, 1.4415926138560835, 1.4415926138560835]]
 
+// Shape of the first array. Can use img.getShape(1) to load others
+await img.getShape()
+// [2, 236, 275, 271]
+
 // Shapes are calculated from the first array shape and the scales above
+// NB: This will be an empty list for v0.1-v0.3 (no scale info) 
 await img.calcShapes()
 //   [[2, 236, 275, 271]
 //    [2, 236, 137, 135]
 //    [2, 236, 68, 67]]
 
+await img.getNeuroglancerUrl()
+// https://neuroglancer-demo.appspot.com/#!%7B%22layers%22%3A%5B%7B%22name%22%3A%226001240_labels.zarr%22%2C%22source%22%3A%22https%3A%2F%2Flivingobjects.ebi.ac.uk%2Fidr%2Fzarr%2Fv0.5%2Fidr0062A%2F6001240_labels.zarr%2F%7Czarr3%3A%22%2C%22type%22%3A%22auto%22%7D%5D%2C%22layout%22%3A%224panel-alt%22%7D
 ```
-
 
 ## Rendering settings
 
