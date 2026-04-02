@@ -9,7 +9,7 @@ import { PNG } from "pngjs";
 import { Buffer } from "buffer";
 
 const URL_IDR62 =
-  "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
+  "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
 // labels
 const URL_IDR52 =
   "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0052A/5514375.zarr";
@@ -91,4 +91,11 @@ test("getLabelPaths", async () => {
   const imgNoLabels = await NgffImage.load(IDR0066);
   const noPaths = await imgNoLabels.getLabelsPaths();
   expect(noPaths).toEqual([]);
+});
+
+test("neuroglancerUrl6001240", async () => {
+  const img = await NgffImage.load(URL_IDR62);
+  const url = await img.getNeuroglancerUrl();
+  expect(url).toContain("neuroglancer");
+  expect(url).toEqual("https://neuroglancer-demo.appspot.com/#!%7B%22layers%22%3A%5B%7B%22name%22%3A%226001240.zarr%22%2C%22source%22%3A%22https%3A%2F%2Flivingobjects.ebi.ac.uk%2Fidr%2Fzarr%2Fv0.4%2Fidr0062A%2F6001240.zarr%2F%7Czarr2%3A%22%2C%22type%22%3A%22auto%22%7D%5D%2C%22layout%22%3A%224panel-alt%22%7D");
 });

@@ -4,6 +4,7 @@ import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./t
 import { openArray, openGroup, createOmero } from "./utils";
 // import { renderImage } from "./api";
 import { convertRbgDataToDataUrl, getRgba } from "./render";
+import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
 export class NgffImage {
   /**
@@ -14,6 +15,7 @@ export class NgffImage {
    * @minItems 1
    */
   attrs: OmeAttrs;
+  imgAttrs: ImageAttrs;
   store: zarr.FetchStore;
   multiscales: [Multiscale, ...Multiscale[]];
   paths: string[];
@@ -30,31 +32,30 @@ export class NgffImage {
     // Handle v0.4 or v0.5 to get the multiscale object
     // attrs is just the dictionary we get from zarr
     this.store = store;
-    let imgAttrs: ImageAttrs;
     if ("ome" in attrs) {
       this.attrs = attrs as ImageAttrsV5;
       // deep copy to avoid mutating original attrs object
-      imgAttrs = JSON.parse(JSON.stringify(this.attrs.ome));
+      this.imgAttrs = JSON.parse(JSON.stringify(this.attrs.ome));
       this.zarr_version = 3;
-      this.omezarr_version = imgAttrs.version;
-      this.axes = imgAttrs.multiscales[0].axes;
+      this.omezarr_version = this.imgAttrs.version;
+      this.axes = this.imgAttrs.multiscales[0].axes;
       // v0.6 moved 'axes' into coordinateSystems
       // TODO: Don't just pick the first coordinateSystem - handle multiple coordinateSystems properly
-      if (!this.axes && imgAttrs.multiscales[0].coordinateSystems?.[0]?.axes) {
-        this.axes = imgAttrs.multiscales[0].coordinateSystems[0].axes;
+      if (!this.axes && this.imgAttrs.multiscales[0].coordinateSystems?.[0]?.axes) {
+        this.axes = this.imgAttrs.multiscales[0].coordinateSystems[0].axes;
       }
     } else {
       // Just copy over the fields for v0.4
       this.attrs = attrs as ImageAttrs;
       // deep copy to avoid mutating original attrs object
-      imgAttrs = JSON.parse(JSON.stringify(this.attrs));
+      this.imgAttrs = JSON.parse(JSON.stringify(this.attrs));
       this.zarr_version = 2;
-      this.omezarr_version = imgAttrs.multiscales[0].version || "0.4";
+      this.omezarr_version = this.imgAttrs.multiscales[0].version || "0.4";
       // check v0.1-v0.3 axes - default to 'tczyx' if not found
-      this.axes = imgAttrs.multiscales[0].axes || ['t', 'c', 'z', 'y', 'x'].map((name) => ({ name }));
+      this.axes = this.imgAttrs.multiscales[0].axes || ['t', 'c', 'z', 'y', 'x'].map((name) => ({ name }));
     }
-    this.multiscales = imgAttrs.multiscales;
-    this.omero = imgAttrs.omero;
+    this.multiscales = this.imgAttrs.multiscales;
+    this.omero = this.imgAttrs.omero;
 
     // for convenience, we also add top-level keys for the most commonly used fields
     this.paths = this.multiscales[0].datasets.map((d) => d.path);
@@ -143,6 +144,11 @@ export class NgffImage {
     this.omero.rdefs.defaultT = tIndex;
   }
 
+  async getShape(datasetIndex: number = 0): Promise<number[]> {
+    let arr = await this.openArray(datasetIndex);
+    return arr.shape;
+  }
+
   getVersion() {
     return this.omezarr_version;
   }
@@ -165,6 +171,20 @@ export class NgffImage {
     }
     return labelPaths;
   }
+
+  async getNeuroglancerUrl(): Promise<string> {
+    const neuroglancerBaseUrl = 'https://neuroglancer-demo.appspot.com/#!';
+    let dataUrl = this.store.url || '' as string;
+    if (!dataUrl) {
+      throw new Error("Cannot generate Neuroglancer URL: store does not have a URL");
+    }
+    // e.g. https://neuroglancer-demo.appspot.com/#!%7B%22layers%22%3A%5B%7B%22name%22%3A%2224569.zarr%22%2C%22source%22%3A%22http%3A%2F%2Flocalhost%3A7878%2Ffiles%2FHDrAc_wcNeqdG7dj%2F24569.zarr%2F%7Czarr2%3A%22%2C%22type%22%3A%22auto%22%7D%5D%2C%22layout%22%3A%224panel-alt%22%7D
+    let zarrVersion = this.getZarrVersion();
+    let layerType = this.imgAttrs["image-label"] ? 'segmentation' : 'auto' as LayerType;  // 'auto' | 'image' | 'segmentation'
+    let shape = await this.getShape();
+    return neuroglancerBaseUrl + generateNeuroglancerStateForOmeZarr(dataUrl.toString(), zarrVersion, layerType, this.axes, shape);
+  }
+
 
   async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
