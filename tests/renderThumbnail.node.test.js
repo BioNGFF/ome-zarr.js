@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { renderThumbnail } from "../src/index.js";
+import { renderThumbnail } from "../src/index.ts";
 import { data6001240 } from "./imagesAsData.js";
 
 import { PNG } from "pngjs";
@@ -25,3 +25,13 @@ test("render6001240_src", async () => {
   // compare decoded pixel bytes from data URLs
   expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
 }, 10_000); // timeout in ms
+
+test("render6001240_signal", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await expect(
+    renderThumbnail(URL_IDR62, undefined, false, 1000, {
+      signal: controller.signal,
+    })
+  ).rejects.toThrow();
+});
