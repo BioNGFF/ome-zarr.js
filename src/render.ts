@@ -17,8 +17,11 @@ export async function renderThumbnail(
   store: zarr.FetchStore | string,
   targetSize: number | undefined = undefined,
   autoBoost: boolean = false,
-  maxSize: number = 1000
+  maxSize: number = 1000,
+  options?: { signal?: AbortSignal }
 ): Promise<string> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
   if (typeof store === "string") {
     store = new zarr.FetchStore(store);
   }
@@ -26,7 +29,8 @@ export async function renderThumbnail(
   // Lets load SMALLEST resolution and render it as a thumbnail
   const datasetIndex = -1;
   let { multiscale, omero, zarr_version, arr, shapes } =
-    await getMultiscaleWithArray(store, datasetIndex);
+    await getMultiscaleWithArray(store, datasetIndex, { signal });
+  signal?.throwIfAborted();
 
   // targetSize is specified, may need to load a different resolution...
   // pick a different dataset level if we want a different size
@@ -77,7 +81,8 @@ export async function renderThumbnail(
       }
     }
     let path = paths[pathIndex];
-    arr = await getArray(store, path, zarr_version);
+    arr = await getArray(store, path, zarr_version, { signal });
+    signal?.throwIfAborted();
   }
 
   // we want to remove any start/end values from window, to calculate min/max
@@ -102,8 +107,12 @@ export async function renderImage(
   omero: Omero | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
   autoBoost: boolean = false,
-  originalShape?: number[]
+  originalShape?: number[],
+  options?: { signal?: AbortSignal }
 ): Promise<string> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
+
   // Main rendering function...
   // We have the zarr Array already in hand, axes for dimensions
   // and omero for rendering settings
@@ -114,10 +123,12 @@ export async function renderImage(
     omero,
     sliceIndices,
     originalShape,
-    autoBoost
+    autoBoost,
+    { signal }
   );
+  signal?.throwIfAborted();
 
-  return convertRbgDataToDataUrl(data, width, height);
+  return await convertRbgDataToDataUrl(data, width, height);
 }
 
 async function getRgba(
@@ -126,12 +137,16 @@ async function getRgba(
   omero: Omero | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
-  autoBoost: boolean
+  autoBoost: boolean,
+  options?: { signal?: AbortSignal }
 ): Promise<{
   data: Uint8ClampedArray;
-  width: number,
-  height: number
+  width: number;
+  height: number;
 }> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
+
   let shape = arr.shape;
 
   // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'
@@ -202,8 +217,11 @@ async function getRgba(
   );
 
   // Wait for all chunks to be fetched...
-  let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));
+  let promises = chSlices.map((chSlice: any) =>
+    zarr.get(arr, chSlice, { opts: { signal } })
+  );
   let ndChunks = await Promise.all(promises);
+  signal?.throwIfAborted();
 
   // Use start/end values from 'omero' if available, otherwise calculate min/max
   let minMaxValues = activeChannelIndices.map(
