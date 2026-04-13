@@ -1,5 +1,8 @@
-import { expect, test } from "vitest";
+import * as zarr from "zarrita";
+
+import { describe, expect, test } from "vitest";
 import { renderThumbnail } from "../src/index.ts";
+import { getGroup } from "../src/utils.ts";
 import { data6001240 } from "./imagesAsData.js";
 
 import { PNG } from "pngjs";
@@ -16,22 +19,34 @@ function rgbaFromDataUrl(dataUrl) {
   return rgba;
 }
 
-test("render6001240", async () => {
-  expect(await renderThumbnail(URL_IDR62)).toBeDefined();
-}, 10_000); // timeout in ms
+describe("renderThumbnail", () => {
+  test("render6001240_fromURL", async () => {
+    const result = await renderThumbnail(URL_IDR62);
+    expect(result).toBeDefined();
+    expect(rgbaFromDataUrl(result)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000); // timeout in ms
 
-test("render6001240_src", async () => {
-  const got = await renderThumbnail(URL_IDR62);
-  // compare decoded pixel bytes from data URLs
-  expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
-}, 10_000); // timeout in ms
+  test("render6001240_fromFetchStore", async () => {
+    const store = new zarr.FetchStore(URL_IDR62);
+    const result = await renderThumbnail(store);
+    expect(result).toBeDefined();
+    expect(rgbaFromDataUrl(result)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000); // timeout in ms
 
-test("render6001240_signal", async () => {
-  const controller = new AbortController();
-  controller.abort();
-  await expect(
-    renderThumbnail(URL_IDR62, undefined, false, 1000, {
-      signal: controller.signal,
-    })
-  ).rejects.toThrow();
+  test("render6001240_fromGroup", async () => {
+    const group = await getGroup(URL_IDR62);
+    const result = await renderThumbnail(group);
+    expect(result).toBeDefined();
+    expect(rgbaFromDataUrl(result)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000); // timeout in ms
+
+  test("render6001240_signal", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      renderThumbnail(URL_IDR62, undefined, false, 1000, {
+        signal: controller.signal,
+      })
+    ).rejects.toThrow();
+  }, 10_000); // timeout in ms
 });
