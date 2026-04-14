@@ -126,7 +126,7 @@ test("getLabelPaths", async () => {
   const imgNoLabels = await NgffImage.load(IDR0066);
   const noPaths = await imgNoLabels.getLabelsPaths();
   expect(noPaths).toEqual([]);
-}, 1_000);
+}, 10_000);
 
 test("neuroglancerUrl6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);
