@@ -19,7 +19,7 @@ function blackToTransparentRgba(d) {
 }
 
 // load and render the parent image
-let url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
+let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
 let img = await omezarr.NgffImage.load(url);
 let imgSrc = await img.render({targetSize: 300});
 document.getElementById("img").src = labelSrc;

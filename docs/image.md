@@ -58,7 +58,7 @@ will be created.
 
 ```js
 // We create a NgffImage, update rendering settings and render()
-let url = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
+let url = "https://livingobjects.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
 
 // When the image is loaded, default rendering settings are created
 // if there is no "omero" metadata found
@@ -104,7 +104,7 @@ let src = await img.render({targetSize: 300});
 When updating Z and T, we keep the same Zarr array in hand. `render()` only needs to fetch the zarr chunks for each re-render. 
 
 <ClientOnly>
-<Image url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD815/c49efcfd-e767-4ae5-adbf-299cafd92120/c49efcfd-e767-4ae5-adbf-299cafd92120.zarr/0/" autoBoost=true example="ztSliders" />
+<Image url="https://livingobjects.ebi.ac.uk/idr/share/ome2024-ngff-challenge/idr0051/180712_H2B_22ss_Courtney1_20180712-163837_p00_c00_preview.zarr/0/" autoBoost=true example="ztSliders" />
 </ClientOnly>
 
 
@@ -116,7 +116,7 @@ Image is from [idr0051-fulton-tailbudlightsheet](https://idr.openmicroscopy.org/
 We can render a tile or region of an array by specifying `slices`.
 
 ```js
-let url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
+let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
 // This loads the first dataset array, so we know it's shape...
 let img = await omezarr.NgffImage.load(url);
 // Calulate the shape of other arrays using 'scale' transforms
@@ -142,18 +142,18 @@ let src4 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3200,3400], "y":[
 <tbody>
 <tr>
 <td style="padding: 0">
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4000, 4200]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4000, 4200]}' arrayPathOrIndex=0 />
 </td>
 <td style="padding: 0">
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4000, 4200]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4000, 4200]}' arrayPathOrIndex=0 />
 </td>
 </tr>
 <tr>
 <td style="padding: 0">
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4200, 4400]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4200, 4400]}' arrayPathOrIndex=0 />
 </td>
 <td style="padding: 0">
-<Thumbnail url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4200, 4400]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4200, 4400]}' arrayPathOrIndex=0 />
 </td>
 </tr>
 </tbody>

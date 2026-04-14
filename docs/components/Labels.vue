@@ -21,7 +21,7 @@ onMounted(async () => {
   }
 
   let url =
-    "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
+    "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
   let img = await omezarr.NgffImage.load(url);
   imgSrc.value = await img.render({ targetSize: 300 });
 
@@ -48,7 +48,7 @@ onMounted(async () => {
   <a
     :href="
       VURL +
-      `https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/`
+      `https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/`
     "
     target="_blank"
   >

@@ -58,12 +58,6 @@
 
     <p>We can specify a targetSize to pick a larger multiscales resolution to render.
       If autoBoost" is true, contrast will be boosted if needed.</p>
-    <code><pre>
-      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
-      let thumbSrc = await omezarr.render(IDR0066, 300);
-      let thumbSrc = await omezarr.render(IDR0066, 300, {autoBoost: true});
-      </pre>
-    </code>
     <div id="bigThumbnails"></div>
 
     <p>We can choose various rendering settings etc. "Inverted" is a orthogonal view</p>
@@ -114,7 +108,7 @@
       }
 
       async function renderLabels() {
-        let imgUrl = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
+        let imgUrl = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
         let img = await omezarr.NgffImage.load(imgUrl);
         let imsSrc = await img.render({targetSize: 300, autoBoost: true});
         let html = `<a href="${imgUrl}"><img src="${imsSrc}" /></a>`;
@@ -160,27 +154,27 @@
       renderSimilarThumbs();
 
       const OXZ = "https://livingobjects.ebi.ac.uk/bioimaging-sandbox/testbucket-bia/test-ozx/6001240.ozx";
-      const IDR0079_2_LABELS = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
+      const IDR0079_2_LABELS = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
       const IDR0062 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
+        "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
       const IDR0048 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
+        "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
       const IDR0083 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr";
-      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"; // OME-Zarr v0.5
+        "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr";
+      const IDR0066 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"; // OME-Zarr v0.5
 
       // v0.1 (no axes)
-      const IDR0077 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr";
+      const IDR0077 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr";
       // v0.2 (no axes)
-      const IDR0070 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/";
+      const IDR0070 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/";
       // v0.3
-      const IDR0079 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
+      const IDR0079 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
 
       // https://github.com/BioNGFF/ome-zarr.js/issues/9
       const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64-small.zarr/";
 
       // v0.6 (coordinateSystems instead of axes)
-      const V06_IDR067 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
+      const V06_IDR067 = "https://livingobjects.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
 
       // Thumbnails...
       const urls = [

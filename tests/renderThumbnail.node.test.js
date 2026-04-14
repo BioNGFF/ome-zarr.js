@@ -16,8 +16,8 @@ const URL_IDR62 =
   "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
 // labels
 const URL_IDR52 =
-  "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0052A/5514375.zarr";
-const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
+  "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0052A/5514375.zarr";
+const IDR0066 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"
 
 function rgbaFromDataUrl(dataUrl) {
   // turn a data URL into decoded RGBA bytes

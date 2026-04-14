@@ -25,7 +25,7 @@ and the lowest resolution of the multiscales pyramid by default:
 ```javascript
 import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js@latest/+esm";
 
-const url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
+const url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
 let src = await omezarr.render(url);
 document.getElementById("thumbnail").src = src;
 ```

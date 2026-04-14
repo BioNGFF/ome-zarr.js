@@ -29,7 +29,7 @@ let src = await img.render({targetSize: 300});
 Click on a LUT below to re-render the image:
 
 <ClientOnly>
-<Image url="https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr" autoBoost=true example="luts" />
+<Image url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr" autoBoost=true example="luts" />
 </ClientOnly>
 
 <div :class="$style.clear_left"></div>
