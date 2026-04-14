@@ -15,14 +15,15 @@ const autoBoost = Boolean(props.autoBoost);
 
 const maxWidth = (props.example == 'splitView') ? 200 : 500;
 
-// We store image array and metadata in these refs
-let arrRef = null;
+// We store image for doing the rendering
+let img = null;
+// omero ref used for UI components
 const omeroRef = ref({channels: []});
-const multiscaleRef = ref(null);
 
 
 const luts = ref([]);
 const lut = ref("fire.lut");
+const playing = ref(false);
 
 // hard-coded for now
 const theZ = ref(100);
@@ -41,10 +42,9 @@ onMounted(async () => {
   }
 
   // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-  const {arr, omero, multiscale} = await omezarr.getMultiscaleWithArray(props.url);
-  arrRef = arr;
-  omeroRef.value = omero;
-  multiscaleRef.value = multiscale;
+  img = await omezarr.NgffImage.load(props.url);
+  // make a deep copy so we don't mix Vue refs with the original image object
+  omeroRef.value = JSON.parse(JSON.stringify(img.omero));
 
   console.log("onMounted omero", omeroRef.value);
   render();
@@ -53,6 +53,13 @@ onMounted(async () => {
 
 function handleZ(event) {
   console.log('handleZ', event.target.value, theZ.value);
+  img.setZIndex(parseInt(theZ.value));
+  render();
+}
+
+function handleT(event) {
+  console.log('handleT', event.target.value, theT.value);
+  img.setTIndex(parseInt(theT.value));
   render();
 }
 
@@ -61,42 +68,58 @@ function handleLut(lutName) {
   render();
 }
 
+function play() {
+  playing.value = !playing.value;
+  let t = theT.value;
+  async function next() {
+    theT.value = t;
+    t = (t + 1) % 79;
+    img.setTIndex(parseInt(theT.value));
+    await render();
+    if (playing.value) {
+      setTimeout(next, 50);
+    }
+  }
+  if (playing.value) {
+    next();
+  }
+}
+
+
+
 async function render() {
   // This loads from http://localhost:5173/ome-zarr.js/@fs/Users/wmoore/Desktop/ZARR/ome-zarr.js/dist/ome-zarr.js
   // NB: needs `npm run build` first!
-
-  console.log("rendering omeroRef.value", omeroRef.value);
 
   if (imgSrcList.length == 0) {
     // initialize imgSrcList
     omeroRef.value.channels.forEach((ch) => imgSrcList.value.push(""));
   }
 
-  // turn OFF all channels
-  omeroRef.value.channels.forEach((ch) => (ch.active = false));
   // for each channel...
-  omeroRef.value.channels.forEach(async (channel, index) => {
-    // deepcopy omero for each channel...
-    let omeroCopy = JSON.parse(JSON.stringify(omeroRef.value));
+  for (let index = 0; index < omeroRef.value.channels.length; index++) {
+    // turn OFF all channels
+    for (let index = 0; index < omeroRef.value.channels.length; index++) {
+      img.setChannelActive(index, false);
+    }
     // turn on the channel we want to render...
-    omeroCopy.channels[index].active = true;
+    img.setChannelActive(index, true);
 
     // for Z/T slider example, set the Z/T...
     if (props.example == 'ztSliders') {
-      omeroCopy.rdefs = { defaultZ: parseInt(theZ.value), defaultT: parseInt(theT.value) };
       // we know the image is greyscale...
-      omeroCopy.channels[index].color = "FFFFFF";
-      omeroCopy.channels[index].window.end = 2000;
+      img.setChannelColor(index, "FFFFFF");
+      img.setChannelEnd(index, 2000);
     } else if (props.example == 'luts') {
-      omeroCopy.channels[index].lut = lut.value;
+      img.setChannelLut(index, lut.value);
     }
 
     // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-    let src = await omezarr.renderImage(arrRef, multiscaleRef.value.axes, omeroCopy, {}, autoBoost);
+    let src = await img.render({targetSize: 300, autoBoost});
 
     // replace the src
     imgSrcList.value[index] = src;
-  });
+  };
 };
 </script>
 
@@ -122,8 +145,11 @@ async function render() {
     {{ theZ }}
     <br>
     T:
-    <input @change="handleZ" type="range" min="0" max="79" v-model="theT" />
+    <input @change="handleT" type="range" min="0" max="79" v-model="theT" />
     {{ theT }}
+
+    <hr >
+    <button @click="()=>{play()}">{{ playing ? '■ Stop Movie' : '► Play Movie' }}</button>
   </div>
 
 <div :class="$style.clear_left"></div>
@@ -151,6 +177,14 @@ async function render() {
 
 .clear_left {
   clear: left;
+}
+
+button {
+  border: solid 1px #ccc;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: transparent;
+  cursor: pointer;
 }
 
 </style>

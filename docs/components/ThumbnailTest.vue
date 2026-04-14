@@ -6,6 +6,7 @@ import { ref } from 'vue'
 const VURL = "https://ome.github.io/ome-ngff-validator/?source=";
 
 const imgSrc = ref(null);
+const neuroglancerUrl = ref(null);
 
 // const props = defineProps(['url']);
 
@@ -13,7 +14,7 @@ const imgSrc = ref(null);
 let arrRef = null;
 // const omeroRef = ref({ channels: [] });
 // const multiscaleRef = ref(null);
-const url = ref("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr");
+const url = ref("https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr");
 const targetSize = ref(100);
 const setTargetSize = ref(true);
 const boostRef = ref(false);
@@ -25,7 +26,7 @@ const imgInfo = ref(null);
 const naturalWidth = ref(0);
 const naturalHeight = ref(0);
 
-const maxWidth = 450;
+const maxWidth = 650;
 
 let omezarr;
 
@@ -80,6 +81,11 @@ async function render() {
     };
     img.src = imgSrc.value;
 
+    // Load image for neuroglancer link and info
+    const imgForInfo = await omezarr.NgffImage.load(url.value);
+    neuroglancerUrl.value = await imgForInfo.getNeuroglancerUrl();
+
+
   } catch (error) {
     console.error("Error rendering thumbnail:", error);
     errorMsg.value = "Error rendering thumbnail: " + error;
@@ -100,7 +106,7 @@ async function render() {
     <div :class="$style.row">
       <label for="setTargetSize">Set Target Size</label>
       <input type="checkbox" id="setTargetSize" v-model="setTargetSize" @change="render" />
-      <input :disabled="!setTargetSize" type="range" min="1" max="500" step="1" v-model="targetSize"
+      <input :disabled="!setTargetSize" type="range" min="1" max="2000" step="1" v-model="targetSize"
         @change="event => text = handleUrl(event)" />
       <label>targetSize: {{ targetSize }}</label>
     </div>
@@ -116,12 +122,19 @@ async function render() {
       <label>maxSize: {{ maxSize }}</label>
     </div>
     <div>
-      <img :class="$style.renderedImage" :src="imgSrc" :style="{ maxWidth: maxWidth + 'px', float: 'none' }" />
+      <a :href="`https://ome.github.io/ome-ngff-validator/?source=${url}`" target="_blank">
+        <img :class="$style.renderedImage" :src="imgSrc" :style="{ maxWidth: maxWidth + 'px', float: 'none' }" />
+      </a>
     </div>
     <div v-if="errorMsg" :style="{ color: 'red' }">{{ errorMsg }}</div>
     <div v-if="imgInfo">
       <h4>Image Info:</h4>
       <div>Thumbnail size: {{ naturalWidth }} x {{ naturalHeight }}</div>
+      <div>
+        <a target="_blank" :href="neuroglancerUrl">
+          Link to neuroglancer
+        </a>
+      </div>
       <div>
         Shapes (from scales info):
         <code v-for="shape in imgInfo.shapes" :key="shape.join(', ')">

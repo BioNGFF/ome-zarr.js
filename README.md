@@ -19,22 +19,19 @@ The URL must point to a `multiscales` image (not a `plate` or `bioformats2raw.la
 
 ## Usage
 
-`renderThumbnail()` uses rendering settings from the `omero` metadata if the zarr image has it
+`render()` uses rendering settings from the `omero` metadata if the zarr image has it
 and the lowest resolution of the multiscales pyramid by default:
 
 ```javascript
 import * as omezarr from "https://cdn.jsdelivr.net/npm/ome-zarr.js@latest/+esm";
 
-const url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
-let src = await omezarr.renderThumbnail(url);
+const url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr";
+let src = await omezarr.render(url);
 document.getElementById("thumbnail").src = src;
 ```
 
-`renderImage()` uses the highest resolution dataset by default and allows you to
-specify rendering settings, Z/T indices.
-
-We can choose to use different resolutions of the multiscales pyramid and to render
-a smaller region. See docs above for more details.
+We can choose to use different resolutions of the multiscales pyramid, to apply rendering settings
+and to render a smaller region of the image. See docs above for more details.
 
 
 ## Demo and Development

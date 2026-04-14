@@ -1,7 +1,9 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
-import { ImageAttrs, Multiscale, Omero } from "./types/ome";
+import { Multiscale, Omero } from "./types/ome";
 import { getLutRgb } from "./luts";
+import { NgffImage } from "./image";
+
 
 export const MAX_CHANNELS = 3;
 export const COLORS = {
@@ -15,7 +17,7 @@ export const COLORS = {
 };
 export const MAGENTA_GREEN = [COLORS.magenta, COLORS.green];
 export const RGB = [COLORS.red, COLORS.green, COLORS.blue];
-export const CYMRGB = Object.values(COLORS).slice(0, -2);
+export const CYMRGB = Object.values(COLORS);
 
 // this duplicates Slice() from zarrita as I couldn't import it
 export interface Slice {
@@ -23,13 +25,6 @@ export interface Slice {
   stop: number | null;
   step: number | null;
 }
-
-// For now, the only difference we care about between v0.4 and v0.5 is the nesting
-// of the ImageAttrs object within an 'ome' key.
-export interface ImageAttrsV5 {
-  ome: ImageAttrs;
-}
-type OmeAttrs = ImageAttrs | ImageAttrsV5;
 
 export function hexToRGB(hex: string): [number, number, number] {
   if (hex.startsWith("#")) hex = hex.slice(1);
@@ -54,10 +49,30 @@ export function getDefaultVisibilities(n: number): boolean[] {
   return visibilities;
 }
 
+export function createOmero(
+  {sizeC, sizeZ, sizeT}: {sizeC: number, sizeZ?: number, sizeT?: number},
+  dtype: string
+): Omero {
+  let visibilities = getDefaultVisibilities(sizeC);
+  let colors = getDefaultColors(sizeC, visibilities);
+  let minMax = getPixelValueRange(dtype);
+  let channels = visibilities.map((active, i) => ({
+    active,
+    color: colors[i],
+    window: { min: minMax.min, max: minMax.max },
+  }));
+  let rdefs = {
+    defaultT: sizeT !== undefined ? Math.floor(sizeT / 2) : 0,
+    defaultZ: sizeZ !== undefined ? Math.floor(sizeZ / 2) : 0,
+    model: "color",
+  };
+  return { channels, rdefs } as Omero;
+}
+
 export function getDefaultColors(
   n: number,
   visibilities: boolean[]
-): [number, number, number][] {
+): string[] {
   let colors: string[] = [];
   if (n == 1) {
     colors = [COLORS.white];
@@ -77,6 +92,18 @@ export function getDefaultColors(
       colors[visibleIndex] = CYMRGB[i];
     }
   }
+  colors = colors.map(color => {
+    if (color.startsWith("#")) color = color.slice(1);
+    return color;
+  });
+  return colors;
+}
+
+export function getDefaultRgbColors(
+  n: number,
+  visibilities: boolean[]
+): [number, number, number][] {
+  let colors = getDefaultColors(n, visibilities);
   return colors.map(hexToRGB);
 }
 
@@ -92,6 +119,56 @@ export function getMinMaxValues(chunk2d: any): [number, number] {
     minV = Math.min(minV, rawValue);
   }
   return [minV, maxV];
+}
+
+export function getPixelValueRange(dtype: string): { min: number; max: number } {
+  // Code migrated from Fileglancer
+  // Default values
+  let dtypeMin = 0;
+  let dtypeMax = 65535;
+
+  if (dtype) {
+    // const dtype;
+    // Parse numpy-style dtype strings (int8, int16, uint8, etc.)
+    if (dtype.includes('int') || dtype.includes('uint')) {
+      // Extract the numeric part for bit depth
+      const bitMatch = dtype.match(/\d+/);
+      if (bitMatch) {
+        const bitCount = parseInt(bitMatch[0]);
+        if (dtype.startsWith('u')) {
+          // Unsigned integer (uint8, uint16, etc.)
+          dtypeMin = 0;
+          dtypeMax = 2 ** bitCount - 1;
+        } else {
+          // Signed integer (int8, int16, etc.)
+          dtypeMin = -(2 ** (bitCount - 1));
+          dtypeMax = 2 ** (bitCount - 1) - 1;
+        }
+      } else {
+        // Try explicit endianness format: <byteorder><type><bytes>
+        const oldFormatMatch = dtype.match(/^[<>|]([iuf])(\d+)$/);
+        if (oldFormatMatch) {
+          const typeCode = oldFormatMatch[1];
+          const bytes = parseInt(oldFormatMatch[2], 10);
+          const bitCount = bytes * 8;
+          if (typeCode === 'i') {
+            // Signed integer
+            dtypeMin = -(2 ** (bitCount - 1));
+            dtypeMax = 2 ** (bitCount - 1) - 1;
+          } else if (typeCode === 'u') {
+            // Unsigned integer
+            dtypeMin = 0;
+            dtypeMax = 2 ** bitCount - 1;
+          }
+        } else {
+          console.warn('Could not determine min/max values for dtype: ', dtype);
+        }
+      }
+    } else {
+      console.warn('Unrecognized dtype format: ', dtype);
+    }
+  }
+  return { min: dtypeMin, max: dtypeMax };
 }
 
 export function range(start: number, end: number): number[] {
@@ -213,6 +290,7 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
   return hist;
 }
 
+// For backwards compatibility - keep this function
 export async function getMultiscale(
   group: zarr.Group<zarr.Readable> | zarr.Readable | string,
   options?: { signal?: AbortSignal }
@@ -221,34 +299,12 @@ export async function getMultiscale(
   omero: Omero | null | undefined;
   zarr_version: 2 | 3;
 }> {
-  const { signal } = options ?? {};
-  signal?.throwIfAborted();
-  if (!(group instanceof zarr.Group)) {
-    group = await getGroup(group, undefined, undefined, { signal });
-    signal?.throwIfAborted();
-  }
-  let attrs: OmeAttrs = group.attrs as OmeAttrs;  
-
-  // Handle v0.4 or v0.5 to get the multiscale object
-  let multiscale: Multiscale;
-  let omero: Omero | null | undefined;
-  let zarr_version: 2 | 3 = 2;
-  if ("ome" in attrs) {
-    attrs = attrs as ImageAttrsV5;
-    multiscale = attrs.ome.multiscales[0];
-    omero = attrs.ome.omero;
-    zarr_version = 3;
-  } else {
-    attrs = attrs as ImageAttrs;
-    multiscale = attrs.multiscales[0];
-    omero = attrs.omero;
-  }
-  // v0.6 moved 'axes' into coordinateSystems
-  // In this case we "move it back" for compatibility
-  if (!multiscale.axes && multiscale.coordinateSystems?.[0]?.axes) {
-    multiscale.axes = multiscale.coordinateSystems[0].axes;
-  }
-  return { multiscale, omero, zarr_version };
+  const img = await NgffImage.load(group, options);
+  return {
+    multiscale: img.multiscales[0],
+    omero: img.omero,
+    zarr_version: img.zarr_version,
+  };
 }
 
 export async function getMultiscaleWithArray(
@@ -263,89 +319,37 @@ export async function getMultiscaleWithArray(
   scales: number[][];
   zarr_version: 2 | 3;
 }> {
-  const { signal } = options ?? {};
-  signal?.throwIfAborted();
-  if (!(group instanceof zarr.Group)) {
-    group = await getGroup(group, undefined, undefined, { signal });
-    signal?.throwIfAborted();
+  const img = await NgffImage.load(group, options);
+  const multiscale = img.multiscales[0];
+  const omero = img.omero;
+  const zarr_version = img.zarr_version;
+  const scales = img.scales;
+
+  // Get the specified zarr array
+  const arr = await img.openArray(datasetIndex, options);
+  // This uses the cached array to calculate shapes from scales
+  let shapes: number[][] | undefined = await img.calcShapes();
+  if (shapes.length == 0) {
+    shapes = undefined;
   }
-  const { multiscale, omero, zarr_version } = await getMultiscale(group, {
-    signal,
-  });
-  signal?.throwIfAborted();
-
-  const paths: Array<string> = multiscale.datasets.map((d) => d.path);
-  if (datasetIndex < 0) {
-    datasetIndex = paths.length + datasetIndex;
-  }
-  const path = paths[datasetIndex];
-
-  // Get the zarr array
-  const arr = await getArray(group, path, zarr_version, { signal });
-  signal?.throwIfAborted();
-
-  // calculate some useful values...
-  const shape = arr.shape;
-  const scales: Array<number[]> = multiscale.datasets
-    .map((ds) => {
-      let scale: number[] | undefined = undefined;
-      if (Array.isArray(ds.coordinateTransformations)) {
-        for (const ct of ds.coordinateTransformations) {
-          if ("scale" in ct) {
-            scale = (ct as { scale: number[] }).scale;
-            break;
-          } else if ("transformations" in ct) {
-            // handle nested transformations
-            for (const sct of (ct as { transformations: any[] })
-              .transformations) {
-              if ("scale" in sct) {
-                scale = (sct as { scale: number[] }).scale;
-                break;
-              }
-            }
-          }
-        }
-      }
-      // handle missing coordinateTransformations below
-      return scale;
-    })
-    .filter((s) => s !== undefined) as number[][]; // remove undefined
-
-  if (scales.length > 0 && scales.length !== multiscale.datasets.length) {
-    throw new Error("Could not determine scales for all datasets");
-  }
-
-  const arrayScale = scales[datasetIndex];
-
-  // we know the shape and scale of the chosen array, so we can calculate the
-  // shapes of other arrays in the multiscale pyramid...
-  const shapes =
-    scales.length === 0
-      ? undefined
-      : scales.map((scale) => {
-          return shape.map((dim, i) =>
-            Math.ceil((dim * arrayScale[i]) / scale[i])
-          );
-        });
-
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
 
-export async function getArrayOrGroup(
+export async function openArrayOrGroup(
   src: zarr.Group<zarr.Readable> | zarr.Readable | string,
   kind: "array",
   path?: string,
   zarr_version?: 2 | 3,
   options?: { signal?: AbortSignal }
 ): Promise<zarr.Array<zarr.DataType>>;
-export async function getArrayOrGroup(
+export async function openArrayOrGroup(
   src: zarr.Group<zarr.Readable> | zarr.Readable | string,
   kind: "group",
   path?: string,
   zarr_version?: 2 | 3,
   options?: { signal?: AbortSignal }
 ): Promise<zarr.Group<zarr.Readable>>;
-export async function getArrayOrGroup(
+export async function openArrayOrGroup(
   src: zarr.Group<zarr.Readable> | zarr.Readable | string,
   kind: "array" | "group",
   path?: string,
@@ -360,6 +364,7 @@ export async function getArrayOrGroup(
       : zarr_version === 2
         ? zarr.open.v2
         : zarr.open;
+
   let location;
   if (src instanceof zarr.Group) {
     location = src;
@@ -375,7 +380,22 @@ export async function getArrayOrGroup(
   return arrayOrGroup;
 }
 
+// For backwards compatibility - keep this function
 export async function getArray(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Array<zarr.DataType>> {
+  // deprecation warning
+  console.warn(
+    "getArray is deprecated and will be removed in future versions. Please use openArray() instead."
+  );
+  const { signal } = options ?? {};
+  return openArray(src, path, zarr_version, { signal});
+}
+
+export async function openArray(
   src: zarr.Group<zarr.Readable> | zarr.Readable | string,
   path?: string,
   zarr_version?: 2 | 3,
@@ -383,10 +403,10 @@ export async function getArray(
 ): Promise<zarr.Array<zarr.DataType>> {
   const { signal } = options ?? {};
   signal?.throwIfAborted();
-  return getArrayOrGroup(src, "array", path, zarr_version, { signal});
+  return openArrayOrGroup(src, "array", path, zarr_version, { signal });
 }
 
-export async function getGroup(
+export async function openGroup(
   src: zarr.Group<zarr.Readable> | zarr.Readable | string,
   path?: string,
   zarr_version?: 2 | 3,
@@ -394,7 +414,7 @@ export async function getGroup(
 ): Promise<zarr.Group<zarr.Readable>> {
   const { signal } = options ?? {};
   signal?.throwIfAborted();
-  return getArrayOrGroup(src, "group", path, zarr_version, { signal });
+  return openArrayOrGroup(src, "group", path, zarr_version, { signal });
 }
 
 export function getSlices(

@@ -8,17 +8,18 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'renderThumbnail', link: '/render-thumbnail' },
-      { text: 'renderImage', link: '/render-image' },
+      { text: 'render', link: '/render' },
+      // { text: 'renderImage', link: '/render-image' },
       { text: 'LUTs', link: '/luts' }
     ],
 
     sidebar: [
       {
-        text: 'Examples',
+        // text: 'Examples',
         items: [
-          { text: 'renderThumbnail', link: '/render-thumbnail' },
-          { text: 'renderImage', link: '/render-image' },
+          { text: 'render', link: '/render' },
+          { text: 'NgffImage', link: '/image' },
+          { text: 'Labels', link: '/labels' },
           { text: 'LUTs', link: '/luts' }
         ]
       }

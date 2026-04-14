@@ -6,7 +6,7 @@ import { ref } from 'vue'
 
 const imgSrc = ref("");
 
-const props = defineProps(['url', 'targetSize', 'autoBoost']);
+const props = defineProps(['url', 'targetSize', 'autoBoost', 'slices', 'arrayPathOrIndex']);
 
 let autoBoost = Boolean(props.autoBoost);
 const VURL = "https://ome.github.io/ome-ngff-validator/?source="
@@ -18,9 +18,20 @@ onMounted(async () => {
   const omezarr = await import('ome-zarr.js');
 
   // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!
-  omezarr.renderThumbnail(props.url, props.targetSize, autoBoost).then(src => {
-    imgSrc.value = src;
-  })
+  if (props.slices) {
+    let renderOpts = {autoBoost, slices: JSON.parse(props.slices)};
+    // if neither arrayPathOrIndex nor targetSize is provided, render() will throw an Error
+    if (props.arrayPathOrIndex !== undefined) {
+      renderOpts.arrayPathOrIndex = props.arrayPathOrIndex;
+    } else if (props.targetSize !== undefined) {
+      renderOpts.targetSize = props.targetSize;
+    }
+    let img = await omezarr.NgffImage.load(props.url);
+    // console.log("shapes", await img.calcShapes());
+    imgSrc.value = await img.render(renderOpts);
+  } else {
+    imgSrc.value = await omezarr.render(props.url, props.targetSize, {autoBoost});
+  }
 });
 </script>
 
@@ -29,11 +40,3 @@ onMounted(async () => {
     <img alt="thumbnail" :src="imgSrc" />
   </a>
 </template>
-
-
-<style module>
-img {
-  float: left;
-  margin: 5px;
-}
-</style>

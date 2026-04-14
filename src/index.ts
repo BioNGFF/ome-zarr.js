@@ -8,12 +8,17 @@ export type {
   Window,
 } from "./types/ome";
 export {
-  getArray,
+  getArray, // deprecated, use openArray instead
+  openArray,
+  openGroup,
   getMultiscale,
   getMultiscaleWithArray,
   renderTo8bitArray,
   getSlices,
   getMinMaxValues,
+  getPixelValueRange,
 } from "./utils";
-export { renderThumbnail, renderImage } from "./render";
 export { LUTS, getLuts } from "./luts";
+export { NgffImage } from "./image";
+export { renderThumbnail, renderImage, render } from "./api";
+export { convertRbgDataToDataUrl } from "./render";

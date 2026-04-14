@@ -21,26 +21,45 @@
         width: 256px;
         height: 15px;
       }
+      .checquers {
+        /* background pattern for transparency */
+        background: linear-gradient(45deg, #ccc 25%, transparent 25%),
+          linear-gradient(-45deg, #ccc 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #ccc 75%),
+          linear-gradient(-45deg, transparent 75%, #ccc 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;  
+      }
+      .fadeInOut {
+        animation: fadeInOut 3s ease-in-out infinite;
+      }
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.1; }
+      }
     </style>
   </head>
   <body>
-    <h2>renderTumbnail()</h2>
+    <h2>render()</h2>
     <p>Default thumbnail is smallest multiscales resolution:</p>
     <code><pre>
-      let thumbSrc = await omezarr.renderThumbnail(url);
+      let thumbSrc = await omezarr.render(url);
       document.getElementById("thumbnail").src = thumbSrc;
     </pre></code>
     <div id="thumbnails"></div>
+
+    <p>If we know that all images are similar, we can just load the "multiscales" group for 1 image,
+      then use that to render the others based on full array URL for each e.g. <code>url/to/image.zarr/scale2/</code>.
+    </p>
+    <div id="wells"></div>
+
+    <p>We can find a labels image, render it with glasbey_inverted.lut and overlay it on the original image.</p>
+    <div id="labels"></div>
+
     <p>We can specify a targetSize to pick a larger multiscales resolution to render.
       If autoBoost" is true, contrast will be boosted if needed.</p>
-    <code><pre>
-      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
-      </pre>
-    </code>
     <div id="bigThumbnails"></div>
-    <h2>renderImage()</h2>
+
     <p>We can choose various rendering settings etc. "Inverted" is a orthogonal view</p>
     <div id="splitview"></div>
     <p>A smaller resolution "1", at various z-indeces with Look-up table "16_colors.lut"</p>
@@ -53,33 +72,120 @@
     <h2>Look-up tables available to choose</h2>
     <div id="luts"></div>
     <script type="module">
+
+      async function renderSimilarThumbs() {
+        let plateUrl = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD885/e7bdccbf-5119-4d9c-b466-66d211871db8/e7bdccbf-5119-4d9c-b466-66d211871db8.zarr";
+        let a1Img = await omezarr.NgffImage.load(plateUrl + "/A/1/0");
+        // a1Img.omero.channels[0].active = false;
+        let dsPath = await a1Img.getPathForTargetSize(100);
+        console.log("dsPath", dsPath);
+
+        for (let well of ["A/1/0", "A/2/0", "A/3/0", "A/4/0", "A/5/0", "A/6/0"]) {
+          let arrUrl = plateUrl + "/" + well + "/" + dsPath;
+          let src = await a1Img.render({arr: arrUrl, autoBoost: true});
+          let html = `<img title="${well}" src="${src}" />`;
+          document.getElementById("wells").innerHTML += html;
+        }
+      }
+
+      function addRgbaArrays(imgArr, labelArr) {
+        if (imgArr.length !== labelArr.length) {
+          throw new Error("Arrays must have the same length");
+        }
+        let result = new Uint8ClampedArray(imgArr.length);
+        for (let i = 0; i < imgArr.length; i++) {
+          result[i] = Math.min(labelArr[i] || imgArr[i], 255);
+        }
+        return result;
+      }
+
+      function blackToTransparentRgba(d) {
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] === 0 && d[i + 1] === 0 && d[i + 2] === 0) {
+            d[i + 3] = 0;
+          }
+        }
+      }
+
+      async function renderLabels() {
+        let imgUrl = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
+        let img = await omezarr.NgffImage.load(imgUrl);
+        let imsSrc = await img.render({targetSize: 300, autoBoost: true});
+        let html = `<a href="${imgUrl}"><img src="${imsSrc}" /></a>`;
+        document.getElementById("labels").innerHTML += html;
+
+        let labelPaths = await img.getLabelsPaths();
+        let labelImage = await omezarr.NgffImage.load(imgUrl + "labels/" + labelPaths[0]);
+        labelImage.setChannelActive(0, true);
+        labelImage.setChannelLut(0, "glasbey_inverted.lut");
+        let labelRgba = await labelImage.renderRgba({targetSize: 300});
+        blackToTransparentRgba(labelRgba.data);
+
+        let labelSrc = await omezarr.convertRbgDataToDataUrl(labelRgba.data, labelRgba.width);
+        html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
+        document.getElementById("labels").innerHTML += html;
+
+        let overlayHtml = `<div style="position: relative; display: inline-block;">
+          <a href="${imgUrl}">
+            <img src="${imsSrc}" />
+            <img src="${labelSrc}" class="fadeInOut" style="position: absolute; top: 0; left: 0;" />
+          </a>
+        </div>`;
+        document.getElementById("labels").innerHTML += overlayHtml;
+      }
+
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
+      import { ZipFileStore } from "@zarrita/storage";
       const omezarr = await import("/src/index.ts");
 
+
+      let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
+      // Load the zarr.json to test {attrs} option.
+      let zarrJson = await fetch(url + "/zarr.json").then((res) => res.json());
+      let attrs = zarrJson.attributes; // v0.6 (zarr v3) nested attributes
+      // This loads the first dataset array, so we know the image dimensions,
+      let i = await omezarr.NgffImage.load(url, {attrs});
+      console.log("VERSION", i.getVersion());
+      console.log("ZARR VERSION", i.getZarrVersion());
+      console.log("SCALES", i.getScales());
+      console.log("SHAPE", await i.getShape());
+      console.log("SHAPES", await i.calcShapes());
+      console.log("NEUROGLANCER URL", await i.getNeuroglancerUrl());
+
+      renderLabels();
+
+      renderSimilarThumbs();
+
+      const OXZ = "https://livingobjects.ebi.ac.uk/bioimaging-sandbox/testbucket-bia/test-ozx/6001240.ozx";
+      const IDR0079_2_LABELS = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
       const IDR0062 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
+        "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
       const IDR0048 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
+        "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846151.zarr/0/";
       const IDR0083 =
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr";
-      const IDR0066 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"; // OME-Zarr v0.5
+        "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr";
+      const IDR0066 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr"; // OME-Zarr v0.5
 
       // v0.1 (no axes)
-      const IDR0077 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr";
+      const IDR0077 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.1/9836841.zarr";
       // v0.2 (no axes)
-      const IDR0070 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/";
+      const IDR0070 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.2/idr0070A/9838562.zarr/0/";
       // v0.3
-      const IDR0079 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
+      const IDR0079 = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr";
 
       // https://github.com/BioNGFF/ome-zarr.js/issues/9
       const TEST_INT64 = "https://s3.janelia.org/funceworm/test-uint64-small.zarr/";
 
       // v0.6 (coordinateSystems instead of axes)
-      const V06_IDR067 = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
+      const V06_IDR067 = "https://livingobjects.ebi.ac.uk/idr/zarr/test-data/v0.6dev2/idr0067/9036345_tiles.zarr/9036345_cropped_200_200_200_200_rot30.zarr/";
 
       // Thumbnails...
       const urls = [
+        OXZ,
+        IDR0079_2_LABELS,
+        IDR0079_2_LABELS + "labels/0/",
         IDR0077,
+        IDR0083,
         IDR0070,
         IDR0079,
         IDR0062,
@@ -91,88 +197,111 @@
       ];
       document.getElementById("thumbnails").innerHTML = `<p>Expected ${urls.length} thumbnails...</p>`;
 
-      for (const url of urls) {
+      let abortController = new AbortController();
+      let signal = abortController.signal;
+
+      // We can abort... - Try uncommenting this code - thumbnails should be aborded.
+      // setTimeout(() => {
+      //   abortController.abort(); // abort all thumbnail requests after 1 seconds (for testing cancellation)
+      //   console.log("Aborted thumbnail requests");
+      // }, 1000);
+
+      for (let url of urls) {
         console.log("Rendering thumbnail for ", url);
         try {
-          let thumbSrc = await omezarr.renderThumbnail(url, 100);
-          let html = `<a href="${url}"><img title="${url}" src="${thumbSrc}" /></a>`;
+          console.log("Signal aborted?", signal.aborted);
+          // let thumbSrc = await omezarr.render(url);
+          if (url.endsWith(".ozx")) {
+            url = ZipFileStore.fromUrl(url);
+          }
+          let ngffImg = await omezarr.NgffImage.load(url);
+          let thumbSrc = await ngffImg.render({targetSize: 100, signal});
+          let ngHref = typeof url === "string" ? await ngffImg.getNeuroglancerUrl() : "no url";
+          let html = `<a target="_blank" href="${ngHref}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
         } catch (error) {
           console.error("Error rendering thumbnail for ", url, error);
-          alert(`Error rendering thumbnail for ${url}: ${error}`);
+          if (!signal.aborted) {
+            alert(`Error rendering thumbnail for ${url}: ${error}`);
+          }
         }
       }
 
-      let thumbSrc = await omezarr.renderThumbnail(IDR0066, 300);
+      let thumbSrc = await omezarr.render(IDR0066, 300);
       let bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
+      // legacy API - keep a single test for this...
       thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
       bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
 
+      // Check we can set channel setting on 2D image (no "c" axis)
+      let imgChick = await omezarr.NgffImage.load(IDR0066);
+      imgChick.setChannelLut(0, "fire.lut");
+      let chickSrc = await imgChick.render({targetSize: 300});
+      document.getElementById("bigThumbnails").innerHTML += `<img src="${chickSrc}" />`;
+
       // For rendering Images, we want to keep the zarr array in hand...
-      const store62 = new zarr.FetchStore(IDR0062);
+      // const store62 = new zarr.FetchStore(IDR0062);
+      const img = await omezarr.NgffImage.load(IDR0062);
       // arr will be full-sized array by default
-      const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
+      // const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
       // turn OFF all channels
-      omero.channels.forEach((ch) => (ch.active = false));
-      // for each channel...
-      omero.channels.forEach(async (channel, index) => {
-        // deepcopy omero for each channel...
-        let omeroCopy = JSON.parse(JSON.stringify(omero));
-        // turn on the channel we want to render...
-        omeroCopy.channels[index].active = true;
-        let start = Date.now();
-        let src = await omezarr.renderImage(arr, multiscale.axes, omeroCopy);
-        console.log(`renderImage channel ${index} took ${Date.now() - start} ms   (Expect 60-80 ms)`);
+      for (let channel in img.omero.channels) {
+        img.setChannelActive(channel, false);
+      }
+      img.setChannelColor(0, "00FF00");
+      img.setChannelColor(1, "FF00FF");
+      // progressively turn channels on and render...
+      for (let channel in img.omero.channels) {
+        img.setChannelActive(channel, true);
+        let src = await img.render({targetSize: 300});
         let html = `<img src="${src}" />`;
         document.getElementById("splitview").innerHTML += html;
-      });
+      };
 
       // Inverted image - orthogonal view
-      let omeroChannel = JSON.parse(JSON.stringify(omero));
-      omeroChannel.channels[1].active = true;
-      omeroChannel.channels[1].inverted = true;
+      img.setChannelInverted(0, true);
       let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
-      omezarr.renderImage(arr, multiscale.axes, omeroChannel, slices62).then(src => {
-        let html = `<img src="${src}" />`;
-        document.getElementById("splitview").innerHTML += html;
-      });
+      let orthSrc = await img.render({targetSize: 300, slices: slices62});
+      let html = `<img src="${orthSrc}" />`;
+      document.getElementById("splitview").innerHTML += html;
 
       // get a smaller array for Z-stack
-      console.log("idr0062 shapes", shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
-      const paths = multiscale.datasets.map((d) => d.path);
-      console.log("idr0062 paths", paths);
-      const path = paths[1];
-      const arr200 = await omezarr.getArray(store62, path, zarr_version);
+      console.log("idr0062 shapes", img.shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
+      // const paths = img.multiscale.datasets.map((d) => d.path);
+      console.log("idr0062 paths", img.paths);
+      const pathOrIndex = 1;
+      const arr200 = await img.openArray(pathOrIndex);
       // turn first channel ON, use LUT
-      omero.channels[0].active = true;
-      omero.channels[0].lut = "16_colors.lut";
+      img.setChannelActive(0, true);
+      img.setChannelActive(1, false);
+      img.setChannelLut(0, "16_colors.lut");
+      img.setChannelInverted(0, false);
       // TODO: use dim names from multiscale
       let sizeZ = arr200.shape.at(-3);
       let interval = Math.ceil(sizeZ / 7);
       for (let zSlice = interval; zSlice <= sizeZ; zSlice += interval) {
-        omero.rdefs = { defaultZ: zSlice };
-        let src = await omezarr.renderImage(arr200, multiscale.axes, omero);
+        img.setZIndex(zSlice);
+        let src = await img.render({arr: arr200});
         let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
         document.getElementById("stack").innerHTML += html;
       }
 
       // BIG thumbnail (birds eye view)
       const storeBig = new zarr.FetchStore(IDR0083);
-      let bigThumb = await omezarr.renderThumbnail(storeBig, 400);
+      let bigThumb = await omezarr.render(storeBig, 400);
       document.getElementById("bigThumb").src = bigThumb;
       // BIG image, Load full-resolution array
-      let big = await omezarr.getMultiscaleWithArray(storeBig);
-      const bigArray = big.arr;
+      // let big = await omezarr.getMultiscaleWithArray(storeBig);
+      let tiledImg = await omezarr.NgffImage.load(IDR0083);
+      console.log("big image shapes (undefined)", tiledImg.shapes);
+      await tiledImg.calcShapes();
+      console.log("big image shapes", tiledImg.shapes);
       // Full-sized image is 144384	x 93184
+      const dsIndex = 0; // pick the largest resolution
       let sliceIndices = {"x": [50000, 50500], "y": [30000, 30500]};
-      let bigImageSrc = await omezarr.renderImage(
-        bigArray,
-        big.multiscale.axes,
-        big.omero,
-        sliceIndices
-      );
+      let bigImageSrc = await tiledImg.render({arrayPathOrIndex: dsIndex, slices: sliceIndices});
       document.getElementById("bigImages").innerHTML += `<img src="${bigImageSrc}" />`;
 
       // show luts
