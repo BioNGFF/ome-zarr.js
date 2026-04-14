@@ -77,15 +77,8 @@ export class NgffImage {
 
     const { signal } = options ?? {};
     signal?.throwIfAborted();
-    let group: zarr.Group<zarr.Readable>;
     if (typeof store === "string") {
       store = new zarr.FetchStore(store);
-    }
-    if (!(store instanceof zarr.Group)) {
-      group = await openGroup(store, undefined, undefined, { signal });
-      signal?.throwIfAborted();
-    } else {
-      group = store;
     }
 
     let attrs: OmeAttrs;
@@ -93,6 +86,13 @@ export class NgffImage {
     if (options.attrs) {
       attrs = options.attrs;
     } else {
+      let group: zarr.Group<zarr.Readable>;
+      if (!(store instanceof zarr.Group)) {
+        group = await openGroup(store, undefined, undefined, { signal });
+        signal?.throwIfAborted();
+      } else {
+        group = store;
+      }
       attrs = group.attrs as OmeAttrs;
     }
     
