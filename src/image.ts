@@ -16,7 +16,7 @@ export class NgffImage {
    */
   attrs: OmeAttrs;
   imgAttrs: ImageAttrs;
-  store: zarr.FetchStore;
+  store: zarr.Group<zarr.Readable> | zarr.Readable
   multiscales: [Multiscale, ...Multiscale[]];
   paths: string[];
   scales: number[][];
@@ -28,7 +28,9 @@ export class NgffImage {
   omezarr_version: string;
   [k: string]: unknown;
 
-  constructor(attrs: OmeAttrs, store: zarr.FetchStore) {
+  constructor(attrs: OmeAttrs,
+    store: zarr.Group<zarr.Readable> | zarr.Readable,
+  ) {
     // Handle v0.4 or v0.5 to get the multiscale object
     // attrs is just the dictionary we get from zarr
     this.store = store;
@@ -65,15 +67,25 @@ export class NgffImage {
 
   // static method to load an image from a zarr store or url
   static async load(
-    store: zarr.FetchStore | string,
+    store: zarr.Group<zarr.Readable> | zarr.Readable | string,
     options: {
       datasetIndex?: number,
-      attrs?: OmeAttrs
+      attrs?: OmeAttrs,
+      signal?: AbortSignal
     } = {}
   ): Promise<NgffImage> {
 
+    const { signal } = options ?? {};
+    signal?.throwIfAborted();
+    let group: zarr.Group<zarr.Readable>;
     if (typeof store === "string") {
       store = new zarr.FetchStore(store);
+    }
+    if (!(store instanceof zarr.Group)) {
+      group = await openGroup(store, undefined, undefined, { signal });
+      signal?.throwIfAborted();
+    } else {
+      group = store;
     }
 
     let attrs: OmeAttrs;
@@ -81,8 +93,7 @@ export class NgffImage {
     if (options.attrs) {
       attrs = options.attrs;
     } else {
-      const data = await zarr.open(store, { kind: "group" });
-      attrs = data.attrs as OmeAttrs;
+      attrs = group.attrs as OmeAttrs;
     }
     
     const img = new NgffImage(attrs, store);
@@ -174,7 +185,7 @@ export class NgffImage {
 
   async getNeuroglancerUrl(): Promise<string> {
     const neuroglancerBaseUrl = 'https://neuroglancer-demo.appspot.com/#!';
-    let dataUrl = this.store.url || '' as string;
+    let dataUrl = (this.store as zarr.FetchStore).url || '' as string;
     if (!dataUrl) {
       throw new Error("Cannot generate Neuroglancer URL: store does not have a URL");
     }
@@ -186,7 +197,7 @@ export class NgffImage {
   }
 
 
-  async openArray(pathOrIndex: string | number): Promise<zarr.Array<any>> {
+  async openArray(pathOrIndex: string | number, options?: { signal?: AbortSignal }): Promise<zarr.Array<any>> {
     // Open the zarr array at the given path or index. This is a helper function for users who want to access the zarr arrays directly.
     let path: string;
     if (typeof pathOrIndex === "number") {
@@ -200,7 +211,7 @@ export class NgffImage {
     if (this.arrays[path]) {
       return this.arrays[path];
     }
-    let arr = await openArray(this.store, path, this.zarr_version);
+    let arr = await openArray(this.store, path, this.zarr_version, options);
     // cache the array for future use
     this.arrays[path] = arr;
     // since we now have array shape and dtype, we can create `omero` if doesn't exist yet

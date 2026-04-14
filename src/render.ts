@@ -18,12 +18,16 @@ export async function getRgba(
   omero: Omero | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
-  autoBoost: boolean
+  autoBoost: boolean,
+  options?: { signal?: AbortSignal }
 ): Promise<{
   data: Uint8ClampedArray;
-  width: number,
-  height: number
+  width: number;
+  height: number;
 }> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
+
   let shape = arr.shape;
 
   // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'
@@ -94,8 +98,11 @@ export async function getRgba(
   );
 
   // Wait for all chunks to be fetched...
-  let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));
+  let promises = chSlices.map((chSlice: any) =>
+    zarr.get(arr, chSlice, { opts: { signal } })
+  );
   let ndChunks = await Promise.all(promises);
+  signal?.throwIfAborted();
 
   // Use start/end values from 'omero' if available, otherwise calculate min/max
   let minMaxValues = activeChannelIndices.map(

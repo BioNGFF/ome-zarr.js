@@ -10,6 +10,7 @@ export type {
 export {
   getArray, // deprecated, use openArray instead
   openArray,
+  openGroup,
   getMultiscale,
   getMultiscaleWithArray,
   renderTo8bitArray,

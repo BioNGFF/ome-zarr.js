@@ -1,6 +1,10 @@
-import { expect, test } from "vitest";
+
+import * as zarr from "zarrita";
+
+import { describe, expect, test } from "vitest";
+import { renderThumbnail } from "../src/index.ts";
+import { openGroup } from "../src/utils.ts";
 import { render } from "../src/api.js";
-import { renderThumbnail } from "../src/index.js";
 import { NgffImage } from "../src/image.js";
 import { data6001240 } from "./imagesAsData.js";
 import { getPixelValueRange } from "../src/utils.js";
@@ -23,16 +27,42 @@ function rgbaFromDataUrl(dataUrl) {
   return rgba;
 }
 
-test("old_api_render6001240_src", async () => {
-  const got = await renderThumbnail(URL_IDR62);
-  // compare decoded pixel bytes from data URLs
-  expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
-}, 10_000); // timeout in ms
+describe("render", () => {
+  test("old_api_render6001240_src", async () => {
+    const got = await renderThumbnail(URL_IDR62);
+    // compare decoded pixel bytes from data URLs
+    expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000); // timeout in ms
 
-test("render6001240_src", async () => {
-  const got = await render(URL_IDR62);
-  expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
-}, 10_000);
+  test("render6001240_src", async () => {
+    const got = await render(URL_IDR62);
+    expect(rgbaFromDataUrl(got)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000);
+
+    test("render6001240_fromFetchStore", async () => {
+    const store = new zarr.FetchStore(URL_IDR62);
+    const result = await render(store);
+    expect(result).toBeDefined();
+    expect(rgbaFromDataUrl(result)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000); // timeout in ms
+
+  test("render6001240_fromGroup", async () => {
+    const group = await openGroup(URL_IDR62);
+    const result = await render(group);
+    expect(result).toBeDefined();
+    expect(rgbaFromDataUrl(result)).toStrictEqual(rgbaFromDataUrl(data6001240));
+  }, 10_000); // timeout in ms
+
+  test("render6001240_signal", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      render(URL_IDR62, undefined, {
+        signal: controller.signal,
+      })
+    ).rejects.toThrow();
+  }, 10_000); // timeout in ms
+});
 
 test("version6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);

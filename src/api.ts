@@ -7,15 +7,18 @@ import { NgffImage } from "./image";
 
 
 export async function render(
-  store: zarr.FetchStore | string,
+  store: zarr.Group<zarr.Readable> | zarr.Readable | string,
   targetSize?: number, 
   options: {
     autoBoost?: boolean,
     maxSize?: number,
-    attrs?: OmeAttrs
+    attrs?: OmeAttrs,
+    signal?: AbortSignal,
   } = {},
 ): Promise<string> {
   
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
   let arrayPathOrIndex: number | undefined = undefined;
   let ngffImg: NgffImage;
 
@@ -56,9 +59,10 @@ export async function renderThumbnail(
   store: zarr.FetchStore | string,
   targetSize: number | undefined = undefined,
   autoBoost: boolean = false,
-  maxSize: number = 1000
+  maxSize: number = 1000,
+  options?: { signal?: AbortSignal }
 ): Promise<string> {
-  return render(store, targetSize, {autoBoost, maxSize});
+  return render(store, targetSize, {autoBoost, maxSize, ...options});
 }
 
 

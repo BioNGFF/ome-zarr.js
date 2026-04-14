@@ -291,12 +291,15 @@ function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
 }
 
 // For backwards compatibility - keep this function
-export async function getMultiscale(store: zarr.FetchStore): Promise<{
+export async function getMultiscale(
+  group: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  options?: { signal?: AbortSignal }
+): Promise<{
   multiscale: Multiscale;
   omero: Omero | null | undefined;
   zarr_version: 2 | 3;
 }> {
-  const img = await NgffImage.load(store);
+  const img = await NgffImage.load(group, options);
   return {
     multiscale: img.multiscales[0],
     omero: img.omero,
@@ -305,8 +308,9 @@ export async function getMultiscale(store: zarr.FetchStore): Promise<{
 }
 
 export async function getMultiscaleWithArray(
-  store: zarr.FetchStore | string,
-  datasetIndex: number = 0
+  group: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  datasetIndex: number = 0,
+  options?: { signal?: AbortSignal }
 ): Promise<{
   arr: zarr.Array<any>;
   shapes: number[][] | undefined;
@@ -315,15 +319,14 @@ export async function getMultiscaleWithArray(
   scales: number[][];
   zarr_version: 2 | 3;
 }> {
-
-  const img = await NgffImage.load(store);
+  const img = await NgffImage.load(group, options);
   const multiscale = img.multiscales[0];
   const omero = img.omero;
   const zarr_version = img.zarr_version;
   const scales = img.scales;
 
   // Get the specified zarr array
-  const arr = await img.openArray(datasetIndex);
+  const arr = await img.openArray(datasetIndex, options);
   // This uses the cached array to calculate shapes from scales
   let shapes: number[][] | undefined = await img.calcShapes();
   if (shapes.length == 0) {
@@ -332,52 +335,86 @@ export async function getMultiscaleWithArray(
   return { arr, shapes, multiscale, omero, scales, zarr_version };
 }
 
-// For backwards compatibility - keep this function
-export async function getArray(
-  store: zarr.FetchStore,
-  path: string,
-  zarr_version: 2 | 3 | undefined
-): Promise<zarr.Array<any>> {
-  // deprecation warning
-  console.warn(
-    "getArray is deprecated and will be removed in future versions. Please use openArray() instead."
-  );
-  return openArray(store, path, zarr_version);
-}
-
-export async function openArray(
-  store: zarr.FetchStore,
-  path: string,
-  zarr_version: 2 | 3 | undefined
-): Promise<zarr.Array<any>> {
-  return openZarr(store, path, zarr_version) as Promise<zarr.Array<any>>;
-}
-
-export async function openGroup(
-  store: zarr.FetchStore,
-  path: string,
-  zarr_version: 2 | 3 | undefined
-): Promise<zarr.Group<any>> {
-  return openZarr(store, path, zarr_version, "group") as Promise<zarr.Group<any>>;
-}
-
-async function openZarr(
-  store: zarr.FetchStore,
-  path: string,
-  zarr_version: 2 | 3 | undefined,
-  kind: "array" | "group" = "array"
-): Promise<zarr.Array<any> | zarr.Group<any>> {
-  // Open the zarr array or group
-  let root = zarr.root(store);
+export async function openArrayOrGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  kind: "array",
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Array<zarr.DataType>>;
+export async function openArrayOrGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  kind: "group",
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Group<zarr.Readable>>;
+export async function openArrayOrGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  kind: "array" | "group",
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Array<zarr.DataType> | zarr.Group<zarr.Readable>> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
   const openFn =
     zarr_version === 3
       ? zarr.open.v3
       : zarr_version === 2
         ? zarr.open.v2
         : zarr.open;
-  let zarrLocation = root.resolve(path);
-  let arr = await openFn(zarrLocation, { kind: kind });
-  return arr;
+
+  let location;
+  if (src instanceof zarr.Group) {
+    location = src;
+  } else {
+    const store = typeof src === "string" ? new zarr.FetchStore(src) : src;
+    location = zarr.root(store);
+  }
+  if (path) {
+    location = location.resolve(path);
+  }
+  const arrayOrGroup = await openFn(location, { kind });  // TODO https://github.com/manzt/zarrita.js/issues/317
+  signal?.throwIfAborted();
+  return arrayOrGroup;
+}
+
+// For backwards compatibility - keep this function
+export async function getArray(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Array<zarr.DataType>> {
+  // deprecation warning
+  console.warn(
+    "getArray is deprecated and will be removed in future versions. Please use openArray() instead."
+  );
+  const { signal } = options ?? {};
+  return openArray(src, path, zarr_version, { signal});
+}
+
+export async function openArray(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Array<zarr.DataType>> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
+  return openArrayOrGroup(src, "array", path, zarr_version, { signal });
+}
+
+export async function openGroup(
+  src: zarr.Group<zarr.Readable> | zarr.Readable | string,
+  path?: string,
+  zarr_version?: 2 | 3,
+  options?: { signal?: AbortSignal }
+): Promise<zarr.Group<zarr.Readable>> {
+  const { signal } = options ?? {};
+  signal?.throwIfAborted();
+  return openArrayOrGroup(src, "group", path, zarr_version, { signal });
 }
 
 export function getSlices(
