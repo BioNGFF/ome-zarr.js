@@ -144,7 +144,7 @@ let ngffImg = await omezarr.NgffImage.load(store, {datasetIndex});
 let src = await ngffImg.render({arrayPathOrIndex: datasetIndex, autoBoost});
 ```
 
-If we have already have the zarr attributes in hand, then we can provide
+If we already have the zarr attributes in hand, then we can provide
 these and save the `NgffImage` from loading them itself:
 
 ```js

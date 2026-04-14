@@ -18,7 +18,7 @@ omezarr.getLuts().forEach((lut) => {
 });
 ```
 
-To `renderImage()` with a LUT, we can set the `lut` attribute of `omero.channels`:
+To `render()` with a LUT, we can set the `lut` attribute of `omero.channels`:
 
 ```js
 let img = await omezarr.NgffImage.load(url);
