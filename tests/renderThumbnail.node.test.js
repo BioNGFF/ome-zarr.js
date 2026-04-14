@@ -68,7 +68,7 @@ test("version6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);
   expect(img.getVersion()).toEqual("0.4");
   expect(img.getZarrVersion()).toEqual(2);
-});
+}, 1_000);
 
 test("shapes6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);
@@ -83,21 +83,26 @@ test("shapes6001240", async () => {
     [2, 236, 272, 268],
     [2, 236, 136, 134],
     [2, 236, 68, 67]]);
-});
+}, 1_000);
 
 test("attrs6001240", async () => {
   let zarrJson = await fetch(`${URL_IDR62}/.zattrs`).then((res) => res.json());
-  // Hack the scale (z downsampling) to test that attrs can be passed in directly
-  zarrJson.multiscales[0].datasets[0].coordinateTransformations[0].scale = [1, 1, 1, 1];
-  zarrJson.multiscales[0].datasets[1].coordinateTransformations[0].scale = [1, 2, 2, 2];
-  zarrJson.multiscales[0].datasets[2].coordinateTransformations[0].scale = [1, 4, 4, 4];
   // This won't need to load the zarr group again
   const img = await NgffImage.load(URL_IDR62, {attrs: zarrJson});
   expect(await img.calcShapes()).toEqual([
     [2, 236, 275, 271],
+    [2, 236, 137, 135],
+    [2, 236, 68, 67]]);
+  // Now hack the scale (z downsampling) to test that attrs can be passed in directly
+  zarrJson.multiscales[0].datasets[0].coordinateTransformations[0].scale = [1, 1, 1, 1];
+  zarrJson.multiscales[0].datasets[1].coordinateTransformations[0].scale = [1, 2, 2, 2];
+  zarrJson.multiscales[0].datasets[2].coordinateTransformations[0].scale = [1, 4, 4, 4];
+  const img2 = await NgffImage.load(URL_IDR62, {attrs: zarrJson});
+  expect(await img2.calcShapes()).toEqual([
+    [2, 236, 275, 271],
     [2, 118, 137, 135],
     [2, 59, 68, 67]]);
-});
+}, 1_000);
 
 test("getPixelValueRange", () => {
   // test some common dtypes
@@ -121,11 +126,11 @@ test("getLabelPaths", async () => {
   const imgNoLabels = await NgffImage.load(IDR0066);
   const noPaths = await imgNoLabels.getLabelsPaths();
   expect(noPaths).toEqual([]);
-});
+}, 1_000);
 
 test("neuroglancerUrl6001240", async () => {
   const img = await NgffImage.load(URL_IDR62);
   const url = await img.getNeuroglancerUrl();
   expect(url).toContain("neuroglancer");
   expect(url).toEqual("https://neuroglancer-demo.appspot.com/#!%7B%22layers%22%3A%5B%7B%22name%22%3A%226001240.zarr%22%2C%22source%22%3A%22https%3A%2F%2Flivingobjects.ebi.ac.uk%2Fidr%2Fzarr%2Fv0.4%2Fidr0062A%2F6001240.zarr%2F%7Czarr2%3A%22%2C%22type%22%3A%22auto%22%7D%5D%2C%22layout%22%3A%224panel-alt%22%7D");
-});
+}, 1_000);

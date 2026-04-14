@@ -72,7 +72,7 @@ img.setChannelColor(1, "0000FF");
 img.setChannelStart(1, 100);
 img.setChannelEnd(1, 300);
 // set first channel inverted
-img.setChannelInvertes(0, true);
+img.setChannelInverted(0, true);
 
 // This call will load the chunks and render to rgb image
 let src = await img.render({targetSize: 500});
@@ -91,7 +91,9 @@ Image is from [idr0036-gustafsdottir-cellpainting](https://idr.openmicroscopy.or
 
 ## Z and T indices
 
-Set the Z and T indicies. If not specified, they will default to middle of the Z or T range.
+Set the Z and T indices. If not specified in the
+[omero](https://ngff.openmicroscopy.org/specifications/0.5/index.html#omero-metadata-transitional)
+metadata, they will default to the middle of the Z or T range.
 
 ```js
 img.setZIndex(100);

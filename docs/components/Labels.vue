@@ -52,8 +52,8 @@ onMounted(async () => {
     "
     target="_blank"
   >
-    <img alt="thumbnail" :src="imgSrc" />
-    <img :class="$style.renderedImage" alt="label" :src="labelSrc" />
+    <img v-if="imgSrc" alt="thumbnail" :src="imgSrc" />
+    <img v-if="labelSrc" :class="$style.renderedImage" alt="label" :src="labelSrc" />
   </a>
 
   <p>
@@ -61,8 +61,8 @@ onMounted(async () => {
   </p>
 
   <div :class="$style.overlay">
-    <img alt="thumbnail" :src="imgSrc" />
-    <img :class="$style.fadeInOut" alt="label" :src="labelSrc" />
+    <img v-if="imgSrc" alt="thumbnail" :src="imgSrc" />
+    <img v-if="labelSrc" :class="$style.fadeInOut" alt="label" :src="labelSrc" />
   </div>
 </template>
 
