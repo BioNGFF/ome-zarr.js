@@ -365,7 +365,8 @@ export class NgffImage {
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
     omero?: Omero,
-    maxSize?: number
+    maxSize?: number,
+    signal?: AbortSignal,
   } = {}
   ): Promise<{
     data: Uint8ClampedArray;
@@ -419,7 +420,8 @@ export class NgffImage {
       omero,
       slices,
       originalShape,
-      Boolean(options.autoBoost)
+      Boolean(options.autoBoost),
+      { signal: options.signal }
     );
 
     return { data, width, height };
@@ -433,7 +435,8 @@ export class NgffImage {
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
     omero?: Omero,
-    maxSize?: number
+    maxSize?: number,
+    signal?: AbortSignal,
   } = {}
   ): Promise<string> {
 

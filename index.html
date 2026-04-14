@@ -141,6 +141,7 @@
       }
 
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
+      import { ZipFileStore } from "@zarrita/storage";
       const omezarr = await import("/src/index.ts");
 
 
@@ -154,11 +155,12 @@
       console.log("SHAPES", await i.calcShapes());
       console.log("NEUROGLANCER URL", await i.getNeuroglancerUrl());
 
-
       renderLabels();
 
       renderSimilarThumbs();
 
+      const OXZ = "https://livingobjects.ebi.ac.uk/bioimaging-sandbox/testbucket-bia/test-ozx/6001240.ozx";
+      const IDR0079_2_LABELS = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
       const IDR0062 =
         "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr"; // OME-Zarr v0.4
       const IDR0048 =
@@ -182,8 +184,9 @@
 
       // Thumbnails...
       const urls = [
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/",
-        "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/labels/0/",
+        OXZ,
+        IDR0079_2_LABELS,
+        IDR0079_2_LABELS + "labels/0/",
         IDR0077,
         IDR0083,
         IDR0070,
@@ -197,18 +200,33 @@
       ];
       document.getElementById("thumbnails").innerHTML = `<p>Expected ${urls.length} thumbnails...</p>`;
 
-      for (const url of urls) {
+      let abortController = new AbortController();
+      let signal = abortController.signal;
+
+      // We can abort... - Try uncommenting this code - thumbnails should be aborded.
+      // setTimeout(() => {
+      //   abortController.abort(); // abort all thumbnail requests after 1 seconds (for testing cancellation)
+      //   console.log("Aborted thumbnail requests");
+      // }, 1000);
+
+      for (let url of urls) {
         console.log("Rendering thumbnail for ", url);
         try {
+          console.log("Signal aborted?", signal.aborted);
           // let thumbSrc = await omezarr.render(url);
+          if (url.endsWith(".ozx")) {
+            url = ZipFileStore.fromUrl(url);
+          }
           let ngffImg = await omezarr.NgffImage.load(url);
-          let thumbSrc = await ngffImg.render({targetSize: 100});
-          let ngHref = await ngffImg.getNeuroglancerUrl();
+          let thumbSrc = await ngffImg.render({targetSize: 100, signal});
+          let ngHref = typeof url === "string" ? await ngffImg.getNeuroglancerUrl() : "no url";
           let html = `<a target="_blank" href="${ngHref}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
         } catch (error) {
           console.error("Error rendering thumbnail for ", url, error);
-          alert(`Error rendering thumbnail for ${url}: ${error}`);
+          if (!signal.aborted) {
+            alert(`Error rendering thumbnail for ${url}: ${error}`);
+          }
         }
       }
 
