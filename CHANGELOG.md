@@ -1,4 +1,11 @@
 
+0.0.18 (April 2026)
+-------------------
+
+- New API (non-breaking) [#30](https://github.com/BioNGFF/ome-zarr.js/pull/30)
+- Generalize FetchStore-typed arguments (Thanks to Jonas Windhager) [#27](https://github.com/BioNGFF/ome-zarr.js/pull/27)
+- Support for abort signals (Thanks to Jonas Windhager) [#26](https://github.com/BioNGFF/ome-zarr.js/pull/26)
+- Add Tests with vitest and pngjs (Thanks to Tiago Lubiana) [#21](https://github.com/BioNGFF/ome-zarr.js/pull/21)
 
 0.0.17 (November 2025)
 ----------------------
