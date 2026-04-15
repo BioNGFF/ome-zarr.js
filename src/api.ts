@@ -20,11 +20,12 @@ export async function render(
   
   const { signal } = options ?? {};
   signal?.throwIfAborted();
-  let datasetIndex = options.datasetIndex ?? -1;
+  let datasetIndex: number | undefined;
   let ngffImg: NgffImage;
 
-  // If no targetSize, we ONLY load the smallest array, and render same array below...
+  // If no targetSize, we ONLY load the specified/smallest array, and render same array below...
   if (targetSize == undefined) {
+    datasetIndex = options.datasetIndex ?? -1
     ngffImg = await NgffImage.load(store, {datasetIndex: datasetIndex, attrs: options.attrs});
   } else {
     // ...but if we know the targetSize, we load the largest array here (default),

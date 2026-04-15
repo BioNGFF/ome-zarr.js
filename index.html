@@ -227,8 +227,12 @@
         }
       }
 
-      let thumbSrc = await omezarr.render(IDR0066, 300);
+      let thumbSrc = await omezarr.render(IDR0066, undefined, {datasetIndex: 7});
       let bigImg = `<img src="${thumbSrc}" />`;
+      document.getElementById("bigThumbnails").innerHTML += bigImg;
+
+      thumbSrc = await omezarr.render(IDR0066, undefined, {datasetIndex: 6});
+      bigImg = `<img src="${thumbSrc}" />`;
       document.getElementById("bigThumbnails").innerHTML += bigImg;
       // legacy API - keep a single test for this...
       thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
