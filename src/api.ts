@@ -14,18 +14,19 @@ export async function render(
     maxSize?: number,
     attrs?: OmeAttrs,
     signal?: AbortSignal,
+    datasetIndex?: number,
   } = {},
 ): Promise<string> {
   
   const { signal } = options ?? {};
   signal?.throwIfAborted();
-  let arrayPathOrIndex: number | undefined = undefined;
+  let datasetIndex: number | undefined;
   let ngffImg: NgffImage;
 
-  // If no targetSize, we ONLY load the smallest array, and render same array below...
+  // If no targetSize, we ONLY load the specified/smallest array, and render same array below...
   if (targetSize == undefined) {
-    arrayPathOrIndex = -1;
-    ngffImg = await NgffImage.load(store, {datasetIndex: arrayPathOrIndex, attrs: options.attrs});
+    datasetIndex = options.datasetIndex ?? -1
+    ngffImg = await NgffImage.load(store, {datasetIndex: datasetIndex, attrs: options.attrs});
   } else {
     // ...but if we know the targetSize, we load the largest array here (default),
     // then use targetSize below to pick right resolution
@@ -47,7 +48,7 @@ export async function render(
 
   let src = await ngffImg.render({
     targetSize,
-    arrayPathOrIndex,
+    arrayPathOrIndex: datasetIndex,
     autoBoost: options.autoBoost,
     maxSize: options.maxSize});
   return src;

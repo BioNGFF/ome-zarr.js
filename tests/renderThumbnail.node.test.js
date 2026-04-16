@@ -62,6 +62,15 @@ describe("render", () => {
       })
     ).rejects.toThrow();
   }, 10_000); // timeout in ms
+
+  test("render6001240_datasetIndex", async () => {
+    let result0 = await render(URL_IDR62, undefined, {datasetIndex: 0});
+    let result1 = await render(URL_IDR62, undefined, {datasetIndex: 1});
+    let result2 = await render(URL_IDR62, undefined, {datasetIndex: 2});
+    // We can't compare exact values, but this checks that datasetIndex is respected.
+    expect(result0.length).toBeGreaterThan(result1.length);
+    expect(result1.length).toBeGreaterThan(result2.length);
+  }, 10_000); // timeout in ms
 });
 
 test("version6001240", async () => {
