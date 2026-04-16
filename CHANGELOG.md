@@ -1,4 +1,9 @@
 
+0.0.19 (April 2026)
+-------------------
+
+- render() supports datasetIndex [#31](https://github.com/BioNGFF/ome-zarr.js/pull/31)
+
 0.0.18 (April 2026)
 -------------------
 
