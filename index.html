@@ -74,7 +74,7 @@
     <script type="module">
 
       async function renderSimilarThumbs() {
-        let plateUrl = "https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD885/e7bdccbf-5119-4d9c-b466-66d211871db8/e7bdccbf-5119-4d9c-b466-66d211871db8.zarr";
+        let plateUrl = "https://livingobjects.ebi.ac.uk/bioimaging-integrator-data/S-BIAD885/e7bdccbf-5119-4d9c-b466-66d211871db8/e7bdccbf-5119-4d9c-b466-66d211871db8.zarr";
         let a1Img = await omezarr.NgffImage.load(plateUrl + "/A/1/0");
         // a1Img.omero.channels[0].active = false;
         let dsPath = await a1Img.getPathForTargetSize(100);

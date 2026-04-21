@@ -58,7 +58,7 @@ will be created.
 
 ```js
 // We create a NgffImage, update rendering settings and render()
-let url = "https://livingobjects.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
+let url = "https://livingobjects.ebi.ac.uk/bioimaging-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0";
 
 // When the image is loaded, default rendering settings are created
 // if there is no "omero" metadata found
@@ -84,7 +84,7 @@ documentation](https://github.com/biongff/ome-zarr.js/blob/main/docs/components/
 The example below is from [ImageViewer](https://github.com/biongff/ome-zarr.js/blob/main/docs/components/ImageViewer.vue) component.
 
 <ClientOnly>
-<ImageViewer url="https://uk1s3.embassy.ebi.ac.uk/bia-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0" />
+<ImageViewer url="https://livingobjects.ebi.ac.uk/bioimaging-integrator-data/S-BIAD855/781ac3d7-673f-47be-a4d2-3fdf3f477047/781ac3d7-673f-47be-a4d2-3fdf3f477047.zarr/D/3/0" />
 </ClientOnly>
 
 Image is from [idr0036-gustafsdottir-cellpainting](https://idr.openmicroscopy.org/webclient/?show=screen-1952).
