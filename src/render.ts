@@ -1,6 +1,6 @@
 import * as zarr from "zarrita";
 
-import { Axis, Omero } from "./types/ome";
+import { Axis, Omero, Channel } from "./types/ome";
 import {
   getDefaultVisibilities,
   hexToRGB,
@@ -116,7 +116,7 @@ export function renderChannelWithColormap(
 export async function getRgba(
   arr: zarr.Array<any, zarr.Readable>,
   axes: Axis[],
-  omero: Omero | null | undefined,
+  channels: Channel[] | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
   autoBoost: boolean,
@@ -149,17 +149,17 @@ export async function getRgba(
   let inverteds: Array<boolean> | undefined = undefined;
 
   // If we have 'omero', use it for channel rgbColors and visibilities
-  if (omero) {
+  if (channels) {
     let active_count = 0;
-    visibilities = omero.channels.map((ch) => {
+    visibilities = channels.map((ch) => {
       if (ch.active == undefined) {
         ch.active = true;
       }
       active_count += ch.active ? 1 : 0;
       return ch.active && active_count <= MAX_CHANNELS;
     });
-    rgbColors = omero.channels.map((ch) => hexToRGB(ch.color));
-    luts = omero.channels.map((ch) =>
+    rgbColors = channels.map((ch) => hexToRGB(ch.color));
+    luts = channels.map((ch) =>
       "lut" in ch ? (ch.lut as string) : undefined
     );
   } else {
@@ -176,19 +176,12 @@ export async function getRgba(
   );
   rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
   inverteds = activeChannelIndices.map((chIndex: number) =>
-    Boolean(omero?.channels[chIndex].inverted)
+    Boolean(channels?.[chIndex]?.inverted)
   );
   if (luts !== undefined) {
     luts = luts.filter((_, index) => activeChannelIndices.includes(index));
   }
 
-  // Get slices for each channel
-  if (sliceIndices["z"] == undefined) {
-    sliceIndices["z"] = omero?.rdefs?.defaultZ;
-  }
-  if (sliceIndices["t"] == undefined) {
-    sliceIndices["t"] = omero?.rdefs?.defaultT;
-  }
   // sliceIndices are from originalShape if provided
   let chSlices = getSlices(
     activeChannelIndices,
@@ -208,8 +201,8 @@ export async function getRgba(
   // Use start/end values from 'omero' if available, otherwise calculate min/max
   let minMaxValues = activeChannelIndices.map(
     (chIndex: number, i: number): [number, number] => {
-      if (omero && omero.channels[chIndex]) {
-        let chOmero = omero.channels[chIndex];
+      if (channels && channels[chIndex]) {
+        let chOmero = channels[chIndex];
         if (
           chOmero?.window?.start !== undefined &&
           chOmero?.window?.end !== undefined

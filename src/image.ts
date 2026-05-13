@@ -1,6 +1,6 @@
 
 import * as zarr from "zarrita";
-import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
+import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel } from "./types/ome";
 import { openArray, openGroup, createOmero } from "./utils";
 // import { renderImage } from "./api";
 import { convertRgbDataToDataUrl, getRgba } from "./render";
@@ -364,7 +364,7 @@ export class NgffImage {
     arrayPathOrIndex?: string | number, 
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
-    omero?: Omero,
+    channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
   } = {}
@@ -408,8 +408,16 @@ export class NgffImage {
       );
     }
 
-    let omero = options.omero || this.omero;
+    // let omero = options.omero || this.omero;
     let slices = options.slices || {};
+    // Get slices for each channel
+    if (slices["z"] == undefined) {
+      slices["z"] = this.omero?.rdefs?.defaultZ;
+    }
+    if (slices["t"] == undefined) {
+      slices["t"] = this.omero?.rdefs?.defaultT;
+    }
+    let channels = options.channels || this.omero?.channels;
     // We need originalShape to know if we have Z-downsampling.
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
@@ -417,7 +425,7 @@ export class NgffImage {
     let { data, width, height } = await getRgba(
       arr,
       this.axes,
-      omero,
+      channels,
       slices,
       originalShape,
       Boolean(options.autoBoost),
@@ -434,7 +442,7 @@ export class NgffImage {
     arrayPathOrIndex?: string | number, 
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
-    omero?: Omero,
+    channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
   } = {}
