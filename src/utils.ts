@@ -256,7 +256,7 @@ export function renderTo8bitArray(
   return rgba;
 }
 
-function boostContrast(
+export function boostContrast(
   rgba: Uint8ClampedArray,
   factor: number
 ): Uint8ClampedArray {
@@ -271,7 +271,7 @@ function boostContrast(
   return rgba;
 }
 
-function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
+export function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
   // Create histogram from uint8array.
   // Returns list of percentages in each bin
   let hist = new Array(bins).fill(0);

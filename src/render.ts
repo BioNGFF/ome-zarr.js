@@ -7,6 +7,8 @@ import {
   getDefaultRgbColors,
   getMinMaxValues,
   getSlices,
+  getHistogram,
+  boostContrast,
   renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
@@ -213,18 +215,18 @@ export async function getRgba(
   // Render to 8bit rgb array
   // compare timing for new renderTo8bitArray2 vs old renderTo8bitArray, and also compare outputs for testing
   console.time("renderTo8bitArray");
-  let data = renderTo8bitArray(
+  let oldData = renderTo8bitArray(
     ndChunks,
     minMaxValues,
     rgbColors,
     luts,
     inverteds,
-    false
+    autoBoost
   );
   console.timeEnd("renderTo8bitArray");
 
   console.time("renderTo8bitArray2");
-  let data2 = renderTo8bitArray2(
+  let data = renderTo8bitArray2(
     ndChunks,
     minMaxValues,
     rgbColors,
@@ -236,14 +238,14 @@ export async function getRgba(
   console.log("ch", ndChunks.length, "shape", ndChunks[0].shape);
 
   let mismatches = [];
-  for (let i = 0; i < data.length; i++) {
-    if (data[i] !== data2[i]) {
-      mismatches.push(data2[i] - data[i]);
+  for (let i = 0; i < oldData.length; i++) {
+    if (oldData[i] !== data[i]) {
+      mismatches.push(data[i] - oldData[i]);
     }
   }
   if (mismatches.length > 0) {
     const formattedMismatchCount = mismatches.length.toLocaleString();
-    const formattedDataLength = data.length.toLocaleString();
+    const formattedDataLength = oldData.length.toLocaleString();
     console.warn(
       `Warning: outputs differ at ${formattedMismatchCount} / ${formattedDataLength} pixels`, mismatches.slice(mismatches.length/2, mismatches.length/2 + 1000)
     );
@@ -279,12 +281,25 @@ export function renderTo8bitArray2(
     return lut;
   });
 
+  let start = performance.now();
+
   // init the rgba array with first channel, then blend in subsequent channels
   let rgba = renderChannelWithLUT(ndChunks[0], masterLuts[0], { range: minMaxValues[0] })
   for (let i = 1; i < ndChunks.length; i++) {
     let channelRgba = renderChannelWithLUT(ndChunks[i], masterLuts[i], { blending: "additive", target: rgba, range: minMaxValues[i] });
     rgba = channelRgba;
   }
+
+  if (performance.now() - start < 100 && autoBoost) {
+    let bins = 5;
+    let hist = getHistogram(rgba, bins);
+    // If top bin, has less than 1% of pixesl, boost contrast
+    if (hist[bins - 1] < 1) {
+      let factor = 2;
+      rgba = boostContrast(rgba, factor);
+    }
+  }
+  return rgba;
 
   return rgba;
 }
