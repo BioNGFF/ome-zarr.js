@@ -22,6 +22,9 @@ export function renderChannel(
   func: (value: number) => Color,
   options?: { target?: Uint8ClampedArray; blending?: Blending }
 ): Uint8ClampedArray {
+  // Core rendering function. Takes a chunk, and a function that maps intensity values to colors,
+  // and renders to an RGBA array, according to the blending mode.
+  // If target is provided, it is used as the initial RGBA array, and blended with the new colors.
   const { target, blending = "additive" } = options ?? {};
 
   const [height, width] = chunk.shape;
@@ -36,7 +39,7 @@ export function renderChannel(
     const alphaSrc = data[i + 3] / 255;
     const alphaDst = (alpha ?? 255) / 255;
     if (blending === "additive") {
-      // Additive blending
+      // Additive blending: ADD to existing color (modified by existing alpha)
       data[i] = Math.min(data[i] * alphaSrc + r, 255);
       data[i + 1] = Math.min(data[i + 1] * alphaSrc + g, 255);
       data[i + 2] = Math.min(data[i + 2] * alphaSrc + b, 255);
@@ -66,16 +69,19 @@ export function renderChannelWithLUT(
     range?: [number, number];
   }
 ): Uint8ClampedArray {
-  if (lut.length !== 256) {
-    throw new Error("LUT must have 256 entries");
-  }
-  const { target, blending = "additive", range = [0, 255] } = options ?? {};
+  // LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest"
+  // The intensity value from the chunk is mapped to a color in the LUT, scaling
+  // over the min/max range if provided.
+  // In no range is provided, chunk values are used directly as indices into the LUT.
+  // Values outside the range are clamped to the first/last value in the LUT.
+  const bins = lut.length;
+  const { target, blending = "additive", range = [0, bins - 1] } = options ?? {};
 
   function func(value: number): Color {
     const [min, max] = range;
     if (value < min) value = min;
     if (value > max) value = max;
-    value = Math.round((255 * (value - min)) / (max - min));
+    value = Math.round(((bins - 1) * (value - min)) / (max - min));
     return lut[value];
   }
 
@@ -91,6 +97,9 @@ export function renderChannelWithColormap(
     fillValue?: Color;
   }
 ): Uint8ClampedArray {
+  // The intensity value from the chunk is used to lookup a color in the colormap,
+  // which is a Map of value -> [r,g,b] or [r,g,b,a].
+  // If not found, the fillValue is used (default [0,0,0,0])
   const {
     target,
     blending = "additive",
@@ -299,8 +308,6 @@ export function renderTo8bitArray2(
       rgba = boostContrast(rgba, factor);
     }
   }
-  return rgba;
-
   return rgba;
 }
 
