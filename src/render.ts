@@ -142,7 +142,7 @@ export async function getRgba(
   let visibilities;
   // list of [r,g,b] colors
   let rgbColors: Array<[number, number, number]>;
-  let luts: (Color[] | undefined)[] = [];
+  let luts: (Color[] | Map<number, Color> | undefined)[] = [];
   let inverteds: Array<boolean> | undefined = undefined;
 
   // If we have 'omero', use it for channel rgbColors and visibilities
@@ -157,7 +157,7 @@ export async function getRgba(
     });
     rgbColors = channels.map((ch) => hexToRGB(ch.color));
     luts = channels.map((ch) =>
-      "lut" in ch ? (ch.lut as Color[]) : undefined
+      "lut" in ch ? (ch.lut as Color[]) : "colorMap" in ch ? (ch.colorMap as Map<number, Color>) : undefined
     );
   } else {
     visibilities = getDefaultVisibilities(channel_count);
@@ -232,7 +232,7 @@ export function renderTo8bitArray2(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
   colors: Array<[number, number, number]>,
-  luts: Array<Color[] | undefined> | undefined,
+  luts: Array<Color[] | Map<number, Color> | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
   autoBoost: boolean = false
 ): Uint8ClampedArray {
@@ -244,7 +244,7 @@ export function renderTo8bitArray2(
     if (!lut) {
       lut = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
     }
-    if (inverteds && inverteds[i]) {
+    if (inverteds && inverteds[i] && Array.isArray(lut)) {
       lut = lut.reverse() as Color[];
     }
     return lut;
@@ -252,11 +252,25 @@ export function renderTo8bitArray2(
 
   let start = performance.now();
 
+  let rgba: Uint8ClampedArray;
   // init the rgba array with first channel, then blend in subsequent channels
-  let rgba = renderChannelWithLUT(ndChunks[0], masterLuts[0], { range: minMaxValues[0] })
+  if (masterLuts[0] instanceof Map) {
+    let colorMap = masterLuts[0] as Map<number, Color>;
+    let fillValue: Color | undefined = colorMap.get(Infinity);
+    rgba = renderChannelWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
+  } else {
+    rgba = renderChannelWithLUT(ndChunks[0], masterLuts[0] as Color[], { range: minMaxValues[0] });
+  }
   for (let i = 1; i < ndChunks.length; i++) {
-    let channelRgba = renderChannelWithLUT(ndChunks[i], masterLuts[i], { blending: "additive", target: rgba, range: minMaxValues[i] });
-    rgba = channelRgba;
+    if (masterLuts[i] instanceof Map) {
+      let colorMap = masterLuts[i] as Map<number, Color>;
+      let fillValue: Color | undefined = colorMap.get(Infinity);
+      let channelRgba = renderChannelWithColormap(ndChunks[i], colorMap, { blending: "additive", target: rgba, fillValue });
+      rgba = channelRgba;
+    } else {
+      let channelRgba = renderChannelWithLUT(ndChunks[i], masterLuts[i] as Color[], { blending: "additive", target: rgba, range: minMaxValues[i] });
+      rgba = channelRgba;
+    }
   }
 
   if (performance.now() - start < 100 && autoBoost) {

@@ -145,6 +145,11 @@ export class NgffImage {
     omero.channels[channelIndex].lut = lut;
   }
 
+  setChannelColorMap(channelIndex: number, colorMap: Map<number, Color>) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].colorMap = colorMap;
+  }
+
   setZIndex(zIndex: number) {
     if (!this.omero) {throw new Error("No Omero metadata found in image");}
     this.omero.rdefs.defaultZ = zIndex;
