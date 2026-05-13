@@ -1,6 +1,6 @@
 import * as zarr from "zarrita";
 
-import { Axis, Omero, Channel } from "./types/ome";
+import { Axis, Channel, Color } from "./types/ome";
 import {
   getDefaultVisibilities,
   hexToRGB,
@@ -9,12 +9,9 @@ import {
   getSlices,
   getHistogram,
   boostContrast,
-  renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
-import { getLutRgb } from "./luts";
 
-export type Color = [number, number, number] | [number, number, number, number];
 export type Blending = "additive" | "translucent";
 
 export function renderChannel(
@@ -145,7 +142,7 @@ export async function getRgba(
   let visibilities;
   // list of [r,g,b] colors
   let rgbColors: Array<[number, number, number]>;
-  let luts: (string | undefined)[] = [];
+  let luts: (Color[] | undefined)[] = [];
   let inverteds: Array<boolean> | undefined = undefined;
 
   // If we have 'omero', use it for channel rgbColors and visibilities
@@ -160,7 +157,7 @@ export async function getRgba(
     });
     rgbColors = channels.map((ch) => hexToRGB(ch.color));
     luts = channels.map((ch) =>
-      "lut" in ch ? (ch.lut as string) : undefined
+      "lut" in ch ? (ch.lut as Color[]) : undefined
     );
   } else {
     visibilities = getDefaultVisibilities(channel_count);
@@ -235,7 +232,7 @@ export function renderTo8bitArray2(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
   colors: Array<[number, number, number]>,
-  luts: Array<string | undefined> | undefined,
+  luts: Array<Color[] | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
   autoBoost: boolean = false
 ): Uint8ClampedArray {
@@ -243,11 +240,8 @@ export function renderTo8bitArray2(
   // For each channel in ndChunks...
 
   let masterLuts = colors.map((color, i) => {
-    let lutName = luts?.length ? luts[i] : undefined;
-    let lut: Color[];
-    if (lutName) {
-      lut = getLutRgb(lutName as string) as Color[];
-    } else {
+    let lut = luts?.length ? luts[i] : undefined;
+    if (!lut) {
       lut = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
     }
     if (inverteds && inverteds[i]) {

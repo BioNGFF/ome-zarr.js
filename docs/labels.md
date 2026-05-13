@@ -28,7 +28,7 @@ document.getElementById("img").src = labelSrc;
 let labelPaths = await img.getLabelsPaths();
 let labelImage = await omezarr.NgffImage.load(url + "labels/" + labelPaths[0]);
 // Background will be rendered black
-labelImage.setChannelLut(0, "glasbey_inverted.lut");
+labelImage.setChannelLut(0, omezarr.luts.GLASBEY_INVERTED);
 
 // renderRgba gives us an rgba array we can manipulate, to convert black to transparent
 let {data, width} = await img.renderRgba({targetSize: 300);

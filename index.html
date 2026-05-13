@@ -110,6 +110,8 @@
       async function renderLabels() {
         let imgUrl = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
         let img = await omezarr.NgffImage.load(imgUrl);
+        img.setChannelColor(0, "FF00FF");
+        img.setChannelColor(1, "FFFF00");
         let imsSrc = await img.render({targetSize: 300, autoBoost: true});
         let html = `<a href="${imgUrl}"><img src="${imsSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
@@ -117,7 +119,10 @@
         let labelPaths = await img.getLabelsPaths();
         let labelImage = await omezarr.NgffImage.load(imgUrl + "labels/" + labelPaths[0]);
         labelImage.setChannelActive(0, true);
-        labelImage.setChannelLut(0, "glasbey_inverted.lut");
+        labelImage.setChannelLut(0, omezarr.luts.GLASBEY_INVERTED);
+        // labelImage.setChannelLut(0, omezarr.luts.SIXTEEN_COLORS);
+        // let customLut = [[255, 0, 0], [0, 255, 0], [0, 0, 255]];
+        // labelImage.setChannelLut(0, customLut);
         let labelRgba = await labelImage.renderRgba({targetSize: 300});
         blackToTransparentRgba(labelRgba.data);
 
@@ -241,7 +246,7 @@
 
       // Check we can set channel setting on 2D image (no "c" axis)
       let imgChick = await omezarr.NgffImage.load(IDR0066);
-      imgChick.setChannelLut(0, "fire.lut");
+      imgChick.setChannelLut(0, omezarr.luts.FIRE);
       let chickSrc = await imgChick.render({targetSize: 300});
       document.getElementById("bigThumbnails").innerHTML += `<img src="${chickSrc}" />`;
 
@@ -280,7 +285,7 @@
       // turn first channel ON, use LUT
       img.setChannelActive(0, true);
       img.setChannelActive(1, false);
-      img.setChannelLut(0, "16_colors.lut");
+      img.setChannelLut(0, omezarr.luts.SIXTEEN_COLORS);
       img.setChannelInverted(0, false);
       // TODO: use dim names from multiscale
       let sizeZ = arr200.shape.at(-3);

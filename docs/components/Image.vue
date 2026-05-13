@@ -111,7 +111,8 @@ async function render() {
       img.setChannelColor(index, "FFFFFF");
       img.setChannelEnd(index, 2000);
     } else if (props.example == 'luts') {
-      img.setChannelLut(index, lut.value);
+      let lutRgb = omezarr.getLutRgb(lut.value);
+      img.setChannelLut(index, lutRgb);
     }
 
     // WARNING! If the API changes and this needs to be updated, the docs will need to be updated too!

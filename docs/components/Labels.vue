@@ -30,7 +30,7 @@ onMounted(async () => {
     url + "labels/" + labelPaths[0]
   );
   labelImage.setChannelActive(0, true);
-  labelImage.setChannelLut(0, "glasbey_inverted.lut");
+  labelImage.setChannelLut(0, omezarr.luts.GLASBEY_INVERTED);
 
   // renderRgba gives us an rgba array we can manipulate, to convert black to transparent
   let labelRgba = await labelImage.renderRgba({ targetSize: 300 });

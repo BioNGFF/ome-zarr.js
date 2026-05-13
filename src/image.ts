@@ -1,6 +1,6 @@
 
 import * as zarr from "zarrita";
-import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel } from "./types/ome";
+import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
 import { openArray, openGroup, createOmero } from "./utils";
 // import { renderImage } from "./api";
 import { convertRgbDataToDataUrl, getRgba } from "./render";
@@ -140,7 +140,7 @@ export class NgffImage {
     omero.channels[channelIndex].inverted = inverted;
   }
 
-  setChannelLut(channelIndex: number, lut: string) {
+  setChannelLut(channelIndex: number, lut: Color[]) {
     let omero = this.checkChannelIndex(channelIndex);
     omero.channels[channelIndex].lut = lut;
   }

@@ -18,12 +18,32 @@ omezarr.getLuts().forEach((lut) => {
 });
 ```
 
-To `render()` with a LUT, we can set the `lut` attribute of `omero.channels`:
+We can lookup the `rgb` list for a lut by `name`:
+
+```js
+let fireRgb = omezarr.getLutRgb("fire.lut")
+```
+
+However, if we want to allow tree shaking to skip bundling all the LUTs, we can import
+only the LUT we need:
+
+```js
+let fireRgb = omezarr.luts.FIRE;
+```
+
+To `render()` with a LUT, we can set the `lut` to a list of `rgb` values:
 
 ```js
 let img = await omezarr.NgffImage.load(url);
-img.setChannelLut(0, "fire.lut");
+img.setChannelLut(0, fireRgb);
 let src = await img.render({targetSize: 300});
+```
+
+We can also supply our custom LUT of `rgb` values, which can be of any length:
+
+```js
+let customLut = [[255, 0, 0], [0, 255, 0], [0, 0, 255]];
+img.setChannelLut(0, customLut);
 ```
 
 Click on a LUT below to re-render the image:

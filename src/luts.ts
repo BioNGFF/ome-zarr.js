@@ -1,3 +1,4 @@
+
 type Rgb = Array<[number, number, number]>;
 
 // interface Lut {
@@ -46,11 +47,7 @@ function lutToPng(lutRgb: Rgb) {
   return dataUrl;
 }
 
-export const LUTS = [
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "16_colors.lut",
-    rgb: [
+export const SIXTEEN_COLORS = [
       [0, 0, 0],
       [0, 0, 0],
       [0, 0, 0],
@@ -307,12 +304,9 @@ export const LUTS = [
       [255, 255, 255],
       [255, 255, 255],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "3-3-2_rgb.lut",
-    rgb: [
+    ];
+
+export const THREE_THREE_TWO_RGB = [
       [0, 0, 0],
       [0, 0, 64],
       [0, 0, 128],
@@ -569,12 +563,9 @@ export const LUTS = [
       [224, 224, 64],
       [224, 224, 128],
       [224, 224, 192],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "5_ramps.lut",
-    rgb: [
+    ];
+
+export const FIVE_RAMPS = [
       [0, 0, 1],
       [0, 0, 5],
       [0, 0, 10],
@@ -831,12 +822,9 @@ export const LUTS = [
       [245, 245, 245],
       [250, 250, 250],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "6_shades.lut",
-    rgb: [
+    ];
+
+export const SIX_SHADES = [
       [0, 0, 0],
       [3, 0, 0],
       [7, 0, 0],
@@ -1093,12 +1081,9 @@ export const LUTS = [
       [255, 255, 231],
       [255, 255, 239],
       [255, 255, 247],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "blue_orange_icb.lut",
-    rgb: [
+    ];
+
+export const BLUE_ORANGE_ICB = [
       [1, 2, 1],
       [1, 2, 1],
       [1, 3, 1],
@@ -1355,12 +1340,9 @@ export const LUTS = [
       [254, 249, 246],
       [254, 251, 250],
       [254, 251, 250],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "brgbcmyw.lut",
-    rgb: [
+    ];
+
+export const BRGBCMYW = [
       [0, 0, 0],
       [0, 0, 0],
       [0, 0, 0],
@@ -1617,12 +1599,9 @@ export const LUTS = [
       [255, 255, 255],
       [255, 255, 255],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "cividis.lut",
-    rgb: [
+    ];
+
+export const CIVIDIS = [
       [0, 32, 76],
       [0, 32, 78],
       [0, 33, 80],
@@ -1879,12 +1858,9 @@ export const LUTS = [
       [255, 231, 67],
       [255, 232, 68],
       [255, 233, 69],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "cool.lut",
-    rgb: [
+    ];
+
+export const COOL = [
       [1, 3, 2],
       [1, 3, 2],
       [1, 5, 4],
@@ -2141,12 +2117,9 @@ export const LUTS = [
       [254, 248, 242],
       [254, 250, 246],
       [254, 250, 246],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "cyan_hot.lut",
-    rgb: [
+    ];
+
+export const CYAN_HOT = [
       [0, 0, 0],
       [0, 1, 2],
       [0, 2, 5],
@@ -2403,12 +2376,9 @@ export const LUTS = [
       [248, 255, 255],
       [251, 255, 255],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "edges.lut",
-    rgb: [
+    ];
+
+export const EDGES = [
       [1, 1, 1],
       [1, 1, 1],
       [1, 1, 1],
@@ -2665,12 +2635,9 @@ export const LUTS = [
       [1, 1, 1],
       [1, 1, 1],
       [1, 1, 1],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "fire.lut",
-    rgb: [
+    ];
+
+export const FIRE = [
       [0, 0, 0],
       [0, 0, 7],
       [0, 0, 15],
@@ -2927,12 +2894,9 @@ export const LUTS = [
       [255, 255, 255],
       [255, 255, 255],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "gem.lut",
-    rgb: [
+    ];
+
+export const GEM = [
       [1, 2, 2],
       [1, 2, 2],
       [1, 2, 3],
@@ -3189,12 +3153,9 @@ export const LUTS = [
       [254, 249, 246],
       [254, 252, 250],
       [254, 252, 250],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "glasbey.lut",
-    rgb: [
+    ];
+
+export const GLASBEY = [
       [255, 255, 255],
       [0, 0, 255],
       [255, 0, 0],
@@ -3451,12 +3412,9 @@ export const LUTS = [
       [126, 130, 72],
       [58, 6, 101],
       [189, 117, 101],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "glasbey_inverted.lut",
-    rgb: [
+    ];
+
+export const GLASBEY_INVERTED = [
       [0, 0, 0],
       [0, 48, 136],
       [16, 136, 0],
@@ -3713,12 +3671,9 @@ export const LUTS = [
       [184, 144, 232],
       [232, 224, 104],
       [248, 248, 232],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "glow.lut",
-    rgb: [
+    ];
+
+export const GLOW = [
       [0, 138, 0],
       [1, 0, 0],
       [1, 0, 0],
@@ -3975,12 +3930,9 @@ export const LUTS = [
       [253, 253, 250],
       [253, 253, 252],
       [0, 0, 255],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "grays.lut",
-    rgb: [
+    ];
+
+export const GRAYS = [
       [0, 0, 0],
       [1, 1, 1],
       [2, 2, 2],
@@ -4237,12 +4189,9 @@ export const LUTS = [
       [253, 253, 253],
       [254, 254, 254],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "green_fire_blue.lut",
-    rgb: [
+    ];
+
+export const GREEN_FIRE_BLUE = [
       [0, 0, 0],
       [0, 1, 2],
       [0, 2, 5],
@@ -4499,12 +4448,9 @@ export const LUTS = [
       [255, 255, 243],
       [255, 255, 247],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "hilo.lut",
-    rgb: [
+    ];
+
+export const HILO = [
       [0, 0, 255],
       [1, 1, 1],
       [2, 2, 2],
@@ -4761,12 +4707,9 @@ export const LUTS = [
       [253, 253, 253],
       [254, 254, 254],
       [255, 0, 0],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "ica.lut",
-    rgb: [
+    ];
+
+export const ICA = [
       [204, 204, 255],
       [202, 202, 255],
       [201, 200, 255],
@@ -5023,12 +4966,9 @@ export const LUTS = [
       [255, 252, 198],
       [255, 253, 201],
       [255, 255, 204],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "ica2.lut",
-    rgb: [
+    ];
+
+export const ICA2 = [
       [255, 255, 0],
       [252, 254, 0],
       [250, 254, 0],
@@ -5285,12 +5225,9 @@ export const LUTS = [
       [255, 252, 198],
       [255, 253, 201],
       [255, 255, 204],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "ica3.lut",
-    rgb: [
+    ];
+
+export const ICA3 = [
       [255, 204, 255],
       [254, 202, 254],
       [254, 200, 254],
@@ -5547,12 +5484,9 @@ export const LUTS = [
       [255, 252, 200],
       [255, 253, 202],
       [255, 255, 204],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "ice.lut",
-    rgb: [
+    ];
+
+export const ICE = [
       [0, 156, 140],
       [0, 157, 140],
       [0, 158, 141],
@@ -5809,12 +5743,9 @@ export const LUTS = [
       [230, 0, 27],
       [230, 0, 27],
       [230, 0, 27],
-    ],
-  },
-  {
-    path: "/luts/matplotlib/",
-    name: "inferno.lut",
-    rgb: [
+    ];
+
+export const INFERNO = [
       [0, 0, 3],
       [0, 0, 4],
       [0, 0, 6],
@@ -6071,12 +6002,9 @@ export const LUTS = [
       [249, 252, 157],
       [250, 253, 160],
       [252, 254, 164],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "magenta_hot.lut",
-    rgb: [
+    ];
+
+export const MAGENTA_HOT = [
       [0, 0, 0],
       [1, 0, 1],
       [3, 0, 3],
@@ -6333,12 +6261,9 @@ export const LUTS = [
       [255, 247, 255],
       [255, 250, 255],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/matplotlib/",
-    name: "magma.lut",
-    rgb: [
+    ];
+
+export const MAGMA = [
       [0, 0, 3],
       [0, 0, 4],
       [0, 0, 6],
@@ -6595,12 +6520,9 @@ export const LUTS = [
       [251, 249, 187],
       [251, 250, 189],
       [251, 252, 191],
-    ],
-  },
-  {
-    path: "/luts/seaborn/",
-    name: "mako.lut",
-    rgb: [
+    ];
+
+export const MAKO = [
       [11, 3, 5],
       [12, 4, 6],
       [13, 4, 7],
@@ -6857,12 +6779,9 @@ export const LUTS = [
       [219, 243, 226],
       [221, 244, 228],
       [223, 245, 229],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "orange_hot.lut",
-    rgb: [
+    ];
+
+export const ORANGE_HOT = [
       [0, 0, 0],
       [2, 1, 0],
       [5, 3, 0],
@@ -7119,12 +7038,9 @@ export const LUTS = [
       [255, 255, 248],
       [255, 255, 251],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "phase.lut",
-    rgb: [
+    ];
+
+export const PHASE = [
       [0, 0, 252],
       [0, 0, 252],
       [0, 0, 252],
@@ -7381,12 +7297,9 @@ export const LUTS = [
       [248, 4, 4],
       [252, 0, 0],
       [252, 0, 0],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "physics.lut",
-    rgb: [
+    ];
+
+export const PHYSICS = [
       [47, 2, 119],
       [46, 2, 120],
       [45, 2, 122],
@@ -7643,12 +7556,9 @@ export const LUTS = [
       [232, 41, 16],
       [232, 37, 16],
       [233, 34, 16],
-    ],
-  },
-  {
-    path: "/luts/matplotlib/",
-    name: "plasma.lut",
-    rgb: [
+    ];
+
+export const PLASMA = [
       [12, 7, 134],
       [16, 7, 135],
       [19, 6, 137],
@@ -7905,12 +7815,9 @@ export const LUTS = [
       [240, 245, 37],
       [240, 246, 35],
       [239, 248, 33],
-    ],
-  },
-  {
-    path: "/luts/janelia/",
-    name: "pup_br.lut",
-    rgb: [
+    ];
+
+export const PUP_BR = [
       [213, 0, 246],
       [213, 0, 246],
       [213, 0, 246],
@@ -8167,12 +8074,9 @@ export const LUTS = [
       [0, 124, 239],
       [0, 124, 239],
       [0, 0, 0],
-    ],
-  },
-  {
-    path: "/luts/janelia/",
-    name: "pup_nr.lut",
-    rgb: [
+    ];
+
+export const PUP_NR = [
       [255, 72, 0],
       [255, 72, 0],
       [255, 72, 0],
@@ -8429,12 +8333,9 @@ export const LUTS = [
       [0, 163, 130],
       [0, 163, 130],
       [0, 0, 0],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "rainbow_rgb.lut",
-    rgb: [
+    ];
+
+export const RAINBOW_RGB = [
       [0, 0, 0],
       [0, 0, 5],
       [0, 0, 10],
@@ -8691,12 +8592,9 @@ export const LUTS = [
       [154, 132, 141],
       [153, 138, 144],
       [151, 143, 146],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "red-green.lut",
-    rgb: [
+    ];
+
+export const RED_GREEN = [
       [0, 0, 0],
       [2, 0, 0],
       [4, 0, 0],
@@ -8953,12 +8851,9 @@ export const LUTS = [
       [0, 250, 0],
       [0, 252, 0],
       [0, 254, 0],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "red_hot.lut",
-    rgb: [
+    ];
+
+export const RED_HOT = [
       [0, 0, 0],
       [0, 0, 0],
       [0, 0, 0],
@@ -9215,12 +9110,9 @@ export const LUTS = [
       [255, 255, 255],
       [255, 255, 255],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/seaborn/",
-    name: "rocket.lut",
-    rgb: [
+    ];
+
+export const ROCKET = [
       [2, 4, 25],
       [3, 5, 26],
       [4, 5, 27],
@@ -9477,12 +9369,9 @@ export const LUTS = [
       [250, 232, 217],
       [251, 234, 219],
       [251, 235, 221],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "royal.lut",
-    rgb: [
+    ];
+
+export const ROYAL = [
       [1, 1, 7],
       [1, 1, 7],
       [1, 1, 13],
@@ -9739,12 +9628,9 @@ export const LUTS = [
       [254, 254, 254],
       [254, 254, 254],
       [254, 254, 254],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "sepia.lut",
-    rgb: [
+    ];
+
+export const SEPIA = [
       [0, 0, 0],
       [43, 28, 4],
       [57, 35, 5],
@@ -10001,12 +9887,9 @@ export const LUTS = [
       [255, 233, 217],
       [255, 242, 233],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "smart.lut",
-    rgb: [
+    ];
+
+export const SMART = [
       [2, 2, 2],
       [2, 2, 2],
       [2, 2, 2],
@@ -10263,12 +10146,9 @@ export const LUTS = [
       [254, 252, 249],
       [254, 253, 252],
       [254, 253, 252],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "spectrum.lut",
-    rgb: [
+    ];
+
+export const SPECTRUM = [
       [255, 0, 0],
       [255, 6, 0],
       [255, 12, 0],
@@ -10525,12 +10405,9 @@ export const LUTS = [
       [255, 0, 12],
       [255, 0, 6],
       [255, 0, 0],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "thal.lut",
-    rgb: [
+    ];
+
+export const THAL = [
       [1, 1, 9],
       [1, 1, 9],
       [1, 1, 17],
@@ -10787,12 +10664,9 @@ export const LUTS = [
       [254, 254, 254],
       [254, 254, 254],
       [254, 254, 254],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "thallium.lut",
-    rgb: [
+    ];
+
+export const THALLIUM = [
       [1, 1, 1],
       [1, 1, 1],
       [1, 1, 1],
@@ -11049,12 +10923,9 @@ export const LUTS = [
       [253, 253, 253],
       [253, 253, 253],
       [253, 253, 253],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "thermal.lut",
-    rgb: [
+    ];
+
+export const THERMAL = [
       [70, 0, 115],
       [70, 0, 115],
       [70, 0, 116],
@@ -11311,12 +11182,9 @@ export const LUTS = [
       [255, 5, 3],
       [255, 2, 2],
       [255, 2, 2],
-    ],
-  },
-  {
-    path: "/luts/",
-    name: "turbo.lut",
-    rgb: [
+    ];
+
+export const TURBO = [
       [48, 18, 59],
       [49, 21, 66],
       [51, 24, 74],
@@ -11573,12 +11441,9 @@ export const LUTS = [
       [129, 6, 2],
       [126, 5, 2],
       [122, 4, 2],
-    ],
-  },
-  {
-    path: "/luts/ncsa_paledit/",
-    name: "unionjack.lut",
-    rgb: [
+    ];
+
+export const UNIONJACK = [
       [0, 0, 0],
       [0, 0, 2],
       [0, 0, 5],
@@ -11835,12 +11700,9 @@ export const LUTS = [
       [251, 243, 243],
       [252, 247, 247],
       [255, 255, 255],
-    ],
-  },
-  {
-    path: "/luts/matplotlib/",
-    name: "viridis.lut",
-    rgb: [
+    ];
+
+export const VIRIDIS = [
       [68, 1, 84],
       [68, 2, 85],
       [68, 3, 87],
@@ -12097,12 +11959,9 @@ export const LUTS = [
       [248, 230, 33],
       [250, 230, 34],
       [253, 231, 36],
-    ],
-  },
-  {
-    path: "/luts/wcif/",
-    name: "yellow_hot.lut",
-    rgb: [
+    ];
+
+export const YELLOW_HOT = [
       [0, 0, 0],
       [2, 1, 0],
       [4, 3, 0],
@@ -12359,6 +12218,242 @@ export const LUTS = [
       [255, 255, 248],
       [255, 255, 251],
       [255, 255, 255],
-    ],
+    ];
+
+export const LUTS = [
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "16_colors.lut",
+    rgb: SIXTEEN_COLORS,
+  },
+  {
+    path: "/luts/",
+    name: "3-3-2_rgb.lut",
+    rgb: THREE_THREE_TWO_RGB,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "5_ramps.lut",
+    rgb: FIVE_RAMPS,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "6_shades.lut",
+    rgb: SIX_SHADES,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "blue_orange_icb.lut",
+    rgb: BLUE_ORANGE_ICB,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "brgbcmyw.lut",
+    rgb: BRGBCMYW,
+  },
+  {
+    path: "/luts/",
+    name: "cividis.lut",
+    rgb: CIVIDIS,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "cool.lut",
+    rgb: COOL,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "cyan_hot.lut",
+    rgb: CYAN_HOT,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "edges.lut",
+    rgb: EDGES,
+  },
+  {
+    path: "/luts/",
+    name: "fire.lut",
+    rgb: FIRE,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "gem.lut",
+    rgb: GEM,
+  },
+  {
+    path: "/luts/",
+    name: "glasbey.lut",
+    rgb: GLASBEY,
+  },
+  {
+    path: "/luts/",
+    name: "glasbey_inverted.lut",
+    rgb: GLASBEY_INVERTED,
+  },
+  {
+    path: "/luts/",
+    name: "glow.lut",
+    rgb: GLOW,
+  },
+  {
+    path: "/luts/",
+    name: "grays.lut",
+    rgb: GRAYS,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "green_fire_blue.lut",
+    rgb: GREEN_FIRE_BLUE,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "hilo.lut",
+    rgb: HILO,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "ica.lut",
+    rgb: ICA,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "ica2.lut",
+    rgb: ICA2,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "ica3.lut",
+    rgb: ICA3,
+  },
+  {
+    path: "/luts/",
+    name: "ice.lut",
+    rgb: ICE,
+  },
+  {
+    path: "/luts/matplotlib/",
+    name: "inferno.lut",
+    rgb: INFERNO,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "magenta_hot.lut",
+    rgb: MAGENTA_HOT,
+  },
+  {
+    path: "/luts/matplotlib/",
+    name: "magma.lut",
+    rgb: MAGMA,
+  },
+  {
+    path: "/luts/seaborn/",
+    name: "mako.lut",
+    rgb: MAKO,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "orange_hot.lut",
+    rgb: ORANGE_HOT,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "phase.lut",
+    rgb: PHASE,
+  },
+  {
+    path: "/luts/",
+    name: "physics.lut",
+    rgb: PHYSICS,
+  },
+  {
+    path: "/luts/matplotlib/",
+    name: "plasma.lut",
+    rgb: PLASMA,
+  },
+  {
+    path: "/luts/janelia/",
+    name: "pup_br.lut",
+    rgb: PUP_BR,
+  },
+  {
+    path: "/luts/janelia/",
+    name: "pup_nr.lut",
+    rgb: PUP_NR,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "rainbow_rgb.lut",
+    rgb: RAINBOW_RGB,
+  },
+  {
+    path: "/luts/",
+    name: "red-green.lut",
+    rgb: RED_GREEN,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "red_hot.lut",
+    rgb: RED_HOT,
+  },
+  {
+    path: "/luts/seaborn/",
+    name: "rocket.lut",
+    rgb: ROCKET,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "royal.lut",
+    rgb: ROYAL,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "sepia.lut",
+    rgb: SEPIA,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "smart.lut",
+    rgb: SMART,
+  },
+  {
+    path: "/luts/",
+    name: "spectrum.lut",
+    rgb: SPECTRUM,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "thal.lut",
+    rgb: THAL,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "thallium.lut",
+    rgb: THALLIUM,
+  },
+  {
+    path: "/luts/",
+    name: "thermal.lut",
+    rgb: THERMAL,
+  },
+  {
+    path: "/luts/",
+    name: "turbo.lut",
+    rgb: TURBO,
+  },
+  {
+    path: "/luts/ncsa_paledit/",
+    name: "unionjack.lut",
+    rgb: UNIONJACK,
+  },
+  {
+    path: "/luts/matplotlib/",
+    name: "viridis.lut",
+    rgb: VIRIDIS,
+  },
+  {
+    path: "/luts/wcif/",
+    name: "yellow_hot.lut",
+    rgb: YELLOW_HOT,
   },
 ];
