@@ -214,19 +214,6 @@ export async function getRgba(
     }
   );
 
-  // Render to 8bit rgb array
-  // compare timing for new renderTo8bitArray2 vs old renderTo8bitArray, and also compare outputs for testing
-  console.time("renderTo8bitArray");
-  let oldData = renderTo8bitArray(
-    ndChunks,
-    minMaxValues,
-    rgbColors,
-    luts,
-    inverteds,
-    autoBoost
-  );
-  console.timeEnd("renderTo8bitArray");
-
   console.time("renderTo8bitArray2");
   let data = renderTo8bitArray2(
     ndChunks,
@@ -238,20 +225,6 @@ export async function getRgba(
   );
   console.timeEnd("renderTo8bitArray2");
   console.log("ch", ndChunks.length, "shape", ndChunks[0].shape);
-
-  let mismatches = [];
-  for (let i = 0; i < oldData.length; i++) {
-    if (oldData[i] !== data[i]) {
-      mismatches.push(data[i] - oldData[i]);
-    }
-  }
-  if (mismatches.length > 0) {
-    const formattedMismatchCount = mismatches.length.toLocaleString();
-    const formattedDataLength = oldData.length.toLocaleString();
-    console.warn(
-      `Warning: outputs differ at ${formattedMismatchCount} / ${formattedDataLength} pixels`, mismatches.slice(mismatches.length/2, mismatches.length/2 + 1000)
-    );
-  }
 
   const height = ndChunks[0].shape[0];
   const width = ndChunks[0].shape[1];
