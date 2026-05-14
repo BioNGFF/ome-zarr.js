@@ -5,19 +5,9 @@ We can use `ngffImage.getLabelsPaths()` to list any labels groups below a multis
 
 These can then be opened as images and rendered as normal.
 
-Alternatively, `ngffImage.renderRgba()` returns `rgba` values in an `Uint8ClampedArray`,
-which we can then manipulate as shown below:
+Here we use `ngffImage.setChannelColorMap(0, colorMap)` to map label values to `r,g,b` colors.
 
 ```js
-
-function blackToTransparentRgba(d) {
-    for (let i = 0; i < d.length; i += 4) {
-        if (d[i] === 0 && d[i + 1] === 0 && d[i + 2] === 0) {
-        d[i + 3] = 0;
-        }
-    }
-}
-
 // load and render the parent image
 let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
 let img = await omezarr.NgffImage.load(url);
@@ -27,15 +17,28 @@ document.getElementById("img").src = labelSrc;
 // find labels and open the first label image
 let labelPaths = await img.getLabelsPaths();
 let labelImage = await omezarr.NgffImage.load(url + "labels/" + labelPaths[0]);
-// Background will be rendered black
-labelImage.setChannelLut(0, omezarr.luts.GLASBEY_INVERTED);
 
-// renderRgba gives us an rgba array we can manipulate, to convert black to transparent
-let {data, width} = await img.renderRgba({targetSize: 300);
-blackToTransparentRgba(data)
+// Using a LUT (list of [r, g, b] values)...
+const lut = omezarr.getLutRgb("green_fire_blue.lut");
+// and a table of data for each label value, we can 
+// create a colorMap for rendering the labels...
+const colorMap = new Map();
+ROW_DATA.forEach((row) => {
+    const labelValue = row["Label_Value"];
+    const paramValue = row["Centroids_RAW_X"];
+    const fraction = (paramValue - minValue) / (maxValue - minValue);
+    const lutIndex = Math.round(fraction * (lut.length - 1));
+    const rgb = lut[lutIndex];
+    colorMap.set(labelValue, rgb);
+});
+// We can use Infinity to specify fillColor (transparent by default)
+if (enableFill) {
+    colorMap.set(Infinity, fillRGBA);
+}
+// apply the colorMap to the first channel
+labelImage.setChannelColorMap(0, colorMap);
 
-// convert the rgba array back to image src
-let labelSrc = await omezarr.convertRgbDataToDataUrl(data, width);
+let labelSrc = await labelImage.render({ targetSize: 300 });
 document.getElementById("labelImg").src = labelSrc;
 ```
 
@@ -48,3 +51,7 @@ import Labels from './components/Labels.vue';
 <ClientOnly>
 <Labels />
 </ClientOnly>
+
+Image above is from <a href="https://idr.openmicroscopy.org/webclient/?show=image-9837025">
+idr0079 (Hartmann etal)</a> showing associated
+<a href="https://idr.openmicroscopy.org/webclient/omero_table/41585282/">table data</a>.

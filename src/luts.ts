@@ -18,7 +18,7 @@ export function getLutRgb(name: string) {
   return lut?.rgb || LUTS[0].rgb;
 }
 
-function lutToPng(lutRgb: Rgb) {
+export function lutToPng(lutRgb: Rgb) {
   let height = 1;
   let width = 256;
   let rgba = new Uint8ClampedArray(4 * height * width).fill(255);
