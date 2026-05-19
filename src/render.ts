@@ -142,7 +142,7 @@ export async function getRgba(
   let visibilities;
   // list of [r,g,b] colors
   let rgbColors: Array<[number, number, number]>;
-  let luts: (Color[] | Map<number, Color> | undefined)[] = [];
+  let lutsOrColorMaps: (Color[] | Map<number, Color> | undefined)[] = [];
   let inverteds: Array<boolean> | undefined = undefined;
 
   // If we have 'omero', use it for channel rgbColors and visibilities
@@ -156,7 +156,7 @@ export async function getRgba(
       return ch.active && active_count <= MAX_CHANNELS;
     });
     rgbColors = channels.map((ch) => hexToRGB(ch.color));
-    luts = channels.map((ch) =>
+    lutsOrColorMaps = channels.map((ch) =>
       "lut" in ch ? (ch.lut as Color[]) : "colorMap" in ch ? (ch.colorMap as Map<number, Color>) : undefined
     );
   } else {
@@ -175,8 +175,8 @@ export async function getRgba(
   inverteds = activeChannelIndices.map((chIndex: number) =>
     Boolean(channels?.[chIndex]?.inverted)
   );
-  if (luts !== undefined) {
-    luts = luts.filter((_, index) => activeChannelIndices.includes(index));
+  if (lutsOrColorMaps !== undefined) {
+    lutsOrColorMaps = lutsOrColorMaps.filter((_, index) => activeChannelIndices.includes(index));
   }
 
   // sliceIndices are from originalShape if provided
@@ -215,7 +215,7 @@ export async function getRgba(
     ndChunks,
     minMaxValues,
     rgbColors,
-    luts,
+    lutsOrColorMaps,
     inverteds,
     autoBoost
   );
@@ -229,43 +229,47 @@ export function renderTo8bitArray(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
   colors: Array<[number, number, number]>,
-  luts: Array<Color[] | Map<number, Color> | undefined> | undefined,
+  lutsOrColorMaps: Array<Color[] | Map<number, Color> | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
   autoBoost: boolean = false
 ): Uint8ClampedArray {
-  // This is new version of renderTo8bitArray
-  // For each channel in ndChunks...
+  // Render the given chunks (one per channel) to an RGBA array, using the provided colors and min/max values for each channel.
+  // If lutsOrColorMaps are provided, they are used instead of the colors.
+  // A LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest". Range is scaled over the min/max values
+  // for the channel, and values outside the range are clamped to the first/last value in the LUT.
+  // A colormap is a Map of value -> [r,g,b] or [r,g,b,a].
+  // If inverteds is provided, the LUTs or colors will be reversed for channels where inverteds[i] is true.
 
-  let masterLuts = colors.map((color, i) => {
-    let lut = luts?.length ? luts[i] : undefined;
-    if (!lut) {
-      lut = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
+  let masterLutsMaps = colors.map((color, i) => {
+    let lutOrMap = lutsOrColorMaps?.length ? lutsOrColorMaps[i] : undefined;
+    if (!lutOrMap) {
+      lutOrMap = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
     }
-    if (inverteds && inverteds[i] && Array.isArray(lut)) {
-      lut = lut.reverse() as Color[];
+    if (inverteds && inverteds[i] && Array.isArray(lutOrMap)) {
+      lutOrMap = lutOrMap.reverse() as Color[];
     }
-    return lut;
+    return lutOrMap;
   });
 
   let start = performance.now();
 
   let rgba: Uint8ClampedArray;
   // init the rgba array with first channel, then blend in subsequent channels
-  if (masterLuts[0] instanceof Map) {
-    let colorMap = masterLuts[0] as Map<number, Color>;
+  if (masterLutsMaps[0] instanceof Map) {
+    let colorMap = masterLutsMaps[0] as Map<number, Color>;
     let fillValue: Color | undefined = colorMap.get(Infinity);
     rgba = renderChannelWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
   } else {
-    rgba = renderChannelWithLUT(ndChunks[0], masterLuts[0] as Color[], { range: minMaxValues[0] });
+    rgba = renderChannelWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: minMaxValues[0] });
   }
   for (let i = 1; i < ndChunks.length; i++) {
-    if (masterLuts[i] instanceof Map) {
-      let colorMap = masterLuts[i] as Map<number, Color>;
+    if (masterLutsMaps[i] instanceof Map) {
+      let colorMap = masterLutsMaps[i] as Map<number, Color>;
       let fillValue: Color | undefined = colorMap.get(Infinity);
       let channelRgba = renderChannelWithColormap(ndChunks[i], colorMap, { blending: "additive", target: rgba, fillValue });
       rgba = channelRgba;
     } else {
-      let channelRgba = renderChannelWithLUT(ndChunks[i], masterLuts[i] as Color[], { blending: "additive", target: rgba, range: minMaxValues[i] });
+      let channelRgba = renderChannelWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", target: rgba, range: minMaxValues[i] });
       rgba = channelRgba;
     }
   }
