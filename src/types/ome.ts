@@ -108,6 +108,7 @@ export interface Channel {
   window: Window;
   lut?: Color[];
   colorMap?: Map<number, Color>;
+  fillValue?: Color;
   active?: boolean;
   inverted?: boolean;
   [k: string]: unknown;

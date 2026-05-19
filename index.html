@@ -130,7 +130,7 @@
         // set label 0 to grey with some transparency
         glasbeyInvertedMap.set(0, [100, 100, 100, 255]);
         // set missing values to transparent
-        glasbeyInvertedMap.set(Infinity, [0, 0, 0, 0]);
+        labelImage.setChannelFillValue(0, [255, 0, 0, 100]);
         labelImage.setChannelColorMap(0, glasbeyInvertedMap);
 
         // let labelSrc = await omezarr.convertRgbDataToDataUrl(labelRgba.data, labelRgba.width);
