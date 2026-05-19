@@ -1,7 +1,6 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
 import { Multiscale, Omero } from "./types/ome";
-import { getLutRgb } from "./luts";
 import { NgffImage } from "./image";
 
 
@@ -174,86 +173,6 @@ export function getPixelValueRange(dtype: string): { min: number; max: number } 
 export function range(start: number, end: number): number[] {
   // range(5, 10) -> [5, 6, 7, 8, 9]
   return Array.from({ length: end - start }, (_, i) => i + start);
-}
-
-export function renderTo8bitArray(
-  ndChunks: any,
-  minMaxValues: Array<[number, number]>,
-  colors: Array<[number, number, number]>,
-  luts: Array<string | undefined> | undefined,
-  inverteds: Array<boolean> | undefined,
-  autoBoost: boolean = false
-): Uint8ClampedArray {
-  // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
-  // if autoBoost is true, check histogram and boost contrast if needed
-  // ndChunks is list of zarr arrays
-
-  // assume all chunks are same shape
-  const shape = ndChunks[0].shape;
-  const height = shape[0];
-  const width = shape[1];
-  const pixels = height * width;
-
-  if (!minMaxValues) {
-    minMaxValues = ndChunks.map(getMinMaxValues);
-  }
-
-  // load luts if needed
-  const lutRgbs = luts?.map((lut) => lut && getLutRgb(lut as string));
-
-  // let rgb = [255, 255, 255];
-  let start = performance.now();
-
-  let rgba = new Uint8ClampedArray(4 * height * width).fill(0);
-  let offset = 0;
-  for (let p = 0; p < ndChunks.length; p++) {
-    offset = 0;
-    let rgb = colors[p];
-    let lutRgb = lutRgbs?.[p];
-    let data = ndChunks[p].data;
-    let range = minMaxValues[p];
-    let inverted = inverteds?.[p];
-    for (let y = 0; y < pixels; y++) {
-      // In case of bigint, convert to number. See #9
-      let rawValue = Number(data[y]);
-      let fraction = (rawValue - range[0]) / (range[1] - range[0]);
-      fraction = Math.min(1, Math.max(0, fraction));
-      // for red, green, blue,
-      for (let i = 0; i < 3; i++) {
-        // rgb[i] is 0-255...
-        let v;
-        if (lutRgb) {
-          let val = Math.round(fraction * 255);
-          v = lutRgb[val][i];
-          if (inverted) {
-            v = 255 - v;
-          }
-        } else {
-          v = Math.round(fraction * rgb[i]);
-          // invert. If channel is 'red' only, don't invert green & blue!
-          if (inverted && rgb[i] != 0) {
-            v = 255 - v;
-          }
-        }
-        // add values together for each channel, with max at 255
-        rgba[offset * 4 + i] = Math.min(rgba[offset * 4 + i] + v, 255);
-      }
-      rgba[offset * 4 + 3] = 255; // alpha
-      offset += 1;
-    }
-  }
-  // if iterating pixels is fast, check histogram and boost contrast if needed
-  // Thumbnails are less than 5 millisecs. 512x512 is 10-20 millisecs.
-  if (performance.now() - start < 100 && autoBoost) {
-    let bins = 5;
-    let hist = getHistogram(rgba, bins);
-    // If top bin, has less than 1% of pixesl, boost contrast
-    if (hist[bins - 1] < 1) {
-      let factor = 2;
-      rgba = boostContrast(rgba, factor);
-    }
-  }
-  return rgba;
 }
 
 export function boostContrast(

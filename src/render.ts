@@ -211,8 +211,7 @@ export async function getRgba(
     }
   );
 
-  console.time("renderTo8bitArray2");
-  let data = renderTo8bitArray2(
+  let data = renderTo8bitArray(
     ndChunks,
     minMaxValues,
     rgbColors,
@@ -220,15 +219,13 @@ export async function getRgba(
     inverteds,
     autoBoost
   );
-  console.timeEnd("renderTo8bitArray2");
-  console.log("ch", ndChunks.length, "shape", ndChunks[0].shape);
 
   const height = ndChunks[0].shape[0];
   const width = ndChunks[0].shape[1];
   return { data, width, height };
 }
 
-export function renderTo8bitArray2(
+export function renderTo8bitArray(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
   colors: Array<[number, number, number]>,
