@@ -31,12 +31,10 @@ ROW_DATA.forEach((row) => {
     const rgb = lut[lutIndex];
     colorMap.set(labelValue, rgb);
 });
-// We can specify a fillColor (transparent by default)
+// We can use Infinity to specify fillColor (transparent by default)
 if (enableFill) {
-    labelImage.setChannelFillValue(0, fillRGBA);
-} else {
-    labelImage.setChannelFillValue(0, undefined);
-  }
+    colorMap.set(Infinity, fillRGBA);
+}
 // apply the colorMap to the first channel
 labelImage.setChannelColorMap(0, colorMap);
 

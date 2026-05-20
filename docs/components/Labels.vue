@@ -50,10 +50,7 @@ async function renderLabel() {
     const fillR = parseInt(fillColor.value.slice(1, 3), 16);
     const fillG = parseInt(fillColor.value.slice(3, 5), 16);
     const fillB = parseInt(fillColor.value.slice(5, 7), 16);
-    labelImage.setChannelFillValue(0, [fillR, fillG, fillB]);
-  } else {
-    // Need to explicitly set to undefined to clear any previous fillColor
-    labelImage.setChannelFillValue(0, undefined);
+    renderingMap.set(Infinity, [fillR, fillG, fillB]);
   }
   // display min/max
   displayMin.value = minValue;
