@@ -111,7 +111,12 @@ async function render() {
       img.setChannelColor(index, "FFFFFF");
       img.setChannelEnd(index, 2000);
     } else if (props.example == 'luts') {
-      let lutRgb = omezarr.getLutRgb(lut.value);
+      let lutRgb;
+      if (lut.value == "customRgbLut") {
+        lutRgb = [[255, 0, 0], [0, 255, 0], [0, 0, 255]];
+      } else {
+        lutRgb = omezarr.getLutRgb(lut.value);
+      }
       img.setChannelLut(index, lutRgb);
     }
 
@@ -126,6 +131,10 @@ async function render() {
 
 <template>
   <div :class="$style.luts" v-if="props.example == 'luts'">
+    <button @click="()=>{handleLut('customRgbLut')}" :class="$style.lut" >
+      <legend>customRgbLut (see code above)</legend>
+    </button>
+    <br style="clear:both;" />
     <button @click="()=>{handleLut(lut.name)}" :class="$style.lut" v-for="lut in luts" :key="lut.name">
       <legend>{{lut.name}}</legend>
       <img :src="lut.png" />

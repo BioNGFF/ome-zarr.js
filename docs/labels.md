@@ -35,9 +35,8 @@ ROW_DATA.forEach((row) => {
 if (enableFill) {
     colorMap.set(omezarr.FILL_VALUE_KEY, fillRGBA);
 }
-// apply the colorMap to the first channel
+// apply the colorMap to the first channel of the label image, then render
 labelImage.setChannelColorMap(0, colorMap);
-
 let labelSrc = await labelImage.render({ targetSize: 300 });
 document.getElementById("labelImg").src = labelSrc;
 ```

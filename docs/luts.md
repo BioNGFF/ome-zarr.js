@@ -8,7 +8,8 @@ import Image from './components/Image.vue';
 
 # Look-up Tables
 
-Over 40 LUTs are included in `ome-zarr.js`. Each `lut.png` is a png of `256 x 1` pixels.
+Over 40 LUTs are included in `ome-zarr.js`. We can list them all with `getLuts()`.
+Each `lut.png` is a `data:` URL of a `256 x 1` pixels png.
 Below these are displayed with a height of `15px`:
 
 ```js
@@ -42,8 +43,8 @@ let src = await img.render({targetSize: 300});
 We can also supply our custom LUT of `rgb` values, which can be of any length:
 
 ```js
-let customLut = [[255, 0, 0], [0, 255, 0], [0, 0, 255]];
-img.setChannelLut(0, customLut);
+let customRgbLut = [[255, 0, 0], [0, 255, 0], [0, 0, 255]];
+img.setChannelLut(0, customRgbLut);
 ```
 
 Click on a LUT below to re-render the image:
