@@ -127,10 +127,10 @@
         for (let i = 20; i < 90; i++) {
           glasbeyInvertedMap.set(i, omezarr.luts.GLASBEY_INVERTED[i]);
         }
-        // set label 0 to grey with some transparency
+        // set label 0 (background) to grey with some transparency
         glasbeyInvertedMap.set(0, [100, 100, 100, 255]);
-        // set missing values to transparent
-        glasbeyInvertedMap.set(Infinity, [0, 0, 0, 0]);
+        // set missing values to Yellow
+        glasbeyInvertedMap.set(omezarr.FILL_VALUE_KEY, [255, 255, 0, 100]);
         labelImage.setChannelColorMap(0, glasbeyInvertedMap);
 
         // let labelSrc = await omezarr.convertRgbDataToDataUrl(labelRgba.data, labelRgba.width);

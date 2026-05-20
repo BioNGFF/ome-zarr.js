@@ -16,6 +16,7 @@ export {
   getSlices,
   getMinMaxValues,
   getPixelValueRange,
+  FILL_VALUE_KEY,
 } from "./utils";
 export { LUTS, getLuts, getLutRgb } from "./luts";
 export { NgffImage } from "./image";

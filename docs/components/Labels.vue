@@ -50,7 +50,7 @@ async function renderLabel() {
     const fillR = parseInt(fillColor.value.slice(1, 3), 16);
     const fillG = parseInt(fillColor.value.slice(3, 5), 16);
     const fillB = parseInt(fillColor.value.slice(5, 7), 16);
-    renderingMap.set(Infinity, [fillR, fillG, fillB]);
+    renderingMap.set(omezarr.FILL_VALUE_KEY, [fillR, fillG, fillB]);
   }
   // display min/max
   displayMin.value = minValue;

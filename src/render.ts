@@ -10,6 +10,7 @@ import {
   getHistogram,
   boostContrast,
   MAX_CHANNELS,
+  FILL_VALUE_KEY,
 } from "./utils";
 
 export type Blending = "additive" | "translucent";
@@ -257,7 +258,7 @@ export function renderTo8bitArray(
   // init the rgba array with first channel, then blend in subsequent channels
   if (masterLutsMaps[0] instanceof Map) {
     let colorMap = masterLutsMaps[0] as Map<number, Color>;
-    let fillValue: Color | undefined = colorMap.get(Infinity);
+    let fillValue: Color | undefined = colorMap.get(FILL_VALUE_KEY);
     rgba = renderChannelWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
   } else {
     rgba = renderChannelWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: minMaxValues[0] });

@@ -18,6 +18,10 @@ export const MAGENTA_GREEN = [COLORS.magenta, COLORS.green];
 export const RGB = [COLORS.red, COLORS.green, COLORS.blue];
 export const CYMRGB = Object.values(COLORS);
 
+// We use Infinity as a special key to represent fillValue for missing labels in label images,
+// since label values are always integers and can't be Infinity. 
+export const FILL_VALUE_KEY = Infinity;
+
 // this duplicates Slice() from zarrita as I couldn't import it
 export interface Slice {
   start: number | null;
