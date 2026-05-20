@@ -13,6 +13,12 @@ hero:
     - theme: alt
       text: NgffImage
       link: /image
+    - theme: alt
+      text: Labels
+      link: /labels
+    - theme: alt
+      text: LUTs
+      link: /luts
 
 features:
   - title: Minimal dependencies
