@@ -1,8 +1,8 @@
 
 import * as zarr from "zarrita";
 
-import { Axis, Channel, OmeAttrs, Omero } from "./types/ome";
-import { getRgba, convertRbgDataToDataUrl } from "./render";
+import { Axis, Channel, OmeAttrs } from "./types/ome";
+import { getRgba, convertRgbDataToDataUrl } from "./render";
 import { NgffImage } from "./image";
 
 
@@ -71,7 +71,7 @@ export async function renderThumbnail(
 export async function renderImage(
   arr: zarr.Array<any>,
   axes: Axis[],
-  omero: Omero | null | undefined,
+  channels: Channel[] | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
   autoBoost: boolean = false,
   originalShape?: number[]
@@ -79,10 +79,10 @@ export async function renderImage(
   let { data, width } = await getRgba(
     arr,
     axes,
-    omero,
+    channels,
     sliceIndices,
     originalShape,
     autoBoost
   );
-  return convertRbgDataToDataUrl(data, width);
+  return convertRgbDataToDataUrl(data, width);
 }

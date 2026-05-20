@@ -1,7 +1,6 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
 import { Multiscale, Omero } from "./types/ome";
-import { getLutRgb } from "./luts";
 import { NgffImage } from "./image";
 
 
@@ -18,6 +17,10 @@ export const COLORS = {
 export const MAGENTA_GREEN = [COLORS.magenta, COLORS.green];
 export const RGB = [COLORS.red, COLORS.green, COLORS.blue];
 export const CYMRGB = Object.values(COLORS);
+
+// We use Infinity as a special key to represent fillValue for missing labels in label images,
+// since label values are always integers and can't be Infinity. 
+export const FILL_VALUE_KEY = Infinity;
 
 // this duplicates Slice() from zarrita as I couldn't import it
 export interface Slice {
@@ -176,87 +179,7 @@ export function range(start: number, end: number): number[] {
   return Array.from({ length: end - start }, (_, i) => i + start);
 }
 
-export function renderTo8bitArray(
-  ndChunks: any,
-  minMaxValues: Array<[number, number]>,
-  colors: Array<[number, number, number]>,
-  luts: Array<string | undefined> | undefined,
-  inverteds: Array<boolean> | undefined,
-  autoBoost: boolean = false
-): Uint8ClampedArray {
-  // Render chunks (array) into 2D 8-bit data for new ImageData(arr)
-  // if autoBoost is true, check histogram and boost contrast if needed
-  // ndChunks is list of zarr arrays
-
-  // assume all chunks are same shape
-  const shape = ndChunks[0].shape;
-  const height = shape[0];
-  const width = shape[1];
-  const pixels = height * width;
-
-  if (!minMaxValues) {
-    minMaxValues = ndChunks.map(getMinMaxValues);
-  }
-
-  // load luts if needed
-  const lutRgbs = luts?.map((lut) => lut && getLutRgb(lut as string));
-
-  // let rgb = [255, 255, 255];
-  let start = performance.now();
-
-  let rgba = new Uint8ClampedArray(4 * height * width).fill(0);
-  let offset = 0;
-  for (let p = 0; p < ndChunks.length; p++) {
-    offset = 0;
-    let rgb = colors[p];
-    let lutRgb = lutRgbs?.[p];
-    let data = ndChunks[p].data;
-    let range = minMaxValues[p];
-    let inverted = inverteds?.[p];
-    for (let y = 0; y < pixels; y++) {
-      // In case of bigint, convert to number. See #9
-      let rawValue = Number(data[y]);
-      let fraction = (rawValue - range[0]) / (range[1] - range[0]);
-      fraction = Math.min(1, Math.max(0, fraction));
-      // for red, green, blue,
-      for (let i = 0; i < 3; i++) {
-        // rgb[i] is 0-255...
-        let v;
-        if (lutRgb) {
-          let val = (fraction * 255) << 0;
-          v = lutRgb[val][i];
-          if (inverted) {
-            v = 255 - v;
-          }
-        } else {
-          v = (fraction * rgb[i]) << 0;
-          // invert. If channel is 'red' only, don't invert green & blue!
-          if (inverted && rgb[i] != 0) {
-            v = 255 - v;
-          }
-        }
-        // increase pixel intensity if value is higher
-        rgba[offset * 4 + i] = Math.max(rgba[offset * 4 + i], v);
-      }
-      rgba[offset * 4 + 3] = 255; // alpha
-      offset += 1;
-    }
-  }
-  // if iterating pixels is fast, check histogram and boost contrast if needed
-  // Thumbnails are less than 5 millisecs. 512x512 is 10-20 millisecs.
-  if (performance.now() - start < 100 && autoBoost) {
-    let bins = 5;
-    let hist = getHistogram(rgba, bins);
-    // If top bin, has less than 1% of pixesl, boost contrast
-    if (hist[bins - 1] < 1) {
-      let factor = 2;
-      rgba = boostContrast(rgba, factor);
-    }
-  }
-  return rgba;
-}
-
-function boostContrast(
+export function boostContrast(
   rgba: Uint8ClampedArray,
   factor: number
 ): Uint8ClampedArray {
@@ -271,7 +194,7 @@ function boostContrast(
   return rgba;
 }
 
-function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
+export function getHistogram(uint8array: Uint8ClampedArray, bins = 5): number[] {
   // Create histogram from uint8array.
   // Returns list of percentages in each bin
   let hist = new Array(bins).fill(0);
