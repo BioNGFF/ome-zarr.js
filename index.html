@@ -133,7 +133,7 @@
         glasbeyInvertedMap.set(omezarr.FILL_VALUE_KEY, [255, 255, 0, 100]);
         labelImage.setChannelColorMap(0, glasbeyInvertedMap);
 
-        // let labelSrc = await omezarr.convertRgbDataToDataUrl(labelRgba.data, labelRgba.width);
+        // let labelSrc = await omezarr.createRgbDataUrl(labelRgba.data, labelRgba.width);
         let labelSrc = await labelImage.render({targetSize: 300});
         html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;

@@ -16,17 +16,17 @@ export {
   getSlices,
   getMinMaxValues,
   getPixelValueRange,
+  createRgbDataUrl,
   FILL_VALUE_KEY,
 } from "./utils";
 export { LUTS, getLuts, getLutRgb } from "./luts";
 export { NgffImage } from "./image";
 export { renderThumbnail, renderImage, render } from "./api";
 export {
-  renderChannel,
-  renderChannelWithLUT,
-  renderChannelWithColormap,
-  renderTo8bitArray,
-  convertRgbDataToDataUrl,
+  renderChunk,
+  renderChunkWithLUT,
+  renderChunkWithColormap,
+  renderChunks,
 } from "./render";
 
 // export all the luts as a single object for easy access

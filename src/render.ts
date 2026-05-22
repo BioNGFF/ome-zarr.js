@@ -15,25 +15,25 @@ import {
 
 export type Blending = "additive" | "translucent";
 
-export function renderChannel(
+export function renderChunk(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
-  func: (value: number) => Color,
-  options?: { target?: Uint8ClampedArray; blending?: Blending }
+  transferFunc: (value: number) => Color,
+  options?: { dst?: Uint8ClampedArray; blending?: Blending }
 ): Uint8ClampedArray {
   // Core rendering function. Takes a chunk, and a function that maps intensity values to colors,
   // and renders to an RGBA array, according to the blending mode.
   // If target is provided, it is used as the initial RGBA array, and blended with the new colors.
-  const { target, blending = "additive" } = options ?? {};
+  const { dst, blending = "additive" } = options ?? {};
 
   const [height, width] = chunk.shape;
-  const data = target ?? new Uint8ClampedArray(4 * height * width).fill(0);
+  const data = dst ?? new Uint8ClampedArray(4 * height * width).fill(0);
   const n = height * width * 4;
   let dIndex = 0;
   for (let i = 0; i < n; i += 4) {
     // ! in this line suppresses TypeScript error about possible undefined
     const value = Number(chunk.data[dIndex]!);
     dIndex += 1;
-    const [r, g, b, alpha = 255] = func(value);
+    const [r, g, b, alpha = 255] = transferFunc(value);
     const alphaSrc = data[i + 3] / 255;
     const alphaDst = (alpha ?? 255) / 255;
     if (blending === "additive") {
@@ -58,11 +58,11 @@ export function renderChannel(
   return data;
 }
 
-export function renderChannelWithLUT(
+export function renderChunkWithLUT(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   lut: Color[],
   options?: {
-    target?: Uint8ClampedArray;
+    dst?: Uint8ClampedArray;
     blending?: Blending;
     range?: [number, number];
   }
@@ -73,9 +73,9 @@ export function renderChannelWithLUT(
   // In no range is provided, chunk values are used directly as indices into the LUT.
   // Values outside the range are clamped to the first/last value in the LUT.
   const bins = lut.length;
-  const { target, blending = "additive", range = [0, bins - 1] } = options ?? {};
+  const { dst, blending = "additive", range = [0, bins - 1] } = options ?? {};
 
-  function func(value: number): Color {
+  function transferFunc(value: number): Color {
     const [min, max] = range;
     if (value < min) value = min;
     if (value > max) value = max;
@@ -83,14 +83,14 @@ export function renderChannelWithLUT(
     return lut[value];
   }
 
-  return renderChannel(chunk, func, { target, blending });
+  return renderChunk(chunk, transferFunc, { dst, blending });
 }
 
-export function renderChannelWithColormap(
+export function renderChunkWithColormap(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   colormap: Map<number, Color>,
   options?: {
-    target?: Uint8ClampedArray;
+    dst?: Uint8ClampedArray;
     blending?: Blending;
     fillValue?: Color;
   }
@@ -99,19 +99,19 @@ export function renderChannelWithColormap(
   // which is a Map of value -> [r,g,b] or [r,g,b,a].
   // If not found, the fillValue is used (default [0,0,0,0])
   const {
-    target,
+    dst,
     blending = "additive",
     fillValue = [0, 0, 0, 0],
   } = options ?? {};
 
-  function func(value: number): Color {
+  function transferFunc(value: number): Color {
     return colormap.get(value) ?? fillValue;
   }
 
-  return renderChannel(chunk, func, { target, blending });
+  return renderChunk(chunk, transferFunc, { dst, blending });
 }
 
-export async function getRgba(
+export async function renderRgba(
   arr: zarr.Array<any, zarr.Readable>,
   axes: Axis[],
   channels: Channel[] | null | undefined,
@@ -212,7 +212,7 @@ export async function getRgba(
     }
   );
 
-  let data = renderTo8bitArray(
+  let data = renderChunks(
     ndChunks,
     minMaxValues,
     rgbColors,
@@ -226,7 +226,7 @@ export async function getRgba(
   return { data, width, height };
 }
 
-export function renderTo8bitArray(
+export function renderChunks(
   ndChunks: any,
   minMaxValues: Array<[number, number]>,
   colors: Array<[number, number, number]>,
@@ -259,18 +259,18 @@ export function renderTo8bitArray(
   if (masterLutsMaps[0] instanceof Map) {
     let colorMap = masterLutsMaps[0] as Map<number, Color>;
     let fillValue: Color | undefined = colorMap.get(FILL_VALUE_KEY);
-    rgba = renderChannelWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
+    rgba = renderChunkWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
   } else {
-    rgba = renderChannelWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: minMaxValues[0] });
+    rgba = renderChunkWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: minMaxValues[0] });
   }
   for (let i = 1; i < ndChunks.length; i++) {
     if (masterLutsMaps[i] instanceof Map) {
       let colorMap = masterLutsMaps[i] as Map<number, Color>;
       let fillValue: Color | undefined = colorMap.get(Infinity);
-      let channelRgba = renderChannelWithColormap(ndChunks[i], colorMap, { blending: "additive", target: rgba, fillValue });
+      let channelRgba = renderChunkWithColormap(ndChunks[i], colorMap, { blending: "additive", dst: rgba, fillValue });
       rgba = channelRgba;
     } else {
-      let channelRgba = renderChannelWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", target: rgba, range: minMaxValues[i] });
+      let channelRgba = renderChunkWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", dst: rgba, range: minMaxValues[i] });
       rgba = channelRgba;
     }
   }
@@ -285,40 +285,4 @@ export function renderTo8bitArray(
     }
   }
   return rgba;
-}
-
-export async function convertRgbDataToDataUrl(
-  rbgData: Uint8ClampedArray,
-  width: number
-): Promise<string> {
-  let h = rbgData.length / (width * 4);
-  if (typeof document !== "undefined") {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "";
-    ctx.putImageData(new ImageData(rbgData, width, h), 0, 0);
-    return canvas.toDataURL("image/png");
-  } else {
-    const { PNG } = await import("pngjs");
-    const { Buffer } = await import("buffer");
-    const png = new PNG({ width, height: h });
-    png.data = Buffer.from(
-      rbgData.buffer,
-      rbgData.byteOffset,
-      rbgData.byteLength
-    );
-    const chunks: Buffer[] = [];
-    const stream = png.pack();
-    return new Promise((resolve, reject) => {
-      stream.on("data", (c) => chunks.push(c));
-      stream.on("end", () => {
-        resolve(
-          `data:image/png;base64,${Buffer.concat(chunks).toString("base64")}`
-        );
-      });
-      stream.on("error", reject);
-    });
-  }
 }

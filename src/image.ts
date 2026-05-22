@@ -1,9 +1,8 @@
 
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
-import { openArray, openGroup, createOmero } from "./utils";
-// import { renderImage } from "./api";
-import { convertRgbDataToDataUrl, getRgba } from "./render";
+import { createRgbDataUrl, openArray, openGroup, createOmero } from "./utils";
+import { renderRgba } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
 export class NgffImage {
@@ -427,7 +426,7 @@ export class NgffImage {
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    let { data, width, height } = await getRgba(
+    let { data, width, height } = await renderRgba(
       arr,
       this.axes,
       channels,
@@ -454,6 +453,6 @@ export class NgffImage {
   ): Promise<string> {
 
     let { data, width } = await this.renderRgba(options);
-    return convertRgbDataToDataUrl(data, width);
+    return createRgbDataUrl(data, width);
   }
 }

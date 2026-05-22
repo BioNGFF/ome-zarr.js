@@ -2,8 +2,9 @@
 import * as zarr from "zarrita";
 
 import { Axis, Channel, OmeAttrs } from "./types/ome";
-import { getRgba, convertRgbDataToDataUrl } from "./render";
+import { renderRgba } from "./render";
 import { NgffImage } from "./image";
+import { createRgbDataUrl } from "./utils";
 
 
 export async function render(
@@ -67,7 +68,7 @@ export async function renderThumbnail(
 }
 
 
-// API, but also used under the hood by NgffImage.render()
+// Legacy API
 export async function renderImage(
   arr: zarr.Array<any>,
   axes: Axis[],
@@ -76,7 +77,7 @@ export async function renderImage(
   autoBoost: boolean = false,
   originalShape?: number[]
 ): Promise<string> {
-  let { data, width } = await getRgba(
+  let { data, width } = await renderRgba(
     arr,
     axes,
     channels,
@@ -84,5 +85,5 @@ export async function renderImage(
     originalShape,
     autoBoost
   );
-  return convertRgbDataToDataUrl(data, width);
+  return createRgbDataUrl(data, width);
 }
