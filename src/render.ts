@@ -179,7 +179,6 @@ export async function renderRgba(
     lutsOrColorMaps = lutsOrColorMaps.filter((_, index) => activeChannelIndices.includes(index));
   }
 
-  // sliceIndices are from originalShape if provided
   let chSlices = getSlices(
     activeChannelIndices,
     shape,

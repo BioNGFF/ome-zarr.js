@@ -346,7 +346,6 @@ export function getSlices(
   axesNames: string[],
   indices: { [k: string]: number | [number, number] | undefined }
 ): (number | Slice | undefined)[][] {
-  // Slice indices are with respect to originalShape if provided
   // For each active channel, get a multi-dimensional slice
   let chSlices = activeChannelIndices.map((chIndex: number) => {
     let chSlice = shape.map((dimSize, index) => {
@@ -359,8 +358,6 @@ export function getSlices(
         if (Array.isArray(idx)) {
           return slice(idx[0], idx[1]);
         } else if (Number.isInteger(idx)) {
-          // scale index if needed. e.g. Z-size of arr shape is 10, but originalShape is 50,
-          // and idx is 25, we want to get slice 5 from this array
           return idx !== undefined ? idx : undefined;
         }
       }
