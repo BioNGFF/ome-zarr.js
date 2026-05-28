@@ -97,13 +97,17 @@ export interface Omero {
   };
   [k: string]: unknown;
 }
+
+export type Color = [number, number, number] | [number, number, number, number];
+
 /**
  * A single omero channel.
  */
 export interface Channel {
   color: string;
   window: Window;
-  lut?: string;
+  lut?: Color[];
+  colorMap?: Map<number, Color>;
   active?: boolean;
   inverted?: boolean;
   [k: string]: unknown;

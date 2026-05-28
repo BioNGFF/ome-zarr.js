@@ -1,9 +1,8 @@
 
 import * as zarr from "zarrita";
-import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
-import { openArray, openGroup, createOmero } from "./utils";
-// import { renderImage } from "./api";
-import { convertRgbDataToDataUrl, getRgba } from "./render";
+import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
+import { createRgbDataUrl, openArray, openGroup, createOmero } from "./utils";
+import { renderRgba } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
 export class NgffImage {
@@ -140,9 +139,14 @@ export class NgffImage {
     omero.channels[channelIndex].inverted = inverted;
   }
 
-  setChannelLut(channelIndex: number, lut: string) {
+  setChannelLut(channelIndex: number, lut: Color[]) {
     let omero = this.checkChannelIndex(channelIndex);
     omero.channels[channelIndex].lut = lut;
+  }
+
+  setChannelColorMap(channelIndex: number, colorMap: Map<number, Color>) {
+    let omero = this.checkChannelIndex(channelIndex);
+    omero.channels[channelIndex].colorMap = colorMap;
   }
 
   setZIndex(zIndex: number) {
@@ -364,7 +368,7 @@ export class NgffImage {
     arrayPathOrIndex?: string | number, 
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
-    omero?: Omero,
+    channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
   } = {}
@@ -408,16 +412,24 @@ export class NgffImage {
       );
     }
 
-    let omero = options.omero || this.omero;
+    // let omero = options.omero || this.omero;
     let slices = options.slices || {};
+    // Get slices for each channel
+    if (slices["z"] == undefined) {
+      slices["z"] = this.omero?.rdefs?.defaultZ;
+    }
+    if (slices["t"] == undefined) {
+      slices["t"] = this.omero?.rdefs?.defaultT;
+    }
+    let channels = options.channels || this.omero?.channels;
     // We need originalShape to know if we have Z-downsampling.
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    let { data, width, height } = await getRgba(
+    let { data, width, height } = await renderRgba(
       arr,
       this.axes,
-      omero,
+      channels,
       slices,
       originalShape,
       Boolean(options.autoBoost),
@@ -434,13 +446,13 @@ export class NgffImage {
     arrayPathOrIndex?: string | number, 
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
-    omero?: Omero,
+    channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
   } = {}
   ): Promise<string> {
 
     let { data, width } = await this.renderRgba(options);
-    return convertRgbDataToDataUrl(data, width);
+    return createRgbDataUrl(data, width);
   }
 }

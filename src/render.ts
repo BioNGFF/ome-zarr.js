@@ -1,21 +1,120 @@
 import * as zarr from "zarrita";
 
-import { Axis, Omero } from "./types/ome";
+import { Axis, Channel, Color } from "./types/ome";
 import {
   getDefaultVisibilities,
   hexToRGB,
   getDefaultRgbColors,
   getMinMaxValues,
   getSlices,
-  renderTo8bitArray,
+  getHistogram,
+  boostContrast,
   MAX_CHANNELS,
+  FILL_VALUE_KEY,
 } from "./utils";
 
+export type Blending = "additive" | "translucent";
 
-export async function getRgba(
+export function renderChunk(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  transferFunc: (value: number) => Color,
+  options?: { dst?: Uint8ClampedArray; blending?: Blending }
+): Uint8ClampedArray {
+  // Core rendering function. Takes a chunk, and a function that maps intensity values to colors,
+  // and renders to an RGBA array, according to the blending mode.
+  // If target is provided, it is used as the initial RGBA array, and blended with the new colors.
+  const { dst, blending = "additive" } = options ?? {};
+
+  const [height, width] = chunk.shape;
+  const data = dst ?? new Uint8ClampedArray(4 * height * width).fill(0);
+  const n = height * width * 4;
+  let dIndex = 0;
+  for (let i = 0; i < n; i += 4) {
+    // ! in this line suppresses TypeScript error about possible undefined
+    const value = Number(chunk.data[dIndex]!);
+    dIndex += 1;
+    const [r, g, b, alpha = 255] = transferFunc(value);
+    const alphaSrc = data[i + 3] / 255;
+    const alphaDst = (alpha ?? 255) / 255;
+    if (blending === "additive") {
+      // Additive blending: ADD to existing color (modified by existing alpha)
+      data[i] = Math.min(data[i] * alphaSrc + r, 255);
+      data[i + 1] = Math.min(data[i + 1] * alphaSrc + g, 255);
+      data[i + 2] = Math.min(data[i + 2] * alphaSrc + b, 255);
+      data[i + 3] = Math.min(alphaSrc + alphaDst, 1.0) * 255;
+    } else if (blending === "translucent") {
+      // A over B (Porter & Duff, 1984)
+      // https://en.wikipedia.org/wiki/Alpha_compositing
+      data[i] = r * alphaDst + data[i] * alphaSrc * (1 - alphaDst);
+      data[i + 1] =
+        g * alphaDst + data[i + 1] * alphaSrc * (1 - alphaDst);
+      data[i + 2] =
+        b * alphaDst + data[i + 2] * alphaSrc * (1 - alphaDst);
+      data[i + 3] = (alphaDst + alphaSrc * (1 - alphaDst)) * 255;
+    } else {
+      throw new Error("Invalid blending mode");
+    }
+  }
+  return data;
+}
+
+export function renderChunkWithLUT(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  lut: Color[],
+  options?: {
+    dst?: Uint8ClampedArray;
+    blending?: Blending;
+    range?: [number, number];
+  }
+): Uint8ClampedArray {
+  // LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest"
+  // The intensity value from the chunk is mapped to a color in the LUT, scaling
+  // over the min/max range if provided.
+  // In no range is provided, chunk values are used directly as indices into the LUT.
+  // Values outside the range are clamped to the first/last value in the LUT.
+  const bins = lut.length;
+  const { dst, blending = "additive", range = [0, bins - 1] } = options ?? {};
+
+  function transferFunc(value: number): Color {
+    const [min, max] = range;
+    if (value < min) value = min;
+    if (value > max) value = max;
+    value = Math.round(((bins - 1) * (value - min)) / (max - min));
+    return lut[value];
+  }
+
+  return renderChunk(chunk, transferFunc, { dst, blending });
+}
+
+export function renderChunkWithColormap(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  colormap: Map<number, Color>,
+  options?: {
+    dst?: Uint8ClampedArray;
+    blending?: Blending;
+    fillValue?: Color;
+  }
+): Uint8ClampedArray {
+  // The intensity value from the chunk is used to lookup a color in the colormap,
+  // which is a Map of value -> [r,g,b] or [r,g,b,a].
+  // If not found, the fillValue is used (default [0,0,0,0])
+  const {
+    dst,
+    blending = "additive",
+    fillValue = [0, 0, 0, 0],
+  } = options ?? {};
+
+  function transferFunc(value: number): Color {
+    return colormap.get(value) ?? fillValue;
+  }
+
+  return renderChunk(chunk, transferFunc, { dst, blending });
+}
+
+export async function renderRgba(
   arr: zarr.Array<any, zarr.Readable>,
   axes: Axis[],
-  omero: Omero | null | undefined,
+  channels: Channel[] | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
   autoBoost: boolean,
@@ -44,22 +143,22 @@ export async function getRgba(
   let visibilities;
   // list of [r,g,b] colors
   let rgbColors: Array<[number, number, number]>;
-  let luts: (string | undefined)[] = [];
+  let lutsOrColorMaps: (Color[] | Map<number, Color> | undefined)[] = [];
   let inverteds: Array<boolean> | undefined = undefined;
 
   // If we have 'omero', use it for channel rgbColors and visibilities
-  if (omero) {
+  if (channels) {
     let active_count = 0;
-    visibilities = omero.channels.map((ch) => {
+    visibilities = channels.map((ch) => {
       if (ch.active == undefined) {
         ch.active = true;
       }
       active_count += ch.active ? 1 : 0;
       return ch.active && active_count <= MAX_CHANNELS;
     });
-    rgbColors = omero.channels.map((ch) => hexToRGB(ch.color));
-    luts = omero.channels.map((ch) =>
-      "lut" in ch ? (ch.lut as string) : undefined
+    rgbColors = channels.map((ch) => hexToRGB(ch.color));
+    lutsOrColorMaps = channels.map((ch) =>
+      "lut" in ch ? (ch.lut as Color[]) : "colorMap" in ch ? (ch.colorMap as Map<number, Color>) : undefined
     );
   } else {
     visibilities = getDefaultVisibilities(channel_count);
@@ -75,19 +174,12 @@ export async function getRgba(
   );
   rgbColors = activeChannelIndices.map((chIndex: number) => rgbColors[chIndex]);
   inverteds = activeChannelIndices.map((chIndex: number) =>
-    Boolean(omero?.channels[chIndex].inverted)
+    Boolean(channels?.[chIndex]?.inverted)
   );
-  if (luts !== undefined) {
-    luts = luts.filter((_, index) => activeChannelIndices.includes(index));
+  if (lutsOrColorMaps !== undefined) {
+    lutsOrColorMaps = lutsOrColorMaps.filter((_, index) => activeChannelIndices.includes(index));
   }
 
-  // Get slices for each channel
-  if (sliceIndices["z"] == undefined) {
-    sliceIndices["z"] = omero?.rdefs?.defaultZ;
-  }
-  if (sliceIndices["t"] == undefined) {
-    sliceIndices["t"] = omero?.rdefs?.defaultT;
-  }
   // sliceIndices are from originalShape if provided
   let chSlices = getSlices(
     activeChannelIndices,
@@ -107,8 +199,8 @@ export async function getRgba(
   // Use start/end values from 'omero' if available, otherwise calculate min/max
   let minMaxValues = activeChannelIndices.map(
     (chIndex: number, i: number): [number, number] => {
-      if (omero && omero.channels[chIndex]) {
-        let chOmero = omero.channels[chIndex];
+      if (channels && channels[chIndex]) {
+        let chOmero = channels[chIndex];
         if (
           chOmero?.window?.start !== undefined &&
           chOmero?.window?.end !== undefined
@@ -120,12 +212,11 @@ export async function getRgba(
     }
   );
 
-  // Render to 8bit rgb array
-  let data = renderTo8bitArray(
+  let data = renderChunks(
     ndChunks,
     minMaxValues,
     rgbColors,
-    luts,
+    lutsOrColorMaps,
     inverteds,
     autoBoost
   );
@@ -135,38 +226,63 @@ export async function getRgba(
   return { data, width, height };
 }
 
-export async function convertRgbDataToDataUrl(
-  rbgData: Uint8ClampedArray,
-  width: number
-): Promise<string> {
-  let h = rbgData.length / (width * 4);
-  if (typeof document !== "undefined") {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "";
-    ctx.putImageData(new ImageData(rbgData, width, h), 0, 0);
-    return canvas.toDataURL("image/png");
+export function renderChunks(
+  ndChunks: any,
+  minMaxValues: Array<[number, number]>,
+  colors: Array<[number, number, number]>,
+  lutsOrColorMaps: Array<Color[] | Map<number, Color> | undefined> | undefined,
+  inverteds: Array<boolean> | undefined,
+  autoBoost: boolean = false
+): Uint8ClampedArray {
+  // Render the given chunks (one per channel) to an RGBA array, using the provided colors and min/max values for each channel.
+  // If lutsOrColorMaps are provided, they are used instead of the colors.
+  // A LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest". Range is scaled over the min/max values
+  // for the channel, and values outside the range are clamped to the first/last value in the LUT.
+  // A colormap is a Map of value -> [r,g,b] or [r,g,b,a].
+  // If inverteds is provided, the LUTs or colors will be reversed for channels where inverteds[i] is true.
+
+  let masterLutsMaps = colors.map((color, i) => {
+    let lutOrMap = lutsOrColorMaps?.length ? lutsOrColorMaps[i] : undefined;
+    if (!lutOrMap) {
+      lutOrMap = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
+    }
+    if (inverteds && inverteds[i] && Array.isArray(lutOrMap)) {
+      lutOrMap = lutOrMap.reverse() as Color[];
+    }
+    return lutOrMap;
+  });
+
+  let start = performance.now();
+
+  let rgba: Uint8ClampedArray;
+  // init the rgba array with first channel, then blend in subsequent channels
+  if (masterLutsMaps[0] instanceof Map) {
+    let colorMap = masterLutsMaps[0] as Map<number, Color>;
+    let fillValue: Color | undefined = colorMap.get(FILL_VALUE_KEY);
+    rgba = renderChunkWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
   } else {
-    const { PNG } = await import("pngjs");
-    const { Buffer } = await import("buffer");
-    const png = new PNG({ width, height: h });
-    png.data = Buffer.from(
-      rbgData.buffer,
-      rbgData.byteOffset,
-      rbgData.byteLength
-    );
-    const chunks: Buffer[] = [];
-    const stream = png.pack();
-    return new Promise((resolve, reject) => {
-      stream.on("data", (c) => chunks.push(c));
-      stream.on("end", () => {
-        resolve(
-          `data:image/png;base64,${Buffer.concat(chunks).toString("base64")}`
-        );
-      });
-      stream.on("error", reject);
-    });
+    rgba = renderChunkWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: minMaxValues[0] });
   }
+  for (let i = 1; i < ndChunks.length; i++) {
+    if (masterLutsMaps[i] instanceof Map) {
+      let colorMap = masterLutsMaps[i] as Map<number, Color>;
+      let fillValue: Color | undefined = colorMap.get(Infinity);
+      let channelRgba = renderChunkWithColormap(ndChunks[i], colorMap, { blending: "additive", dst: rgba, fillValue });
+      rgba = channelRgba;
+    } else {
+      let channelRgba = renderChunkWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", dst: rgba, range: minMaxValues[i] });
+      rgba = channelRgba;
+    }
+  }
+
+  if (performance.now() - start < 100 && autoBoost) {
+    let bins = 5;
+    let hist = getHistogram(rgba, bins);
+    // If top bin, has less than 1% of pixesl, boost contrast
+    if (hist[bins - 1] < 1) {
+      let factor = 2;
+      rgba = boostContrast(rgba, factor);
+    }
+  }
+  return rgba;
 }
