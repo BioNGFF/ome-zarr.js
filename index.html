@@ -37,6 +37,20 @@
         0%, 100% { opacity: 1; }
         50% { opacity: 0.1; }
       }
+      #tiles {
+        clear: both;
+      }
+      #tiles img {
+        margin: 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1px;
+        width: fit-content;
+        margin: 10px;
+        float: left;
+      }
     </style>
   </head>
   <body>
@@ -56,6 +70,9 @@
     <p>We can find a labels image, render it with glasbey_inverted.lut and overlay it on the original image.</p>
     <div id="labels"></div>
 
+    <p>Render tiles: tile size 200 x 200 pixels</p>
+    <div id="tiles"></div><div style="clear: both;"></div>
+
     <p>We can specify a targetSize to pick a larger multiscales resolution to render.
       If autoBoost" is true, contrast will be boosted if needed.</p>
     <div id="bigThumbnails"></div>
@@ -64,14 +81,44 @@
     <div id="splitview"></div>
     <p>A smaller resolution "1", at various z-indeces with Look-up table "16_colors.lut"</p>
     <div id="stack"></div>
-    <p>Thumbnail and region of the same big image</p>
-    <div>
-      <img id="bigThumb" />
-      <div id="bigImages"></div>
-    </div>
     <h2>Look-up tables available to choose</h2>
     <div id="luts"></div>
     <script type="module">
+
+      async function renderTiles() {
+
+        let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr";
+        // This loads the first dataset array, so we know it's shape...
+        let img = await omezarr.NgffImage.load(url);
+        // Calulate the shape of other arrays using 'scale' transforms
+        let shapes = await img.calcShapes();
+        // [8978, 6510], [4489, 3255], [2244, 1627], [1122, 813], [561, 406], [280, 203], [140, 101], [70, 50]
+        let shape = shapes[0];
+        let sizeX = shape[shape.length - 1];
+        let sizeY = shape[shape.length - 2];
+        let tileSize = 200;
+        let xOrig = 3000 / sizeX;
+        let yOrig = 4000 / sizeY;
+
+        for (let dsIndex in [0, 1, 2, 3, 4]) {
+          let shape = shapes[dsIndex];
+          let x = Math.floor(xOrig * shape[shape.length - 1]);
+          let y = Math.floor(yOrig * shape[shape.length - 2]);
+          // render 4 tiles from the first dataset array
+          let src1 = await img.render({arrayPathOrIndex: dsIndex, slices:{"x":[x, x + tileSize], "y":[y, y + tileSize]}})
+          let src2 = await img.render({arrayPathOrIndex: dsIndex, slices:{"x":[x + tileSize, x + 2 * tileSize], "y":[y, y + tileSize]}})
+          let src3 = await img.render({arrayPathOrIndex: dsIndex, slices:{"x":[x, x + tileSize], "y":[y + tileSize, y + 2 * tileSize]}})
+          let src4 = await img.render({arrayPathOrIndex: dsIndex, slices:{"x":[x + tileSize, x + 2 * tileSize], "y":[y + tileSize, y + 2 * tileSize]}})
+
+          let html = `<div class="grid">
+            <img src="${src1}" />
+            <img src="${src2}" />
+            <img src="${src3}" />
+            <img src="${src4}" />
+          </div>`;
+          document.getElementById("tiles").innerHTML += html;
+        }
+      }
 
       async function renderSimilarThumbs() {
         let plateUrl = "https://livingobjects.ebi.ac.uk/bioimaging-integrator-data/S-BIAD885/e7bdccbf-5119-4d9c-b466-66d211871db8/e7bdccbf-5119-4d9c-b466-66d211871db8.zarr";
@@ -155,6 +202,8 @@
       renderLabels();
 
       renderSimilarThumbs();
+
+      renderTiles();
 
       const OXZ = "https://livingobjects.ebi.ac.uk/bioimaging-sandbox/testbucket-bia/test-ozx/6001240.ozx";
       const IDR0079_2_LABELS = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
@@ -291,22 +340,6 @@
         let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
         document.getElementById("stack").innerHTML += html;
       }
-
-      // BIG thumbnail (birds eye view)
-      const storeBig = new zarr.FetchStore(IDR0083);
-      let bigThumb = await omezarr.render(storeBig, 400);
-      document.getElementById("bigThumb").src = bigThumb;
-      // BIG image, Load full-resolution array
-      // let big = await omezarr.getMultiscaleWithArray(storeBig);
-      let tiledImg = await omezarr.NgffImage.load(IDR0083);
-      console.log("big image shapes (undefined)", tiledImg.shapes);
-      await tiledImg.calcShapes();
-      console.log("big image shapes", tiledImg.shapes);
-      // Full-sized image is 144384	x 93184
-      const dsIndex = 0; // pick the largest resolution
-      let sliceIndices = {"x": [50000, 50500], "y": [30000, 30500]};
-      let bigImageSrc = await tiledImg.render({arrayPathOrIndex: dsIndex, slices: sliceIndices});
-      document.getElementById("bigImages").innerHTML += `<img src="${bigImageSrc}" />`;
 
       // show luts
       omezarr.getLuts().forEach((lut) => {
