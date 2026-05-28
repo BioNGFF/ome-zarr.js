@@ -9,7 +9,8 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'render', link: '/render' },
-      // { text: 'renderImage', link: '/render-image' },
+      { text: 'NgffImage', link: '/image' },
+      { text: 'Labels', link: '/labels' },
       { text: 'LUTs', link: '/luts' }
     ],
 
