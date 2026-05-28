@@ -40,6 +40,7 @@ export async function getRgba(
     "x",
   ];
   let chDim = axesNames.indexOf("c");
+  let zDim = axesNames.indexOf("z");
   let channel_count = shape[chDim] || 1;
   let visibilities;
   // list of [r,g,b] colors
@@ -85,6 +86,12 @@ export async function getRgba(
   if (sliceIndices["z"] == undefined) {
     sliceIndices["z"] = omero?.rdefs?.defaultZ;
   }
+  if (zDim != -1 && Number.isInteger(sliceIndices["z"])) {
+    // If we have downsampled in Z, adjust Z index accordingly
+    if (originalShape && originalShape[zDim] != shape[zDim]) {
+      sliceIndices["z"] = Math.floor((sliceIndices["z"] as number * shape[zDim]) / originalShape[zDim]);
+    }
+  }
   if (sliceIndices["t"] == undefined) {
     sliceIndices["t"] = omero?.rdefs?.defaultT;
   }
@@ -93,8 +100,7 @@ export async function getRgba(
     activeChannelIndices,
     shape,
     axesNames,
-    sliceIndices,
-    originalShape
+    sliceIndices
   );
 
   // Wait for all chunks to be fetched...
