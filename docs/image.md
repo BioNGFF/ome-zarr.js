@@ -33,6 +33,9 @@ img.getScales()
 //    [1, 0.5002025531914894, 0.7207963069280418, 0.7207963069280418]
 //    [1, 0.5002025531914894, 1.4415926138560835, 1.4415926138560835]]
 
+// Load the zarrita array at a dataset index
+await ngffImage.openArray(0);
+
 // Shape of the first array. Can use img.getShape(1) to load others
 await img.getShape()
 // [2, 236, 275, 271]
