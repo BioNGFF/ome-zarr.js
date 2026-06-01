@@ -119,32 +119,37 @@
         document.getElementById("labels").innerHTML += html;
 
         let labelPaths = await img.getLabelsPaths();
-        let labelImage = await omezarr.NgffImage.load(imgUrl + "labels/" + labelPaths[0]);
-        labelImage.setChannelActive(0, true);
+        // we use `NgffLabels` since it won't scale values when rendering...
+        let labelImage = await omezarr.NgffLabels.load(imgUrl + "labels/" + labelPaths[0]);
 
         let glasbeyInvertedMap = new Map();
-        // We only want to see labels 50-60
-        for (let i = 20; i < 90; i++) {
-          glasbeyInvertedMap.set(i, omezarr.luts.GLASBEY_INVERTED[i]);
+        // We only want to see first 100 labels
+        for (let i = 1; i < 101; i++) {
+          // label 1 is first color LUT[0], label 2 is LUT[1] etc. (label 0 is background)
+          glasbeyInvertedMap.set(i, omezarr.luts.GLASBEY_INVERTED[i - 1]);
         }
         // set label 0 (background) to grey with some transparency
-        glasbeyInvertedMap.set(0, [100, 100, 100, 255]);
+        glasbeyInvertedMap.set(0, [100, 100, 100, 100]);
         // set missing values to Yellow
         glasbeyInvertedMap.set(omezarr.FILL_VALUE_KEY, [255, 255, 0, 100]);
         labelImage.setChannelColorMap(0, glasbeyInvertedMap);
-
-        // let labelSrc = await omezarr.createRgbDataUrl(labelRgba.data, labelRgba.width);
-        let labelSrc = await labelImage.render({targetSize: 300});
+        let labelSrc = await labelImage.render({targetSize: 512});
         html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
 
-        let overlayHtml = `<div style="position: relative; display: inline-block;">
-          <a href="${imgUrl}">
-            <img src="${imsSrc}" />
-            <img src="${labelSrc}" class="fadeInOut" style="position: absolute; top: 0; left: 0;" />
-          </a>
-        </div>`;
-        document.getElementById("labels").innerHTML += overlayHtml;
+        // transparent (background), then glasbey_inverted for labels
+        // We use just 100 colors from the LUT; values over 100 are moduloed back to the start of the LUT
+        // the FIRST 100 labels will be identical to the colorMap example above...
+        labelImage.setChannelLut(0, [[255, 0, 0, 0], ...omezarr.luts.GLASBEY_INVERTED.slice(0, 100)]);
+        labelSrc = await labelImage.render({targetSize: 512});
+        html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
+        document.getElementById("labels").innerHTML += html;
+
+        // Alternatively, we can set ALL labels to the same color:
+        labelImage.setChannelLut(0, [[255, 0, 0, 0], [0, 255, 255]]);
+        labelSrc = await labelImage.render({targetSize: 512});
+        html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
+        document.getElementById("labels").innerHTML += html;
       }
 
       import * as zarr from "https://cdn.jsdelivr.net/npm/zarrita@next/+esm";
