@@ -70,17 +70,30 @@ export function renderChunkWithLUT(
   // LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest"
   // The intensity value from the chunk is mapped to a color in the LUT, scaling
   // over the min/max range if provided.
-  // In no range is provided, chunk values are used directly as indices into the LUT.
-  // Values outside the range are clamped to the first/last value in the LUT.
+  // If no range is provided, chunk values are used directly as indices into the LUT.
+  // Values less than 0 are clamped to the first value in the LUT.
+  // Values greater than the length of the LUT are "modulo" the LUT length,
+  // so the LUT will repeat, excluding the FIRST value which is reserved for out-of-range values.
+  // e.g. if LUT has 256 values, and chunk value is 257, it will use LUT[1].
   const bins = lut.length;
-  const { dst, blending = "additive", range = [0, bins - 1] } = options ?? {};
+  const { dst, blending = "additive" } = options ?? {};
 
-  function transferFunc(value: number): Color {
-    const [min, max] = range;
-    if (value < min) value = min;
-    if (value > max) value = max;
-    value = Math.round(((bins - 1) * (value - min)) / (max - min));
-    return lut[value];
+  let transferFunc: (value: number) => Color;
+  if (options?.range) {
+    const range = options.range;
+    transferFunc = function(value: number): Color {
+      const [min, max] = range;
+      if (value < min) value = min;
+      if (value > max) value = max;
+      value = Math.round(((bins - 1) * (value - min)) / (max - min));
+      return lut[value];
+    }
+  } else {
+    transferFunc = function(value: number): Color {
+      if (value <= 0) return lut[0];
+      const index = ((value - 1) % (bins - 1)) + 1;
+      return lut[index];
+    }
   }
 
   return renderChunk(chunk, transferFunc, { dst, blending });
@@ -118,13 +131,13 @@ export async function renderRgba(
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
   autoBoost: boolean,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal, autoMinMax?: boolean }
 ): Promise<{
   data: Uint8ClampedArray;
   width: number;
   height: number;
 }> {
-  const { signal } = options ?? {};
+  const { signal, autoMinMax } = options ?? {};
   signal?.throwIfAborted();
 
   let shape = arr.shape;
@@ -198,7 +211,7 @@ export async function renderRgba(
 
   // Use start/end values from 'omero' if available, otherwise calculate min/max
   let minMaxValues = activeChannelIndices.map(
-    (chIndex: number, i: number): [number, number] => {
+    (chIndex: number, i: number): [number, number] | undefined => {
       if (channels && channels[chIndex]) {
         let chOmero = channels[chIndex];
         if (
@@ -208,7 +221,10 @@ export async function renderRgba(
           return [chOmero.window.start, chOmero.window.end];
         }
       }
-      return getMinMaxValues(ndChunks[i]);
+      if (autoMinMax) {
+        return getMinMaxValues(ndChunks[i]);
+      }
+      return undefined;
     }
   );
 
@@ -228,7 +244,7 @@ export async function renderRgba(
 
 export function renderChunks(
   ndChunks: any,
-  minMaxValues: Array<[number, number]>,
+  minMaxValues: Array<[number, number] | undefined>,
   colors: Array<[number, number, number]>,
   lutsOrColorMaps: Array<Color[] | Map<number, Color> | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
@@ -243,6 +259,7 @@ export function renderChunks(
 
   let masterLutsMaps = colors.map((color, i) => {
     let lutOrMap = lutsOrColorMaps?.length ? lutsOrColorMaps[i] : undefined;
+    // If no LUT or colormap is provided, create a default LUT based on the channel color
     if (!lutOrMap) {
       lutOrMap = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
     }
