@@ -95,7 +95,8 @@ export class NgffImage {
       attrs = group.attrs as OmeAttrs;
     }
     
-    const img = new NgffImage(attrs, store);
+    // create an instance of the static class...
+    const img = new this(attrs, store);
 
     // open first array (or specified datasetIndex); populates `omero` if missing.
     const datasetIndex = options.datasetIndex ?? 0;
@@ -371,6 +372,7 @@ export class NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
+    autoMinMax?: boolean,
   } = {}
   ): Promise<{
     data: Uint8ClampedArray;
@@ -426,6 +428,14 @@ export class NgffImage {
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
+    // By default, start/end values will be calculated from the data (min/max)
+    // (if not specified in channels)
+    let autoMinMax = true;
+    if (options?.autoMinMax != undefined) {
+      // force NO start/end values - values won't be mapped to start/end, but will be moduloed instead.
+      autoMinMax = options.autoMinMax;
+    }
+
     let { data, width, height } = await renderRgba(
       arr,
       this.axes,
@@ -433,7 +443,7 @@ export class NgffImage {
       slices,
       originalShape,
       Boolean(options.autoBoost),
-      { signal: options.signal }
+      { signal: options.signal, autoMinMax }
     );
 
     return { data, width, height };
@@ -449,10 +459,31 @@ export class NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
+    autoMinMax?: boolean
   } = {}
   ): Promise<string> {
-
     let { data, width } = await this.renderRgba(options);
     return createRgbDataUrl(data, width);
+  }
+}
+
+
+export class NgffLabels extends NgffImage {
+
+  // call super render with autoMinMax = false, since for labels we don't want to calculate min/max values
+  async render(options: {
+    arr?: zarr.Array<any> | string,
+    targetSize?: number,
+    arrayPathOrIndex?: string | number,
+    slices?: { [k: string]: number | [number, number] | undefined },
+    autoBoost?: boolean,
+    channels?: Channel[],
+    maxSize?: number,
+    signal?: AbortSignal,
+    autoMinMax?: boolean
+  } = {}
+  ): Promise<string> {
+    let opts = {...options, autoMinMax: false};
+    return super.render(opts);
   }
 }
