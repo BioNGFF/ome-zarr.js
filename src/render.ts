@@ -171,7 +171,7 @@ export async function renderRgba(
     });
     rgbColors = channels.map((ch) => hexToRGB(ch.color));
     lutsOrColorMaps = channels.map((ch) =>
-      "lut" in ch ? (ch.lut as Color[]) : "colorMap" in ch ? (ch.colorMap as Map<number, Color>) : undefined
+      ("lut" in ch && ch.lut) ? (ch.lut as Color[]) : "colorMap" in ch ? (ch.colorMap as Map<number, Color>) : undefined
     );
   } else {
     visibilities = getDefaultVisibilities(channel_count);
