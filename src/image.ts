@@ -372,7 +372,7 @@ export class NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
-    autoMinMax?: boolean,
+    calcMinMaxForRange?: boolean,
   } = {}
   ): Promise<{
     data: Uint8ClampedArray;
@@ -430,10 +430,10 @@ export class NgffImage {
 
     // By default, start/end values will be calculated from the data (min/max)
     // (if not specified in channels)
-    let autoMinMax = true;
-    if (options?.autoMinMax != undefined) {
+    let calcMinMaxForRange = true;
+    if (options?.calcMinMaxForRange != undefined) {
       // force NO start/end values - values won't be mapped to start/end, but will be moduloed instead.
-      autoMinMax = options.autoMinMax;
+      calcMinMaxForRange = options.calcMinMaxForRange;
     }
 
     let { data, width, height } = await renderRgba(
@@ -443,7 +443,7 @@ export class NgffImage {
       slices,
       originalShape,
       Boolean(options.autoBoost),
-      { signal: options.signal, autoMinMax }
+      { signal: options.signal, calcMinMaxForRange }
     );
 
     return { data, width, height };
@@ -459,7 +459,7 @@ export class NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
-    autoMinMax?: boolean
+    calcMinMaxForRange?: boolean
   } = {}
   ): Promise<string> {
     let { data, width } = await this.renderRgba(options);
@@ -470,7 +470,7 @@ export class NgffImage {
 
 export class NgffLabels extends NgffImage {
 
-  // call super render with autoMinMax = false, since for labels we don't want to calculate min/max values
+  // call super render with calcMinMaxForRange = false, since for labels we don't want to calculate min/max values
   async render(options: {
     arr?: zarr.Array<any> | string,
     targetSize?: number,
@@ -480,10 +480,10 @@ export class NgffLabels extends NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
-    autoMinMax?: boolean
+    calcMinMaxForRange?: boolean
   } = {}
   ): Promise<string> {
-    let opts = {...options, autoMinMax: false};
+    let opts = {...options, calcMinMaxForRange: false};
     return super.render(opts);
   }
 }

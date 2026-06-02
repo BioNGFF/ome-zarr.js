@@ -73,7 +73,7 @@ export function renderChunkWithLUT(
   // If no range is provided, chunk values are used directly as indices into the LUT.
   // Values less than 0 are clamped to the first value in the LUT.
   // Values greater than the length of the LUT are "modulo" the LUT length,
-  // so the LUT will repeat, excluding the FIRST value which is reserved for out-of-range values.
+  // so the LUT will repeat, excluding the FIRST value which is reserved for 0 values.
   // e.g. if LUT has 256 values, and chunk value is 257, it will use LUT[1].
   const bins = lut.length;
   const { dst, blending = "additive" } = options ?? {};
@@ -131,13 +131,13 @@ export async function renderRgba(
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   originalShape: number[] | undefined,
   autoBoost: boolean,
-  options?: { signal?: AbortSignal, autoMinMax?: boolean }
+  options?: { signal?: AbortSignal, calcMinMaxForRange?: boolean }
 ): Promise<{
   data: Uint8ClampedArray;
   width: number;
   height: number;
 }> {
-  const { signal, autoMinMax } = options ?? {};
+  const { signal, calcMinMaxForRange } = options ?? {};
   signal?.throwIfAborted();
 
   let shape = arr.shape;
@@ -221,7 +221,7 @@ export async function renderRgba(
           return [chOmero.window.start, chOmero.window.end];
         }
       }
-      if (autoMinMax) {
+      if (calcMinMaxForRange) {
         return getMinMaxValues(ndChunks[i]);
       }
       return undefined;
