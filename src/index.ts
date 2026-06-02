@@ -20,7 +20,7 @@ export {
   FILL_VALUE_KEY,
 } from "./utils";
 export { LUTS, getLuts, getLutRgb } from "./luts";
-export { NgffImage, NgffLabels } from "./image";
+export { NgffImage, LabelsImage } from "./image";
 export { renderThumbnail, renderImage, render } from "./api";
 export {
   renderChunk,

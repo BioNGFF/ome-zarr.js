@@ -57,6 +57,8 @@ export class NgffImage {
     }
     this.multiscales = this.imgAttrs.multiscales;
     this.omero = this.imgAttrs.omero;
+    // default to calculating min/max for range if not provided in channels info
+    this.calcMinMaxForRange = true;
 
     // for convenience, we also add top-level keys for the most commonly used fields
     this.paths = this.multiscales[0].datasets.map((d) => d.path);
@@ -428,11 +430,11 @@ export class NgffImage {
     let shapes = await this.calcShapes();
     const originalShape = shapes?.[0];
 
-    // By default, start/end values will be calculated from the data (min/max)
+    // By default for NgffImage, start/end values will be calculated from the data (min/max)
     // (if not specified in channels)
-    let calcMinMaxForRange = true;
+    // Default is false for LabelsImage since we want to use values directly as indices into the LUT.
+    let calcMinMaxForRange = this.calcMinMaxForRange ?? true;
     if (options?.calcMinMaxForRange != undefined) {
-      // force NO start/end values - values won't be mapped to start/end, but will be moduloed instead.
       calcMinMaxForRange = options.calcMinMaxForRange;
     }
 
@@ -443,7 +445,7 @@ export class NgffImage {
       slices,
       originalShape,
       Boolean(options.autoBoost),
-      { signal: options.signal, calcMinMaxForRange }
+      { signal: options.signal, calcMinMaxForRange: Boolean(calcMinMaxForRange) }
     );
 
     return { data, width, height };
@@ -468,22 +470,11 @@ export class NgffImage {
 }
 
 
-export class NgffLabels extends NgffImage {
+export class LabelsImage extends NgffImage {
 
-  // call super render with calcMinMaxForRange = false, since for labels we don't want to calculate min/max values
-  async render(options: {
-    arr?: zarr.Array<any> | string,
-    targetSize?: number,
-    arrayPathOrIndex?: string | number,
-    slices?: { [k: string]: number | [number, number] | undefined },
-    autoBoost?: boolean,
-    channels?: Channel[],
-    maxSize?: number,
-    signal?: AbortSignal,
-    calcMinMaxForRange?: boolean
-  } = {}
-  ): Promise<string> {
-    let opts = {...options, calcMinMaxForRange: false};
-    return super.render(opts);
+  constructor(attrs: OmeAttrs, store: zarr.Group<zarr.Readable> | zarr.Readable) {
+    super(attrs, store);
+    // for labels, we default to NOT calculating min/max for range, since we want values to be used directly as indices into the LUT
+    this.calcMinMaxForRange = false;
   }
 }

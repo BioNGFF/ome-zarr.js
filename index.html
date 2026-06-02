@@ -119,8 +119,8 @@
         document.getElementById("labels").innerHTML += html;
 
         let labelPaths = await img.getLabelsPaths();
-        // we use `NgffLabels` since it won't scale values when rendering...
-        let labelImage = await omezarr.NgffLabels.load(imgUrl + "labels/" + labelPaths[0]);
+        // we use `LabelsImage` since it won't scale values when rendering...
+        let labelImage = await omezarr.LabelsImage.load(imgUrl + "labels/" + labelPaths[0]);
 
         let glasbeyInvertedMap = new Map();
         // We only want to see first 100 labels
