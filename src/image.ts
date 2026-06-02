@@ -142,9 +142,13 @@ export class NgffImage {
     omero.channels[channelIndex].inverted = inverted;
   }
 
-  setChannelLut(channelIndex: number, lut: Color[]) {
+  setChannelLut(channelIndex: number, lut: Color[] | undefined) {
     let omero = this.checkChannelIndex(channelIndex);
-    omero.channels[channelIndex].lut = lut;
+    if (lut == undefined) {
+      delete omero.channels[channelIndex].lut;
+    } else {
+      omero.channels[channelIndex].lut = lut;
+    }
   }
 
   setChannelColorMap(channelIndex: number, colorMap: Map<number, Color>) {
