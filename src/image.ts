@@ -477,4 +477,26 @@ export class LabelsImage extends NgffImage {
     // for labels, we default to NOT calculating min/max for range, since we want values to be used directly as indices into the LUT
     this.calcMinMaxForRange = false;
   }
+
+  static async load(store: zarr.Group<zarr.Readable> | zarr.Readable | string,
+    options: {
+      datasetIndex?: number,
+      attrs?: OmeAttrs,
+      signal?: AbortSignal
+    } = {}
+  ): Promise<NgffImage> {
+    let img = await super.load(store, options);
+
+    // Need to remove start/end values from channels, so they aren't used for scaling values when rendering...
+    if (img.omero && img.omero.channels) {
+      for (let ch of img.omero.channels) {
+        console.log("BEFORE", ch.window);
+        if (ch.window) {
+          delete ch.window.start;
+          delete ch.window.end;
+        }
+      }
+    }
+    return img;
+  }
 }
