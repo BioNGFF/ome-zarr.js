@@ -33,6 +33,9 @@ img.getScales()
 //    [1, 0.5002025531914894, 0.7207963069280418, 0.7207963069280418]
 //    [1, 0.5002025531914894, 1.4415926138560835, 1.4415926138560835]]
 
+// Load the zarrita array at a dataset index
+await ngffImage.openArray(0);
+
 // Shape of the first array. Can use img.getShape(1) to load others
 await img.getShape()
 // [2, 236, 275, 271]
@@ -130,35 +133,104 @@ let shapes = await img.calcShapes();
 // [140, 101]
 // [70, 50]
 
-// render 4 tiles from the first dataset array
-let src1 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3000,3200], "y":[4000, 4200]}})
-let src2 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3200,3400], "y":[4000, 4200]}})
-let src3 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3000,3200], "y":[4200, 4400]}})
-let src4 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3200,3400], "y":[4200, 4400]}})
+// render 4 tiles from the first dataset array "0"
+let src1 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3000,3100], "y":[4000, 4100]}})
+let src2 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3100,3200], "y":[4000, 4100]}})
+let src3 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3000,3100], "y":[4100, 4200]}})
+let src4 = await img.render({arrayPathOrIndex: 0, slices:{"x":[3100,3200], "y":[4100, 4200]}})
+
+// render 4 tiles from the dataset array "1"
+let src5 = await img.render({arrayPathOrIndex: 1, slices:{"x":[1500,1600], "y":[2000, 2100]}})
+let src6 = await img.render({arrayPathOrIndex: 1, slices:{"x":[1600,1700], "y":[2000, 2100]}})
+let src7 = await img.render({arrayPathOrIndex: 1, slices:{"x":[1500,1600], "y":[2100, 2200]}})
+let src8 = await img.render({arrayPathOrIndex: 1, slices:{"x":[1600,1700], "y":[2100, 2200]}})
+
+// render 4 tiles from the dataset array "2"
+let src5 = await img.render({arrayPathOrIndex: 2, slices:{"x":[750,850], "y":[1000, 1100]}})
+let src6 = await img.render({arrayPathOrIndex: 2, slices:{"x":[850,950], "y":[1000, 1100]}})
+let src7 = await img.render({arrayPathOrIndex: 2, slices:{"x":[750,850], "y":[1100, 1200]}})
+let src8 = await img.render({arrayPathOrIndex: 2, slices:{"x":[850,950], "y":[1100, 1200]}})
 ```
 
+<div style="float:left; margin-right: 20px">
+Resolution: 0
 <ClientOnly>
 <table>
 <tbody>
 <tr>
 <td style="padding: 0">
-<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4000, 4200]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3100], "y":[4000, 4100]}' arrayPathOrIndex=0 />
 </td>
 <td style="padding: 0">
-<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4000, 4200]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3100,3200], "y":[4000, 4100]}' arrayPathOrIndex=0 />
 </td>
 </tr>
 <tr>
 <td style="padding: 0">
-<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3200], "y":[4200, 4400]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3000,3100], "y":[4100, 4200]}' arrayPathOrIndex=0 />
 </td>
 <td style="padding: 0">
-<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3200,3400], "y":[4200, 4400]}' arrayPathOrIndex=0 />
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[3100,3200], "y":[4100, 4200]}' arrayPathOrIndex=0 />
 </td>
 </tr>
 </tbody>
 </table>
 </ClientOnly>
+</div>
+
+<div style="float:left; margin-right: 20px">
+Resolution: 1
+<ClientOnly>
+<table>
+<tbody>
+<tr>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[1500,1600], "y":[2000, 2100]}' arrayPathOrIndex=1 />
+</td>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[1600,1700], "y":[2000, 2100]}' arrayPathOrIndex=1 />
+</td>
+</tr>
+<tr>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[1500,1600], "y":[2100, 2200]}' arrayPathOrIndex=1 />
+</td>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[1600,1700], "y":[2100, 2200]}' arrayPathOrIndex=1 />
+</td>
+</tr>
+</tbody>
+</table>
+</ClientOnly>
+</div>
+
+<div style="float:left">
+Resolution: 2
+<ClientOnly>
+<table>
+<tbody>
+<tr>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[750,850], "y":[1000, 1100]}' arrayPathOrIndex=2 />
+</td>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[850,950], "y":[1000, 1100]}' arrayPathOrIndex=2 />
+</td>
+</tr>
+<tr>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[750,850], "y":[1100, 1200]}' arrayPathOrIndex=2 />
+</td>
+<td style="padding: 0">
+<Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" slices='{"x":[850,950], "y":[1100, 1200]}' arrayPathOrIndex=2 />
+</td>
+</tr>
+</tbody>
+</table>
+</ClientOnly>
+</div>
+
+<div style="clear: both"></div>
 
 This functionality is used by the <a href="https://github.com/TissUUmaps/OMEZarrTileSource">OMEZarrTileSource</a> for OpenSeadragon.
 

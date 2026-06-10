@@ -129,7 +129,6 @@ export async function renderRgba(
   axes: Axis[],
   channels: Channel[] | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined },
-  originalShape: number[] | undefined,
   autoBoost: boolean,
   options?: { signal?: AbortSignal, calcMinMaxForRange?: boolean }
 ): Promise<{
@@ -193,13 +192,11 @@ export async function renderRgba(
     lutsOrColorMaps = lutsOrColorMaps.filter((_, index) => activeChannelIndices.includes(index));
   }
 
-  // sliceIndices are from originalShape if provided
   let chSlices = getSlices(
     activeChannelIndices,
     shape,
     axesNames,
-    sliceIndices,
-    originalShape
+    sliceIndices
   );
 
   // Wait for all chunks to be fetched...

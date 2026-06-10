@@ -74,15 +74,13 @@ export async function renderImage(
   axes: Axis[],
   channels: Channel[] | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
-  autoBoost: boolean = false,
-  originalShape?: number[]
+  autoBoost: boolean = false
 ): Promise<string> {
   let { data, width } = await renderRgba(
     arr,
     axes,
     channels,
     sliceIndices,
-    originalShape,
     autoBoost,
     {calcMinMaxForRange: true}
   );
