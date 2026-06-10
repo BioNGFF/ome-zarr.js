@@ -164,6 +164,10 @@ export class NgffImage {
     return arr.shape;
   }
 
+  getAxesNames() {
+    return this.axes.map((a) => a.name || a.toString());
+  }
+
   getVersion() {
     return this.omezarr_version;
   }
@@ -418,20 +422,25 @@ export class NgffImage {
     if (slices["z"] == undefined) {
       slices["z"] = this.omero?.rdefs?.defaultZ;
     }
+
+    // If we have downsampled in Z and slices['z'] is a single index, adjust Z index accordingly
+    let zDim = this.getAxesNames().indexOf("z");
+    if (zDim != -1 && Number.isInteger(slices["z"])) {
+      const originalShape = await this.getShape();
+      if (originalShape && originalShape[zDim] != shape[zDim]) {
+        slices["z"] = Math.floor((slices["z"] as number * shape[zDim]) / originalShape[zDim]);
+      }
+    }
     if (slices["t"] == undefined) {
       slices["t"] = this.omero?.rdefs?.defaultT;
     }
     let channels = options.channels || this.omero?.channels;
-    // We need originalShape to know if we have Z-downsampling.
-    let shapes = await this.calcShapes();
-    const originalShape = shapes?.[0];
 
     let { data, width, height } = await renderRgba(
       arr,
       this.axes,
       channels,
       slices,
-      originalShape,
       Boolean(options.autoBoost),
       { signal: options.signal }
     );
