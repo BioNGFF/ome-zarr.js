@@ -207,7 +207,7 @@ export async function renderRgba(
   signal?.throwIfAborted();
 
   // Use start/end values from 'omero' if available, otherwise calculate min/max
-  let minMaxValues = activeChannelIndices.map(
+  let ranges = activeChannelIndices.map(
     (chIndex: number, i: number): [number, number] | undefined => {
       if (channels && channels[chIndex]) {
         let chOmero = channels[chIndex];
@@ -227,7 +227,7 @@ export async function renderRgba(
 
   let data = renderChunks(
     ndChunks,
-    minMaxValues,
+    ranges,
     rgbColors,
     lutsOrColorMaps,
     inverteds,
@@ -241,14 +241,15 @@ export async function renderRgba(
 
 export function renderChunks(
   ndChunks: any,
-  minMaxValues: Array<[number, number] | undefined>,
+  ranges: Array<[number, number] | undefined>,
   colors: Array<[number, number, number]>,
   lutsOrColorMaps: Array<Color[] | Map<number, Color> | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
   autoBoost: boolean = false
 ): Uint8ClampedArray {
-  // Render the given chunks (one per channel) to an RGBA array, using the provided colors and min/max values for each channel.
+  // Render the given chunks (one per channel) to an RGBA array, using the provided colors and ranges for each channel.
   // If lutsOrColorMaps are provided, they are used instead of the colors.
+  // NB: If any ranges are undefined, the pixel values are used as indices into the LUT (or LUT created from the color).
   // A LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest". Range is scaled over the min/max values
   // for the channel, and values outside the range are clamped to the first/last value in the LUT.
   // A colormap is a Map of value -> [r,g,b] or [r,g,b,a].
@@ -275,7 +276,7 @@ export function renderChunks(
     let fillValue: Color | undefined = colorMap.get(FILL_VALUE_KEY);
     rgba = renderChunkWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
   } else {
-    rgba = renderChunkWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: minMaxValues[0] });
+    rgba = renderChunkWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: ranges[0] });
   }
   for (let i = 1; i < ndChunks.length; i++) {
     if (masterLutsMaps[i] instanceof Map) {
@@ -284,7 +285,7 @@ export function renderChunks(
       let channelRgba = renderChunkWithColormap(ndChunks[i], colorMap, { blending: "additive", dst: rgba, fillValue });
       rgba = channelRgba;
     } else {
-      let channelRgba = renderChunkWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", dst: rgba, range: minMaxValues[i] });
+      let channelRgba = renderChunkWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", dst: rgba, range: ranges[i] });
       rgba = channelRgba;
     }
   }
