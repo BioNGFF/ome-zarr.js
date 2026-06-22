@@ -22,7 +22,7 @@ let labelImage = await omezarr.LabelsImage.load(url + "labels/" + labelPaths[0])
 We can render by `LUTs` (lookup-tables) which are lists of colors; each color is
 defined by `[red, green, blue]`, or `[red, green, blue, alpha]` values.
 
-The first item of the `LUT` list will be used for background (where `pixel value = 0`).
+When a `LabelsImage` renders with a `LUT`, the first item of the `LUT` list will be used for background (where `pixel value = 0`).
 The remaining colors will be used for other label values, repeating as necessary.
 
 ```js

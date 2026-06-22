@@ -110,44 +110,50 @@ onMounted(async () => {
   <hr>
   <div>
     <input type="radio" v-model="colorBy" id="colorpicker" name="color_by" value="colorpicker" @change="renderLabel"/>
-    <label for="colorpicker">Color Picker:</label>
-    <input type="color" v-model="labelsColor" @input="renderLabel" style="position: relative; top: 4px; margin-left: 10px;" />
+    <label for="colorpicker">Single color:</label>
+    <input title="Color picker" type="color" v-model="labelsColor" @input="renderLabel" style="position: relative; top: 4px; margin-left: 10px;" />
+    <code :class="$style.code">img.setChannelLut(0, [transparent, cyan]);</code>
   </div> 
   <hr>
   <div>
     <input type="radio" v-model="colorBy" id="auto" name="color_by" value="auto" @change="renderLabel"/>
     <label for="auto">Auto (glasbey LUT)</label>
+    <code :class="$style.code">img.setChannelLut(0, [transparent, ...glasbeyRgb]);</code>
   </div>
   <hr>
   <div>
     <input type="radio" v-model="colorBy" id="data" name="color_by" value="data" @change="renderLabel"/>
     <label for="data">Data:</label>
+    <code :class="$style.code">img.setChannelColorMap(0, colorMap);</code>
   </div>
 
-  <select v-model="colName" @change="renderLabel">
-    <option v-for="label in COL_NAMES.slice(3)" :key="label" :value="label">
-      {{ label }}
-    </option>
-  </select>
+  <!-- show 50% opacity unless colorBy is 'data' -->
+  <div style="margin-left: 100px" :style="{ opacity: colorBy === 'data' ? 1 : 0.5 }">
+    <select v-model="colName" @change="renderLabel" :disabled="colorBy !== 'data'">
+      <option v-for="label in COL_NAMES.slice(3)" :key="label" :value="label">
+        {{ label }}
+      </option>
+    </select>
 
-  <select v-model="lutName" @change="renderLabel">
-    <option v-for="lut in luts" :key="lut.name" :value="lut.name">
-      {{lut.name}}
-    </option>
-  </select>
+    <select v-model="lutName" @change="renderLabel" :disabled="colorBy !== 'data'">
+      <option v-for="lut in luts" :key="lut.name" :value="lut.name">
+        {{lut.name}}
+      </option>
+    </select>
 
-  <div style="display: flex; flex-direction: row; gap: 7px; align-items: center; margin: 0 10px">
-    <input type="checkbox" v-model="fillColorEnabled" @change="renderLabel" />
-      Fill color:
-    </input>
-    <input type="color" v-model="fillColor" @input="renderLabel" />
-  </div>
+    <div style="display: flex; flex-direction: row; gap: 7px; align-items: center; margin: 0 10px">
+      <input type="checkbox" v-model="fillColorEnabled" @change="renderLabel" :disabled="colorBy !== 'data'" />
+        Fill color:
+      </input>
+      <input type="color" v-model="fillColor" @input="renderLabel" :disabled="colorBy !== 'data'" />
+    </div>
 
-  <div style="display: flex; flex-direction: row; gap: 7px; align-items: center; margin: 0 10px">
-    <!-- Show a colorbar with min and max values -->
-    <div>{{ displayMin.toFixed(2) }}</div>
-    <img :class="$style.lutImg" :src="lutImgSrc"/>
-    <div>{{ displayMax.toFixed(2) }}</div>
+    <div style="display: flex; flex-direction: row; gap: 7px; align-items: center; margin: 0 10px">
+      <!-- Show a colorbar with min and max values -->
+      <div>{{ displayMin.toFixed(2) }}</div>
+      <img :class="$style.lutImg" :src="lutImgSrc"/>
+      <div>{{ displayMax.toFixed(2) }}</div>
+    </div>
   </div>
 
   <hr/>
@@ -179,6 +185,9 @@ select {
   padding: 5px;
   border-radius: 5px;
   appearance: auto;
+}
+.code {
+  margin-left: 30px;
 }
 .lutImg {
   width: 256px;
