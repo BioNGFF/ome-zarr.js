@@ -124,7 +124,7 @@ export function renderChunkWithColormap(
   return renderChunk(chunk, transferFunc, { dst, blending });
 }
 
-export async function renderRgba(
+export async function renderArray(
   arr: zarr.Array<any, zarr.Readable>,
   axes: Axis[],
   channels: Channel[] | null | undefined,
