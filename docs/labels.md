@@ -19,6 +19,8 @@ let labelPaths = await img.getLabelsPaths();
 let labelImage = await omezarr.LabelsImage.load(url + "labels/" + labelPaths[0]);
 ```
 
+## LUTs
+
 We can render by `LUTs` (lookup-tables) which are lists of colors; each color is
 defined by `[red, green, blue]`, or `[red, green, blue, alpha]` values.
 
@@ -42,6 +44,8 @@ labelImage.setChannelLut(0, lut);
 let labelSrc = await labelImage.render({ targetSize: 300 });
 document.getElementById("labelImg").src = labelSrc;
 ```
+
+## Color Map
 
 If we want to precisely map pixel values to colors, we can use a `colorMap`, which is
 a `Map` of `integer: [r, g, b]` (or `[r, g, b, a]`).

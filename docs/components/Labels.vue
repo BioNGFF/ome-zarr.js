@@ -117,13 +117,13 @@ onMounted(async () => {
   <hr>
   <div>
     <input type="radio" v-model="colorBy" id="auto" name="color_by" value="auto" @change="renderLabel"/>
-    <label for="auto">Auto (glasbey LUT)</label>
+    <label for="auto">Glasbey LUT</label>
     <code :class="$style.code">img.setChannelLut(0, [transparent, ...glasbeyRgb]);</code>
   </div>
   <hr>
   <div>
     <input type="radio" v-model="colorBy" id="data" name="color_by" value="data" @change="renderLabel"/>
-    <label for="data">Data:</label>
+    <label for="data">ColorMap:</label>
     <code :class="$style.code">img.setChannelColorMap(0, colorMap);</code>
   </div>
 
