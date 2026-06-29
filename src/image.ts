@@ -57,6 +57,8 @@ export class NgffImage {
     }
     this.multiscales = this.imgAttrs.multiscales;
     this.omero = this.imgAttrs.omero;
+    // default to calculating min/max for range if not provided in channels info
+    this.calcMinMaxForRange = true;
 
     // for convenience, we also add top-level keys for the most commonly used fields
     this.paths = this.multiscales[0].datasets.map((d) => d.path);
@@ -95,7 +97,8 @@ export class NgffImage {
       attrs = group.attrs as OmeAttrs;
     }
     
-    const img = new NgffImage(attrs, store);
+    // create an instance of the static class...
+    const img = new this(attrs, store);
 
     // open first array (or specified datasetIndex); populates `omero` if missing.
     const datasetIndex = options.datasetIndex ?? 0;
@@ -139,9 +142,13 @@ export class NgffImage {
     omero.channels[channelIndex].inverted = inverted;
   }
 
-  setChannelLut(channelIndex: number, lut: Color[]) {
+  setChannelLut(channelIndex: number, lut: Color[] | undefined) {
     let omero = this.checkChannelIndex(channelIndex);
-    omero.channels[channelIndex].lut = lut;
+    if (lut == undefined) {
+      delete omero.channels[channelIndex].lut;
+    } else {
+      omero.channels[channelIndex].lut = lut;
+    }
   }
 
   setChannelColorMap(channelIndex: number, colorMap: Map<number, Color>) {
@@ -375,6 +382,7 @@ export class NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
+    calcMinMaxForRange?: boolean,
   } = {}
   ): Promise<{
     data: Uint8ClampedArray;
@@ -436,13 +444,21 @@ export class NgffImage {
     }
     let channels = options.channels || this.omero?.channels;
 
+    // By default for NgffImage, start/end values will be calculated from the data (min/max)
+    // (if not specified in channels)
+    // Default is false for LabelsImage since we want to use values directly as indices into the LUT.
+    let calcMinMaxForRange = this.calcMinMaxForRange ?? true;
+    if (options?.calcMinMaxForRange != undefined) {
+      calcMinMaxForRange = options.calcMinMaxForRange;
+    }
+
     let { data, width, height } = await renderRgba(
       arr,
       this.axes,
       channels,
       slices,
       Boolean(options.autoBoost),
-      { signal: options.signal }
+      { signal: options.signal, calcMinMaxForRange: Boolean(calcMinMaxForRange) }
     );
 
     return { data, width, height };
@@ -458,10 +474,42 @@ export class NgffImage {
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
+    calcMinMaxForRange?: boolean
   } = {}
   ): Promise<string> {
-
     let { data, width } = await this.renderRgba(options);
     return createRgbDataUrl(data, width);
+  }
+}
+
+
+export class LabelsImage extends NgffImage {
+
+  constructor(attrs: OmeAttrs, store: zarr.Group<zarr.Readable> | zarr.Readable) {
+    super(attrs, store);
+    // for labels, we default to NOT calculating min/max for range, since we want values to be used directly as indices into the LUT
+    this.calcMinMaxForRange = false;
+  }
+
+  static async load(store: zarr.Group<zarr.Readable> | zarr.Readable | string,
+    options: {
+      datasetIndex?: number,
+      attrs?: OmeAttrs,
+      signal?: AbortSignal
+    } = {}
+  ): Promise<NgffImage> {
+    let img = await super.load(store, options);
+
+    // Need to remove start/end values from channels, so they aren't used for scaling values when rendering...
+    if (img.omero && img.omero.channels) {
+      for (let ch of img.omero.channels) {
+        console.log("BEFORE", ch.window);
+        if (ch.window) {
+          delete ch.window.start;
+          delete ch.window.end;
+        }
+      }
+    }
+    return img;
   }
 }

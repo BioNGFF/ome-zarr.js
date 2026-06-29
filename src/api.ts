@@ -81,7 +81,8 @@ export async function renderImage(
     axes,
     channels,
     sliceIndices,
-    autoBoost
+    autoBoost,
+    {calcMinMaxForRange: true}
   );
   return createRgbDataUrl(data, width);
 }
