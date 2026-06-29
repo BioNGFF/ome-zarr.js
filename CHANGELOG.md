@@ -1,4 +1,9 @@
 
+CHANGELOG is no-longer updated
+------------------------------
+
+Please see individual releases on GitHub for release info.
+
 0.0.19 (April 2026)
 -------------------
 

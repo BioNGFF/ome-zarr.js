@@ -68,7 +68,6 @@ license, "ome-zarr.js" is free and open source software.
 
  - Fetch `origin/main`, checkout `main` and rebase
  - Bump version in `package.json`
- - Update `CHANGELOG.md`
  - Commit changes
 
 Then:
@@ -84,3 +83,7 @@ Then:
 
     $ git tag v0.0.14
     $ git push origin HEAD v0.0.14
+
+Finally:
+
+  - Draft a new Release at https://github.com/BioNGFF/ome-zarr.js/releases using the new tag.
