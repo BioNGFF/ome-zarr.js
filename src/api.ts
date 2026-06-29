@@ -2,7 +2,7 @@
 import * as zarr from "zarrita";
 
 import { Axis, Channel, OmeAttrs } from "./types/ome";
-import { renderRgba } from "./render";
+import { renderArray } from "./render";
 import { NgffImage } from "./image";
 import { createRgbDataUrl } from "./utils";
 
@@ -76,7 +76,7 @@ export async function renderImage(
   sliceIndices: { [k: string]: number | [number, number] | undefined } = {},
   autoBoost: boolean = false
 ): Promise<string> {
-  let { data, width } = await renderRgba(
+  let { data, width } = await renderArray(
     arr,
     axes,
     channels,

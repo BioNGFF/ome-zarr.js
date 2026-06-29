@@ -2,7 +2,7 @@
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
 import { createRgbDataUrl, openArray, openGroup, createOmero } from "./utils";
-import { renderRgba } from "./render";
+import { renderArray } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
 export class NgffImage {
@@ -372,7 +372,7 @@ export class NgffImage {
     return path;
   }
 
-  async renderRgba(options: {
+  async renderArray(options: {
     // Array can be provided directly, or we will load based on targetSize or arrayPathOrIndex
     arr?: zarr.Array<any> | string,
     targetSize?: number,
@@ -452,7 +452,7 @@ export class NgffImage {
       calcMinMaxForRange = options.calcMinMaxForRange;
     }
 
-    let { data, width, height } = await renderRgba(
+    let { data, width, height } = await renderArray(
       arr,
       this.axes,
       channels,
@@ -477,7 +477,7 @@ export class NgffImage {
     calcMinMaxForRange?: boolean
   } = {}
   ): Promise<string> {
-    let { data, width } = await this.renderRgba(options);
+    let { data, width } = await this.renderArray(options);
     return createRgbDataUrl(data, width);
   }
 }
