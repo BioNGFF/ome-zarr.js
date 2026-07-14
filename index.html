@@ -28,7 +28,7 @@
           linear-gradient(45deg, transparent 75%, #ccc 75%),
           linear-gradient(-45deg, transparent 75%, #ccc 75%);
         background-size: 20px 20px;
-        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;  
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
       }
       .fadeInOut {
         animation: fadeInOut 3s ease-in-out infinite;
@@ -366,6 +366,36 @@
           <img class="lut" src="${src}" title="${lut.name}" /></div>`;
         document.getElementById("luts").innerHTML += html;
       });
+
+      // --- IDR0062: 3D multi-channel with LUTs ---
+      const idr62Url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240_ngff-zarr.ome.zarr";
+      const idr62Img = await omezarr.NgffImage.load(idr62Url);
+      idr62Img.setChannelActive(0, true);
+      idr62Img.setChannelActive(1, false);
+
+      let idr62Html = "<h3>IDR0062: Projection with LUTs</h3><p>MIP with different LUTs on channel 0:</p>";
+      idr62Img.setChannelLut(0, omezarr.luts.FIRE);
+      idr62Html += `<img src="${await idr62Img.render({projection: "max", autoBoost: true, maxVoxels: 4_000_000})}" title="FIRE" />`;
+      idr62Img.setChannelLut(0, omezarr.luts.SIXTEEN_COLORS);
+      idr62Html += `<img src="${await idr62Img.render({projection: "max", autoBoost: true, maxVoxels: 4_000_000})}" title="16_colors" />`;
+      idr62Img.setChannelLut(0, undefined);
+      idr62Img.setChannelInverted(0, true);
+      idr62Html += `<img src="${await idr62Img.render({projection: "max", autoBoost: true, maxVoxels: 4_000_000})}" title="inverted" />`;
+      document.getElementById("content").innerHTML += idr62Html;
+
+      // --- Stag Beetle: max/mean/sum and orthogonal projections ---
+      const stagUrl = "https://ome-zarr-scivis.s3.us-east-1.amazonaws.com/v0.5/96x2/stag_beetle.ome.zarr";
+      const stagImg = await omezarr.NgffImage.load(stagUrl);
+
+      let stagHtml = "<h3>Stag Beetle: max / mean / sum</h3>";
+      for (const mode of ["max", "mean", "sum"]) {
+        stagHtml += `<img src="${await stagImg.render({projection: mode, autoBoost: true, maxVoxels: 8_000_000})}" title="${mode}" />`;
+      }
+      stagHtml += "<h3>Stag Beetle: Orthogonal projections (z / y / x)</h3>";
+      for (const axis of ["z", "y", "x"]) {
+        stagHtml += `<img src="${await stagImg.render({projection: "max", projectionAxis: axis, autoBoost: true, maxVoxels: 8_000_000})}" title="axis ${axis}" />`;
+      }
+      document.getElementById("content").innerHTML += stagHtml;
 
     </script>
   </body>
