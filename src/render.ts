@@ -61,9 +61,14 @@ export function projectChunk(
     os *= outShape[d];
   }
 
-  const Ctor = src.constructor as any;
   const isBig = typeof src[0] === "bigint";
-  const out = new Ctor(outLen);
+
+
+  // "max" and "mean" stay within the source range, so keep the source dtype.
+  // "sum" can exceed it. Widen to Float32 so accumulated value survives
+  const OutCtor = how === "sum" ? Float32Array : (src.constructor as any);
+  const out = new OutCtor(outLen);
+  // -----------------------------------------------
 
   for (let o = 0; o < outLen; o++) {
     // decompose the flat output index into coords, map back to the source
@@ -88,14 +93,20 @@ export function projectChunk(
       for (let k = 0; k < n; k++) {
         sum += Number(src[base + k * axisStride]);
       }
-      const val = how === "mean" ? sum / n : sum;
-      out[o] = isBig ? BigInt(Math.round(val)) : val;
+      // only mean rounds back into an integer dtype
+      if (how === "mean") {
+        const val = sum / n;
+        out[o] = isBig ? BigInt(Math.round(val)) : val;
+      } else {
+        // "sum" -> Float32 output, write the raw accumulated value
+        out[o] = sum;
+      }
+      // ---------------------------------------------------------------
     }
   }
 
   return { data: out, shape: outShape, stride: outStrides } as any;
 }
-
 export function renderChunk(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   transferFunc: (value: number) => Color,
