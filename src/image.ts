@@ -1,13 +1,12 @@
-
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
 import { createRgbDataUrl, openArray, openGroup, createOmero } from "./utils";
-import { renderArray } from "./render";
+import { renderArray, Projection } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
 export class NgffImage {
   /**
-   * This is the main Image class for the API. It handles both v0.4 and v0.5 formats, 
+   * This is the main Image class for the API. It handles both v0.4 and v0.5 formats,
    * and provides a consistent interface for accessing the multiscale datasets,
    * omero metadata, and zarr version.
    *
@@ -96,7 +95,7 @@ export class NgffImage {
       }
       attrs = group.attrs as OmeAttrs;
     }
-    
+
     // create an instance of the static class...
     const img = new this(attrs, store);
 
@@ -372,23 +371,68 @@ export class NgffImage {
     return path;
   }
 
+  /**
+   * Count the voxels a projection would fetch for a given shape: nz * ny * nx.
+   */
+  private countVoxels(shape: number[]): number {
+    const names = this.getAxesNames();
+    const zi = names.indexOf("z");
+    const yi = names.indexOf("y");
+    const xi = names.indexOf("x");
+    // If any of the axes are missing, treat them as size 1 (e.g. a 2D image has no z axis).
+    const sz = zi === -1 ? 1 : shape[zi];
+    const sy = yi === -1 ? 1 : shape[yi];
+    const sx = xi === -1 ? 1 : shape[xi];
+    return sz * sy * sx;
+  }
+
+
+  /**
+   * This is the projection counterpart of getPathForTargetSize()
+   * Default is limited to 64M voxels (~64MB if uint8)
+   */
+  async getPathForTargetVolume(maxVoxels: number = 64_000_000): Promise<string> {
+    const names = this.getAxesNames();
+    if (!names.includes("z")) {
+      throw new Error("getPathForTargetVolume requires a 'z' axis; image has none");
+    }
+    // shapes can be empty for v0.1-v0.3 (no coordinateTransformations)
+    const shapes = await this.calcShapes();
+    if (!shapes.length) {
+      // no scales to reason about - use the smallest level
+      return this.paths[this.paths.length - 1];
+    }
+    for (let i = 0; i < shapes.length; i++) {
+      if (this.countVoxels(shapes[i]) <= maxVoxels) {
+        return this.paths[i];
+      }
+    }
+    return this.paths[this.paths.length - 1];
+  }
+
   async renderArray(options: {
     // Array can be provided directly, or we will load based on targetSize or arrayPathOrIndex
     arr?: zarr.Array<any> | string,
     targetSize?: number,
-    arrayPathOrIndex?: string | number, 
+    arrayPathOrIndex?: string | number,
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
     calcMinMaxForRange?: boolean,
+    projection?: Projection,           // "max" | "mean" | "sum"
+    projectionAxis?: "z" | "y" | "x",  // default "z"
+    maxVoxels?: number,                // budget for the nz*ny*nx fetch
   } = {}
   ): Promise<{
     data: Uint8ClampedArray;
     width: number,
     height: number
   }> {
+    const projection = options.projection;
+    const maxVoxels = options.maxVoxels ?? 64_000_000;
+
     let arr;
     if (options.arr) {
       if (typeof options.arr === "string") {
@@ -403,13 +447,16 @@ export class NgffImage {
         path = options.arrayPathOrIndex;
       } else if (options.targetSize !== undefined) {
         path = await this.getPathForTargetSize(options.targetSize);
+      } else if (projection) {
+        // No level given: for a projection, pick by VOLUME rather than XY size.
+        path = await this.getPathForTargetVolume(maxVoxels);
       } else {
-        throw new Error("Need to specify arr OR targetSize OR arrayPathOrIndex ")
+        throw new Error("Need to specify arr OR targetSize OR arrayPathOrIndex OR projection");
       }
       arr = await this.openArray(path);
     }
 
-    // TODO: decide when to ignore maxSize? 
+    // TODO: decide when to ignore maxSize?
     // E.g. if targetSize is specified, use maxSize = 2 x targetSize?
     let maxSize = options.maxSize ?? 1000;
     let shape = arr.shape;
@@ -424,10 +471,22 @@ export class NgffImage {
       );
     }
 
+    // A projection fetches nz * ny * nx voxels,
+    if (projection) {
+      const voxels = this.countVoxels(shape);
+      if (voxels > maxVoxels) {
+        throw new Error(
+          `Projection would fetch ${voxels.toLocaleString()} voxels, over the ` +
+          `'maxVoxels' limit of ${maxVoxels.toLocaleString()}. Use a coarser ` +
+          `level (arrayPathOrIndex / getPathForTargetVolume), or raise maxVoxels.`
+        );
+      }
+    }
+
     // let omero = options.omero || this.omero;
     let slices = options.slices || {};
-    // Get slices for each channel
-    if (slices["z"] == undefined) {
+    // Get slices for each channel.
+    if (slices["z"] == undefined && !projection) {
       slices["z"] = this.omero?.rdefs?.defaultZ;
     }
 
@@ -458,7 +517,12 @@ export class NgffImage {
       channels,
       slices,
       Boolean(options.autoBoost),
-      { signal: options.signal, calcMinMaxForRange: Boolean(calcMinMaxForRange) }
+      {
+        signal: options.signal,
+        calcMinMaxForRange: Boolean(calcMinMaxForRange),
+        projection: options.projection,
+        projectionAxis: options.projectionAxis,
+      }
     );
 
     return { data, width, height };
@@ -468,13 +532,17 @@ export class NgffImage {
     // Array can be provided directly, or we will load based on targetSize or arrayPathOrIndex
     arr?: zarr.Array<any> | string,
     targetSize?: number,
-    arrayPathOrIndex?: string | number, 
+    arrayPathOrIndex?: string | number,
     slices?: { [k: string]: number | [number, number] | undefined },
     autoBoost?: boolean,
     channels?: Channel[],
     maxSize?: number,
     signal?: AbortSignal,
-    calcMinMaxForRange?: boolean
+    calcMinMaxForRange?: boolean,
+    // Projection: collapse an axis instead of picking a single plane.
+    projection?: Projection,           // "max" | "mean" | "sum"
+    projectionAxis?: "z" | "y" | "x",  // default "z"
+    maxVoxels?: number,
   } = {}
   ): Promise<string> {
     let { data, width } = await this.renderArray(options);

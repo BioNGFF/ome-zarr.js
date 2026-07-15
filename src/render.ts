@@ -15,6 +15,98 @@ import {
 
 export type Blending = "additive" | "translucent";
 
+export type Projection = "max" | "mean" | "sum";
+
+/**
+ * Collapse one axis of a chunk, returning a new chunk with that axis removed.
+ *
+ * The result is a plain object with `data` / `shape` / `stride`, which is all
+ * that renderChunk() and getMinMaxValues() need
+ * The rendering (LUTs, colormaps, inverted, blending, autoBoost) is unchanged.
+ *
+ */
+export function projectChunk(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  axis: number,
+  how: Projection = "max"
+): zarr.Chunk<any> {
+  const shape = chunk.shape;
+  const src = chunk.data as any;
+
+  if (axis < 0 || axis >= shape.length) {
+    throw new Error(
+      `projectChunk: axis ${axis} out of range for shape [${shape}]`
+    );
+  }
+
+  const n = shape[axis];
+
+  // C-order strides for the source
+  const strides: number[] = new Array(shape.length);
+  let s = 1;
+  for (let d = shape.length - 1; d >= 0; d--) {
+    strides[d] = s;
+    s *= shape[d];
+  }
+  const axisStride = strides[axis];
+
+  const outShape = shape.filter((_, d) => d !== axis);
+  const outAxes = shape.map((_, d) => d).filter((d) => d !== axis);
+  const outLen = outShape.reduce((a, b) => a * b, 1);
+
+  const outStrides: number[] = new Array(outShape.length);
+  let os = 1;
+  for (let d = outShape.length - 1; d >= 0; d--) {
+    outStrides[d] = os;
+    os *= outShape[d];
+  }
+
+  const isBig = typeof src[0] === "bigint";
+
+
+  // "max" and "mean" stay within the source range, so keep the source dtype.
+  // "sum" can exceed it. Widen to Float32 so accumulated value survives
+  const OutCtor = how === "sum" ? Float32Array : (src.constructor as any);
+  const out = new OutCtor(outLen);
+  // -----------------------------------------------
+
+  for (let o = 0; o < outLen; o++) {
+    // decompose the flat output index into coords, map back to the source
+    // offset with the projected axis at 0
+    let rem = o;
+    let base = 0;
+    for (let d = 0; d < outShape.length; d++) {
+      const c = (rem / outStrides[d]) | 0;
+      rem -= c * outStrides[d];
+      base += c * strides[outAxes[d]];
+    }
+
+    if (how === "max") {
+      let m = src[base];
+      for (let k = 1; k < n; k++) {
+        const v = src[base + k * axisStride];
+        if (v > m) m = v;
+      }
+      out[o] = m;
+    } else {
+      let sum = 0;
+      for (let k = 0; k < n; k++) {
+        sum += Number(src[base + k * axisStride]);
+      }
+      // only mean rounds back into an integer dtype
+      if (how === "mean") {
+        const val = sum / n;
+        out[o] = isBig ? BigInt(Math.round(val)) : val;
+      } else {
+        // "sum" -> Float32 output, write the raw accumulated value
+        out[o] = sum;
+      }
+      // ---------------------------------------------------------------
+    }
+  }
+
+  return { data: out, shape: outShape, stride: outStrides } as any;
+}
 export function renderChunk(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   transferFunc: (value: number) => Color,
@@ -130,13 +222,23 @@ export async function renderArray(
   channels: Channel[] | null | undefined,
   sliceIndices: { [k: string]: number | [number, number] | undefined },
   autoBoost: boolean,
-  options?: { signal?: AbortSignal, calcMinMaxForRange?: boolean }
+  options?: {
+    signal?: AbortSignal;
+    calcMinMaxForRange?: boolean;
+    projection?: Projection;
+    projectionAxis?: string;
+  }
 ): Promise<{
   data: Uint8ClampedArray;
   width: number;
   height: number;
 }> {
-  const { signal, calcMinMaxForRange } = options ?? {};
+  const {
+    signal,
+    calcMinMaxForRange,
+    projection,
+    projectionAxis = "z",
+  } = options ?? {};
   signal?.throwIfAborted();
 
   let shape = arr.shape;
@@ -192,11 +294,36 @@ export async function renderArray(
     lutsOrColorMaps = lutsOrColorMaps.filter((_, index) => activeChannelIndices.includes(index));
   }
 
+  // For a projection, the projected axis must be fetched as a FULL RANGE, not as
+  // a single index. Override whatever the caller (or omero rdefs) asked for.
+  let effectiveSlices = sliceIndices;
+  if (projection) {
+    if (!axesNames.includes(projectionAxis)) {
+      throw new Error(
+        `Cannot project along '${projectionAxis}': image has axes [${axesNames}]`
+      );
+    }
+    effectiveSlices = { ...sliceIndices };
+    // The projected axis must be a full range...
+    const pDim = axesNames.indexOf(projectionAxis);
+    effectiveSlices[projectionAxis] = [0, shape[pDim]];
+    // ...and so must the two spatial axes we keep. getSlices() gives x/y a full
+    // range by default, but defaults z to a MIDDLE INDEX - which would collapse
+    // it to a scalar and leave us with a 2D chunk when projecting along y or x.
+    for (const name of ["z", "y", "x"]) {
+      if (name === projectionAxis) continue;
+      const d = axesNames.indexOf(name);
+      if (d === -1) continue;
+      if (effectiveSlices[name] === undefined || !Array.isArray(effectiveSlices[name])) {
+        effectiveSlices[name] = [0, shape[d]];
+      }
+    }
+  }
   let chSlices = getSlices(
     activeChannelIndices,
     shape,
     axesNames,
-    sliceIndices
+    effectiveSlices
   );
 
   // Wait for all chunks to be fetched...
@@ -206,7 +333,26 @@ export async function renderArray(
   let ndChunks = await Promise.all(promises);
   signal?.throwIfAborted();
 
-  // Use start/end values from 'omero' if available, otherwise calculate min/max
+  // Collapse the projection axis, turning each 3D chunk into a 2D one.
+  if (projection) {
+    const pDim = axesNames.indexOf(projectionAxis);
+
+    // Which index is the projection axis WITHIN the fetched chunk?
+    let pInChunk = 0;
+    for (let d = 0; d < pDim; d++) {
+      const name = axesNames[d];
+      const sel = effectiveSlices[name];
+      const isScalar = name === "c" || (sel !== undefined && !Array.isArray(sel));
+      if (!isScalar) pInChunk++;
+    }
+    ndChunks = ndChunks.map((chunk: any) =>
+      projectChunk(chunk, pInChunk, projection)
+    );
+  }
+
+  // Use start/end values from 'omero' if available, otherwise calculate min/max.
+  // NB: for a projection this is computed on the PROJECTED values, which is what
+  // we want — the range should match what is actually displayed.
   let ranges = activeChannelIndices.map(
     (chIndex: number, i: number): [number, number] | undefined => {
       if (channels && channels[chIndex]) {
