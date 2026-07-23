@@ -28,14 +28,22 @@ const props = defineProps(["url"]);
 const canvas = useTemplateRef("galleryCanvas");
 
 console.log("props.url", props.url);
+let zarrUrl = props.url;
+
+// override url with query param if present
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has("source")) {
+  zarrUrl = urlParams.get("source");
+}
+console.log("zarrUrl", zarrUrl);
 
 function incrementTIndex() {
   if (!isPlaying.value) {
     return;
   }
-  let nextTIndex = (tIndex.value + 1) % framesSrc.value.length;
+  let nextTIndex = (parseInt(tIndex.value) + 1) % framesSrc.value.length;
   // only increment if the next frame is loaded
-  if (framesSrc.value[nextTIndex]) {
+  if (framesSrc.value[nextTIndex] !== placeholderImage) {
     tIndex.value = nextTIndex;
   }
   setTimeout(incrementTIndex, delayMs.value);
@@ -51,21 +59,15 @@ function play(event) {
 }
 
 async function loadFrames(step, offset) {
-  let img = await omezarr.NgffImage.load(props.url);
+  let img = await omezarr.NgffImage.load(zarrUrl);
   let shape = await img.getShape(dsPath);
   img.omero.rdefs = {};
 
-  // TEMP - just load first few frames
+  // load all frames...
   for (let t = offset; t < sizeT.value; t += step) {
-    console.log("rendering t", t);
     img.setTIndex(t);
     let imgSrc = await img.render({ arrayPathOrIndex: dsPath });
     framesSrc.value[t] = imgSrc;
-
-    // Start the animation after the first 10 frames are loaded
-    // if (t === 1) {
-    //   incrementTIndex();
-    // }
   }
 }
 
@@ -75,7 +77,7 @@ onMounted(async () => {
   omezarr = await import("ome-zarr.js");
   console.log("MOUNTED omezarr 2");
 
-  let img = await omezarr.NgffImage.load(props.url);
+  let img = await omezarr.NgffImage.load(zarrUrl);
   //   let shapes = await img.calcShapes();
   dsPath = await img.getPathForTargetSize(300);
   let shape = await img.getShape(dsPath);
@@ -114,11 +116,38 @@ onMounted(async () => {
         }
       "
     >
-      {{ isPlaying ? "■" : "►" }}
+      <span v-if="isPlaying" :class="$style.pause"></span>
+      <span v-else>►</span>
     </button>
 
     <div :class="$style.footer">
+      <div style="text-align: center; margin-bottom: 5px;">
+        <div :class="$style.tsliderTrackContainer">
+          
+          <div
+            :class="$style.tsliderTrack"
+          >
+            <div
+              v-for="(frame, index) in framesSrc"
+              :key="index"
+              :class="[
+                $style.loadedFrame,
+                frame !== placeholderImage ? $style.loaded : '',
+              ]"
+            ></div>
+          </div>
+        </div>
+        <input
+          :class="$style.tslider"
+          type="range"
+          v-model="tIndex"
+          :min="0"
+          :max="sizeT - 1"
+          :step="1"
+        />
+      </div>
       <div>
+        T index: {{ tIndex }} / {{ sizeT - 1 }} <br/>
         Size: {{ sizeX }} x {{ sizeY }} x {{ sizeZ }} x {{ sizeC }} x
         {{ sizeT }}
       </div>
@@ -186,6 +215,113 @@ onMounted(async () => {
   border: none;
   font-size: 50px;
   visibility: hidden;
+}
+
+.pause {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+  border-left: 12px solid white;
+  border-right: 12px solid white;
+  position: relative;
+}
+
+.tslider, .tsliderTrackContainer {
+  width: 400px;
+  max-width: 95%;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 20px;
+}
+
+.tsliderTrackContainer {
+  display: flex;
+  align-items: center;
+  border: solid transparent 2px;
+  box-sizing: unset;
+}
+
+.tsliderTrack {
+  height: 5px;
+  background-color: rgb(191, 190, 190);
+  width: 100%;
+  top: calc(50% - 2.5px);
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  margin-left: 10px;
+  margin-left: 10px;
+}
+
+.tsliderTrack div {
+  height: 5px;
+  flex: 1 1 auto;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 25rem;
+}
+
+.loaded {
+  background-color: red;
+}
+
+/* Removes default focus */
+input[type="range"]:focus {
+  outline: none;
+}
+
+/******** Chrome, Safari, Opera and Edge Chromium styles ********/
+/* slider track */
+input[type="range"]::-webkit-slider-runnable-track {
+  background-color: rgba(0, 0, 0, 0.01);
+  border-radius: 0rem;
+  height: 5px;
+  border: none;
+}
+
+/* slider thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  margin-top: -5.5px; /* Centers thumb on the track */
+  background-color: rgba(255, 255, 255, 0.75);
+  border-radius: 0.5rem;
+  height: 1rem;
+  width: 1rem;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  outline: 3px solid white;
+  outline-offset: 0.125rem;
+}
+
+/*********** Firefox styles ***********/
+/* slider track */
+input[type="range"]::-moz-range-track {
+  background-color: #dedede;
+  border-radius: 0rem;
+  height: 5px;
+}
+
+/* slider thumb */
+input[type="range"]::-moz-range-thumb {
+  background-color: white;
+  border: none; /*Removes extra border that FF applies*/
+  border-radius: 0.5rem;
+  height: 1rem;
+  width: 1rem;
+}
+
+input[type="range"]:focus::-moz-range-thumb{
+  outline: 3px solid white;
+  outline-offset: 0.125rem;
 }
 
 canvas {
