@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
-import { createRgbDataUrl, openArray, openGroup, createOmero, resolveYXDimIndices } from "./utils";
+import { createRgbDataUrl, openArray, openGroup, createOmero, resolveAxesNames, resolveYXDimIndices } from "./utils";
 import { renderArray } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
@@ -233,7 +233,7 @@ export class NgffImage {
     if (!this.omero) {
       let shapes = await this.calcShapes();
       let shape0 = shapes?.[0] || arr.shape;
-      let axesNames = this.axes.map((a) => a.name || a.toString());
+      let axesNames = resolveAxesNames(this.axes, shape0.length);
       let sizeC = shape0[axesNames.findIndex(a => a === 'c')] || 1;
       let sizeZ = shape0[axesNames.findIndex(a => a === 'z')] || 1;
       let sizeT = shape0[axesNames.findIndex(a => a === 't')] || 1;

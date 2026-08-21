@@ -9,6 +9,7 @@ import {
   getSlices,
   getHistogram,
   boostContrast,
+  resolveAxesNames,
   resolveYXDimIndices,
   MAX_CHANNELS,
   FILL_VALUE_KEY,
@@ -170,15 +171,11 @@ export async function renderArray(
 
   let shape = arr.shape;
 
-  // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'
-  // v0.4 onwards is list of Axis objects
-  let axesNames = axes?.map((a) => a.name || a.toString()) || [
-    "t",
-    "c",
-    "z",
-    "y",
-    "x",
-  ];
+  // NB: v0.2 no axes. v0.3 is just list of 'x', 'y', 'z', 'c', 't'.
+  // v0.4 onwards is list of Axis objects. resolveAxesNames right-aligns
+  // synthesized legacy axes (more names than the array's real rank) against
+  // the actual shape, instead of matching them by raw position.
+  let axesNames = resolveAxesNames(axes, shape.length);
   let chDim = axesNames.indexOf("c");
   let channel_count = shape[chDim] || 1;
 

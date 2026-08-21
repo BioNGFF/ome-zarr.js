@@ -377,6 +377,18 @@ export function getSlices(
   return chSlices;
 }
 
+// Right-align an axes name list against an array of the given rank, for legacy
+// (v0.1-v0.3) files where the constructor synthesizes more axis names than the
+// array actually has dimensions (see image.ts's tczyx default). If axes are
+// already the right length (or too short), returns the names unchanged.
+export function resolveAxesNames(axes: Axis[] | undefined, ndim: number): string[] {
+  const names = axes?.map((a) => a.name || a.toString()) ?? ["t", "c", "z", "y", "x"];
+  if (names.length > ndim) {
+    return names.slice(names.length - ndim);
+  }
+  return names;
+}
+
 // Resolve the indices of the y and x dimensions within an array of the given rank.
 // Resolution order: match axis names "y" and "x"; else, if axes and shape ranks
 // differ (e.g. synthesized tczyx axes for a lower-rank v0.1-v0.3 array), right-align
