@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
-import { createRgbDataUrl, openArray, openGroup, createOmero } from "./utils";
+import { createRgbDataUrl, openArray, openGroup, createOmero, resolveYXDimIndices } from "./utils";
 import { renderArray } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
@@ -316,46 +316,9 @@ export class NgffImage {
   }
 
   // Resolve the indices of the y and x dimensions within an array of the given rank.
-  // Resolution order: match axis names "y" and "x"; else, if axes and shape ranks
-  // differ (e.g. synthesized tczyx axes for a lower-rank v0.1-v0.3 array), right-align
-  // axis names against the trailing dimensions and retry; else take the last two
-  // axes with type === "space"; else fall back to the last two positions with a warning.
+  // See utils.ts's resolveYXDimIndices for the resolution order.
   getYXDimIndices(ndim: number): { yDim: number; xDim: number } {
-    const positional = { yDim: ndim - 2, xDim: ndim - 1 };
-    if (!this.axes?.length) {
-      return positional;
-    }
-
-    const names = this.getAxesNames();
-    if (names.length === ndim) {
-      let yDim = names.indexOf("y");
-      let xDim = names.indexOf("x");
-      if (yDim !== -1 && xDim !== -1 && yDim !== xDim) {
-        return { yDim, xDim };
-      }
-    } else if (names.length > ndim) {
-      // right-align: assume the extra leading axes (e.g. t, c) were dropped, so the
-      // trailing `ndim` names map 1:1 onto the actual shape's dimensions.
-      const trailingNames = names.slice(names.length - ndim);
-      let yDim = trailingNames.indexOf("y");
-      let xDim = trailingNames.indexOf("x");
-      if (yDim !== -1 && xDim !== -1 && yDim !== xDim) {
-        return { yDim, xDim };
-      }
-    }
-
-    const spaceDims = this.axes
-      .map((a, i) => ((a as Axis)?.type === "space" ? i : -1))
-      .filter((i) => i !== -1);
-    if (spaceDims.length >= 2 && names.length === ndim) {
-      const [yDim, xDim] = spaceDims.slice(-2);
-      return { yDim, xDim };
-    }
-
-    console.warn(
-      `Could not resolve y/x dimensions from axes metadata (axes: ${JSON.stringify(this.axes)}, ndim: ${ndim}); falling back to the last two dimensions.`
-    );
-    return positional;
+    return resolveYXDimIndices(this.axes, ndim);
   }
 
   async getPathForTargetSize(targetSize: number, datasetIndex?: number): Promise<string> {

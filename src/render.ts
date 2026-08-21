@@ -9,50 +9,73 @@ import {
   getSlices,
   getHistogram,
   boostContrast,
+  resolveYXDimIndices,
   MAX_CHANNELS,
   FILL_VALUE_KEY,
 } from "./utils";
 
 export type Blending = "additive" | "translucent";
 
+// Default (C-order) strides for a shape, used when a chunk doesn't carry its
+// own `stride` (e.g. hand-built fake chunks in tests).
+function cOrderStrides(shape: number[]): number[] {
+  const stride = new Array(shape.length).fill(1);
+  for (let i = shape.length - 2; i >= 0; i--) {
+    stride[i] = stride[i + 1] * shape[i + 1];
+  }
+  return stride;
+}
+
 export function renderChunk(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   transferFunc: (value: number) => Color,
-  options?: { dst?: Uint8ClampedArray; blending?: Blending }
+  options?: {
+    dst?: Uint8ClampedArray;
+    blending?: Blending;
+    // Which of chunk.shape/chunk.stride is the row (y/height) vs column (x/width)
+    // dimension. Defaults to [0, 1], i.e. chunk.shape = [height, width].
+    rowDim?: number;
+    colDim?: number;
+  }
 ): Uint8ClampedArray {
   // Core rendering function. Takes a chunk, and a function that maps intensity values to colors,
   // and renders to an RGBA array, according to the blending mode.
   // If target is provided, it is used as the initial RGBA array, and blended with the new colors.
-  const { dst, blending = "additive" } = options ?? {};
+  const { dst, blending = "additive", rowDim = 0, colDim = 1 } = options ?? {};
 
-  const [height, width] = chunk.shape;
+  const stride = chunk.stride ?? cOrderStrides(chunk.shape);
+  const height = chunk.shape[rowDim];
+  const width = chunk.shape[colDim];
+  const rowStride = stride[rowDim];
+  const colStride = stride[colDim];
   const data = dst ?? new Uint8ClampedArray(4 * height * width).fill(0);
-  const n = height * width * 4;
-  let dIndex = 0;
-  for (let i = 0; i < n; i += 4) {
-    // ! in this line suppresses TypeScript error about possible undefined
-    const value = Number(chunk.data[dIndex]!);
-    dIndex += 1;
-    const [r, g, b, alpha = 255] = transferFunc(value);
-    const alphaSrc = data[i + 3] / 255;
-    const alphaDst = (alpha ?? 255) / 255;
-    if (blending === "additive") {
-      // Additive blending: ADD to existing color (modified by existing alpha)
-      data[i] = Math.min(data[i] * alphaSrc + r, 255);
-      data[i + 1] = Math.min(data[i + 1] * alphaSrc + g, 255);
-      data[i + 2] = Math.min(data[i + 2] * alphaSrc + b, 255);
-      data[i + 3] = Math.min(alphaSrc + alphaDst, 1.0) * 255;
-    } else if (blending === "translucent") {
-      // A over B (Porter & Duff, 1984)
-      // https://en.wikipedia.org/wiki/Alpha_compositing
-      data[i] = r * alphaDst + data[i] * alphaSrc * (1 - alphaDst);
-      data[i + 1] =
-        g * alphaDst + data[i + 1] * alphaSrc * (1 - alphaDst);
-      data[i + 2] =
-        b * alphaDst + data[i + 2] * alphaSrc * (1 - alphaDst);
-      data[i + 3] = (alphaDst + alphaSrc * (1 - alphaDst)) * 255;
-    } else {
-      throw new Error("Invalid blending mode");
+  let i = 0;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      // ! in this line suppresses TypeScript error about possible undefined
+      const value = Number(chunk.data[row * rowStride + col * colStride]!);
+      const [r, g, b, alpha = 255] = transferFunc(value);
+      const alphaSrc = data[i + 3] / 255;
+      const alphaDst = (alpha ?? 255) / 255;
+      if (blending === "additive") {
+        // Additive blending: ADD to existing color (modified by existing alpha)
+        data[i] = Math.min(data[i] * alphaSrc + r, 255);
+        data[i + 1] = Math.min(data[i + 1] * alphaSrc + g, 255);
+        data[i + 2] = Math.min(data[i + 2] * alphaSrc + b, 255);
+        data[i + 3] = Math.min(alphaSrc + alphaDst, 1.0) * 255;
+      } else if (blending === "translucent") {
+        // A over B (Porter & Duff, 1984)
+        // https://en.wikipedia.org/wiki/Alpha_compositing
+        data[i] = r * alphaDst + data[i] * alphaSrc * (1 - alphaDst);
+        data[i + 1] =
+          g * alphaDst + data[i + 1] * alphaSrc * (1 - alphaDst);
+        data[i + 2] =
+          b * alphaDst + data[i + 2] * alphaSrc * (1 - alphaDst);
+        data[i + 3] = (alphaDst + alphaSrc * (1 - alphaDst)) * 255;
+      } else {
+        throw new Error("Invalid blending mode");
+      }
+      i += 4;
     }
   }
   return data;
@@ -65,6 +88,8 @@ export function renderChunkWithLUT(
     dst?: Uint8ClampedArray;
     blending?: Blending;
     range?: [number, number];
+    rowDim?: number;
+    colDim?: number;
   }
 ): Uint8ClampedArray {
   // LUT is an array of [r,g,b] or [r,g,b,a] colors, from "darkest" to "brightest"
@@ -76,7 +101,7 @@ export function renderChunkWithLUT(
   // so the LUT will repeat, excluding the FIRST value which is reserved for 0 values.
   // e.g. if LUT has 256 values, and chunk value is 257, it will use LUT[1].
   const bins = lut.length;
-  const { dst, blending = "additive" } = options ?? {};
+  const { dst, blending = "additive", rowDim, colDim } = options ?? {};
 
   let transferFunc: (value: number) => Color;
   if (options?.range) {
@@ -96,7 +121,7 @@ export function renderChunkWithLUT(
     }
   }
 
-  return renderChunk(chunk, transferFunc, { dst, blending });
+  return renderChunk(chunk, transferFunc, { dst, blending, rowDim, colDim });
 }
 
 export function renderChunkWithColormap(
@@ -106,6 +131,8 @@ export function renderChunkWithColormap(
     dst?: Uint8ClampedArray;
     blending?: Blending;
     fillValue?: Color;
+    rowDim?: number;
+    colDim?: number;
   }
 ): Uint8ClampedArray {
   // The intensity value from the chunk is used to lookup a color in the colormap,
@@ -115,13 +142,15 @@ export function renderChunkWithColormap(
     dst,
     blending = "additive",
     fillValue = [0, 0, 0, 0],
+    rowDim,
+    colDim,
   } = options ?? {};
 
   function transferFunc(value: number): Color {
     return colormap.get(value) ?? fillValue;
   }
 
-  return renderChunk(chunk, transferFunc, { dst, blending });
+  return renderChunk(chunk, transferFunc, { dst, blending, rowDim, colDim });
 }
 
 export async function renderArray(
@@ -152,6 +181,14 @@ export async function renderArray(
   ];
   let chDim = axesNames.indexOf("c");
   let channel_count = shape[chDim] || 1;
+
+  // The per-channel selection below (getSlices) keeps x and y as full-range
+  // slices and collapses every other axis to a fixed index, so the resulting
+  // 2D chunk retains just the relative order of x and y from the full array.
+  // rowDim/colDim locate those two survivors within that 2D chunk.
+  let { yDim, xDim } = resolveYXDimIndices(axes, shape.length);
+  let rowDim = yDim < xDim ? 0 : 1;
+  let colDim = 1 - rowDim;
   let visibilities;
   // list of [r,g,b] colors
   let rgbColors: Array<[number, number, number]>;
@@ -231,11 +268,12 @@ export async function renderArray(
     rgbColors,
     lutsOrColorMaps,
     inverteds,
-    autoBoost
+    autoBoost,
+    { rowDim, colDim }
   );
 
-  const height = ndChunks[0].shape[0];
-  const width = ndChunks[0].shape[1];
+  const height = ndChunks[0].shape[rowDim];
+  const width = ndChunks[0].shape[colDim];
   return { data, width, height };
 }
 
@@ -245,8 +283,10 @@ export function renderChunks(
   colors: Array<[number, number, number]>,
   lutsOrColorMaps: Array<Color[] | Map<number, Color> | undefined> | undefined,
   inverteds: Array<boolean> | undefined,
-  autoBoost: boolean = false
+  autoBoost: boolean = false,
+  options?: { rowDim?: number; colDim?: number }
 ): Uint8ClampedArray {
+  const { rowDim, colDim } = options ?? {};
   // Render the given chunks (one per channel) to an RGBA array, using the provided colors and ranges for each channel.
   // If lutsOrColorMaps are provided, they are used instead of the colors.
   // NB: If any ranges are undefined, the pixel values are used as indices into the LUT (or LUT created from the color).
@@ -274,18 +314,18 @@ export function renderChunks(
   if (masterLutsMaps[0] instanceof Map) {
     let colorMap = masterLutsMaps[0] as Map<number, Color>;
     let fillValue: Color | undefined = colorMap.get(FILL_VALUE_KEY);
-    rgba = renderChunkWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue });
+    rgba = renderChunkWithColormap(ndChunks[0], colorMap as Map<number, Color>, { fillValue, rowDim, colDim });
   } else {
-    rgba = renderChunkWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: ranges[0] });
+    rgba = renderChunkWithLUT(ndChunks[0], masterLutsMaps[0] as Color[], { range: ranges[0], rowDim, colDim });
   }
   for (let i = 1; i < ndChunks.length; i++) {
     if (masterLutsMaps[i] instanceof Map) {
       let colorMap = masterLutsMaps[i] as Map<number, Color>;
       let fillValue: Color | undefined = colorMap.get(Infinity);
-      let channelRgba = renderChunkWithColormap(ndChunks[i], colorMap, { blending: "additive", dst: rgba, fillValue });
+      let channelRgba = renderChunkWithColormap(ndChunks[i], colorMap, { blending: "additive", dst: rgba, fillValue, rowDim, colDim });
       rgba = channelRgba;
     } else {
-      let channelRgba = renderChunkWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", dst: rgba, range: ranges[i] });
+      let channelRgba = renderChunkWithLUT(ndChunks[i], masterLutsMaps[i] as Color[], { blending: "additive", dst: rgba, range: ranges[i], rowDim, colDim });
       rgba = channelRgba;
     }
   }

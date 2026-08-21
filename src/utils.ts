@@ -1,6 +1,6 @@
 import * as zarr from "zarrita";
 import { slice } from "zarrita";
-import { Multiscale, Omero } from "./types/ome";
+import { Axis, Multiscale, Omero } from "./types/ome";
 import { NgffImage } from "./image";
 
 
@@ -375,6 +375,52 @@ export function getSlices(
     return chSlice;
   });
   return chSlices;
+}
+
+// Resolve the indices of the y and x dimensions within an array of the given rank.
+// Resolution order: match axis names "y" and "x"; else, if axes and shape ranks
+// differ (e.g. synthesized tczyx axes for a lower-rank v0.1-v0.3 array), right-align
+// axis names against the trailing dimensions and retry; else take the last two
+// axes with type === "space"; else fall back to the last two positions with a warning.
+export function resolveYXDimIndices(
+  axes: Axis[] | undefined,
+  ndim: number
+): { yDim: number; xDim: number } {
+  const positional = { yDim: ndim - 2, xDim: ndim - 1 };
+  if (!axes?.length) {
+    return positional;
+  }
+
+  const names = axes.map((a) => a.name || a.toString());
+  if (names.length === ndim) {
+    let yDim = names.indexOf("y");
+    let xDim = names.indexOf("x");
+    if (yDim !== -1 && xDim !== -1 && yDim !== xDim) {
+      return { yDim, xDim };
+    }
+  } else if (names.length > ndim) {
+    // right-align: assume the extra leading axes (e.g. t, c) were dropped, so the
+    // trailing `ndim` names map 1:1 onto the actual shape's dimensions.
+    const trailingNames = names.slice(names.length - ndim);
+    let yDim = trailingNames.indexOf("y");
+    let xDim = trailingNames.indexOf("x");
+    if (yDim !== -1 && xDim !== -1 && yDim !== xDim) {
+      return { yDim, xDim };
+    }
+  }
+
+  const spaceDims = axes
+    .map((a, i) => (a?.type === "space" ? i : -1))
+    .filter((i) => i !== -1);
+  if (spaceDims.length >= 2 && names.length === ndim) {
+    const [yDim, xDim] = spaceDims.slice(-2);
+    return { yDim, xDim };
+  }
+
+  console.warn(
+    `Could not resolve y/x dimensions from axes metadata (axes: ${JSON.stringify(axes)}, ndim: ${ndim}); falling back to the last two dimensions.`
+  );
+  return positional;
 }
 
 export async function createRgbDataUrl(
