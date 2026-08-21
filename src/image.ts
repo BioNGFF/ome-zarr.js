@@ -1,7 +1,7 @@
 
 import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis, Channel, Color } from "./types/ome";
-import { createRgbDataUrl, openArray, openGroup, createOmero } from "./utils";
+import { createRgbDataUrl, openArray, openGroup, createOmero, resolveAxesNames, resolveYXDimIndices } from "./utils";
 import { renderArray } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
@@ -233,7 +233,7 @@ export class NgffImage {
     if (!this.omero) {
       let shapes = await this.calcShapes();
       let shape0 = shapes?.[0] || arr.shape;
-      let axesNames = this.axes.map((a) => a.name || a.toString());
+      let axesNames = resolveAxesNames(this.axes, shape0.length);
       let sizeC = shape0[axesNames.findIndex(a => a === 'c')] || 1;
       let sizeZ = shape0[axesNames.findIndex(a => a === 'z')] || 1;
       let sizeT = shape0[axesNames.findIndex(a => a === 't')] || 1;
@@ -315,6 +315,12 @@ export class NgffImage {
     return scales;
   }
 
+  // Resolve the indices of the y and x dimensions within an array of the given rank.
+  // See utils.ts's resolveYXDimIndices for the resolution order.
+  getYXDimIndices(ndim: number): { yDim: number; xDim: number } {
+    return resolveYXDimIndices(this.axes, ndim);
+  }
+
   async getPathForTargetSize(targetSize: number, datasetIndex?: number): Promise<string> {
 
     let longestSizes: number[] = [];
@@ -333,8 +339,9 @@ export class NgffImage {
       let arr = await this.openArray(datasetIndex);
       let shape = arr.shape;
       let dims = shape.length;
-      let width = shape[dims - 1];
-      let height = shape[dims - 2];
+      let { yDim, xDim } = this.getYXDimIndices(dims);
+      let width = shape[xDim];
+      let height = shape[yDim];
       let longestSide = Math.max(width, height);
 
       longestSizes = this.paths.map(
@@ -344,8 +351,9 @@ export class NgffImage {
       // This caches shapes
       let shapes = await this.calcShapes();
       let dims = shapes[0].length;
+      let { yDim, xDim } = this.getYXDimIndices(dims);
       longestSizes = shapes.map((shape) =>
-        Math.max(shape[dims - 1], shape[dims - 2])
+        Math.max(shape[yDim], shape[xDim])
       );
     }
 
@@ -414,8 +422,9 @@ export class NgffImage {
     let maxSize = options.maxSize ?? 1000;
     let shape = arr.shape;
     let dims = shape.length;
-    let shape_w = shape[dims - 1];
-    let shape_h = shape[dims - 2];
+    let { yDim, xDim } = this.getYXDimIndices(dims);
+    let shape_w = shape[xDim];
+    let shape_h = shape[yDim];
     // Reject if whole plane is too big and no slices are provided.
     if (shape_h * shape_w > maxSize * maxSize && !options.slices) {
       // TODO: if we have slices, we should check the size of the sliced region
