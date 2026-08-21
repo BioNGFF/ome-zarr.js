@@ -315,6 +315,49 @@ export class NgffImage {
     return scales;
   }
 
+  // Resolve the indices of the y and x dimensions within an array of the given rank.
+  // Resolution order: match axis names "y" and "x"; else, if axes and shape ranks
+  // differ (e.g. synthesized tczyx axes for a lower-rank v0.1-v0.3 array), right-align
+  // axis names against the trailing dimensions and retry; else take the last two
+  // axes with type === "space"; else fall back to the last two positions with a warning.
+  getYXDimIndices(ndim: number): { yDim: number; xDim: number } {
+    const positional = { yDim: ndim - 2, xDim: ndim - 1 };
+    if (!this.axes?.length) {
+      return positional;
+    }
+
+    const names = this.getAxesNames();
+    if (names.length === ndim) {
+      let yDim = names.indexOf("y");
+      let xDim = names.indexOf("x");
+      if (yDim !== -1 && xDim !== -1 && yDim !== xDim) {
+        return { yDim, xDim };
+      }
+    } else if (names.length > ndim) {
+      // right-align: assume the extra leading axes (e.g. t, c) were dropped, so the
+      // trailing `ndim` names map 1:1 onto the actual shape's dimensions.
+      const trailingNames = names.slice(names.length - ndim);
+      let yDim = trailingNames.indexOf("y");
+      let xDim = trailingNames.indexOf("x");
+      if (yDim !== -1 && xDim !== -1 && yDim !== xDim) {
+        return { yDim, xDim };
+      }
+    }
+
+    const spaceDims = this.axes
+      .map((a, i) => ((a as Axis)?.type === "space" ? i : -1))
+      .filter((i) => i !== -1);
+    if (spaceDims.length >= 2 && names.length === ndim) {
+      const [yDim, xDim] = spaceDims.slice(-2);
+      return { yDim, xDim };
+    }
+
+    console.warn(
+      `Could not resolve y/x dimensions from axes metadata (axes: ${JSON.stringify(this.axes)}, ndim: ${ndim}); falling back to the last two dimensions.`
+    );
+    return positional;
+  }
+
   async getPathForTargetSize(targetSize: number, datasetIndex?: number): Promise<string> {
 
     let longestSizes: number[] = [];
@@ -333,8 +376,9 @@ export class NgffImage {
       let arr = await this.openArray(datasetIndex);
       let shape = arr.shape;
       let dims = shape.length;
-      let width = shape[dims - 1];
-      let height = shape[dims - 2];
+      let { yDim, xDim } = this.getYXDimIndices(dims);
+      let width = shape[xDim];
+      let height = shape[yDim];
       let longestSide = Math.max(width, height);
 
       longestSizes = this.paths.map(
@@ -344,8 +388,9 @@ export class NgffImage {
       // This caches shapes
       let shapes = await this.calcShapes();
       let dims = shapes[0].length;
+      let { yDim, xDim } = this.getYXDimIndices(dims);
       longestSizes = shapes.map((shape) =>
-        Math.max(shape[dims - 1], shape[dims - 2])
+        Math.max(shape[yDim], shape[xDim])
       );
     }
 
@@ -414,8 +459,9 @@ export class NgffImage {
     let maxSize = options.maxSize ?? 1000;
     let shape = arr.shape;
     let dims = shape.length;
-    let shape_w = shape[dims - 1];
-    let shape_h = shape[dims - 2];
+    let { yDim, xDim } = this.getYXDimIndices(dims);
+    let shape_w = shape[xDim];
+    let shape_h = shape[yDim];
     // Reject if whole plane is too big and no slices are provided.
     if (shape_h * shape_w > maxSize * maxSize && !options.slices) {
       // TODO: if we have slices, we should check the size of the sliced region
