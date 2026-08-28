@@ -22,7 +22,7 @@ export default defineConfig({
           { text: 'NgffImage', link: '/image' },
           { text: 'Labels', link: '/labels' },
           { text: 'LUTs', link: '/luts' },
-          { text: 'TimelapseViewer', link: '/timelapse' }
+          { text: 'Timelapse Viewer', link: '/timelapse' }
         ]
       }
     ],
