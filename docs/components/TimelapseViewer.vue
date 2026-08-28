@@ -9,7 +9,7 @@ const sizeX = ref(0);
 const sizeY = ref(0);
 
 const tIndex = ref(0);
-const delayMs = ref(200);
+const framesPerSec = ref(2);
 
 const placeholderImage =
   "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
@@ -54,7 +54,7 @@ function incrementTIndex() {
   if (framesSrc.value[nextTIndex] !== placeholderImage) {
     tIndex.value = nextTIndex;
   }
-  setTimeout(incrementTIndex, delayMs.value);
+  setTimeout(incrementTIndex, 1000 / framesPerSec.value);
 }
 
 function play(event) {
@@ -193,6 +193,16 @@ onMounted(async () => {
       />
     </div>
     <div style="float: right; margin: 10px">
+      <label>
+        Playback speed:
+        <select v-model="framesPerSec">
+          <option :value="1">1 fps</option>
+          <option :value="2">2 fps</option>
+          <option :value="5">5 fps</option>
+          <option :value="10">10 fps</option>
+          <option :value="20">20 fps</option>
+        </select>
+      </label>
       Shape: {{ sizeT }} x {{ sizeC }} x {{ sizeZ }} x {{ sizeY }} x
       {{ sizeX }}
     </div>
@@ -367,5 +377,18 @@ input[type="range"]:focus::-moz-range-thumb {
 }
 .activeFrame {
   border: 1px solid red;
+}
+
+select {
+  color: black;
+  margin-right: 10px;
+  padding: 1px 24px 1px 10px;
+  border-radius: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='black'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 6px;
 }
 </style>
