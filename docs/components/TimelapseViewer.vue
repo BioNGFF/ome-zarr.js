@@ -192,7 +192,7 @@ onMounted(async () => {
         :step="1"
       />
     </div>
-    <div style="float: right; margin: 10px">
+    <div style="float: right; padding: 10px; background-color: black">
       <label>
         Playback speed:
         <select v-model="framesPerSec">
@@ -363,6 +363,7 @@ input[type="range"]:focus::-moz-range-thumb {
   width: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
+  z-index: 14;
 }
 
 .controlsVisible .footer,
