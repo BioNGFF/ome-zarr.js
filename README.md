@@ -79,6 +79,7 @@ Then:
     $ npm run docs:preview
 
     $ npm pack
+    $ npm login
     $ npm publish
 
     $ git tag v0.0.14
