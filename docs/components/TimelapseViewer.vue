@@ -1,5 +1,5 @@
 <script setup>
-import { useTemplateRef, onMounted, watch } from "vue";
+import { onMounted, watch } from "vue";
 import { ref } from "vue";
 
 const sizeZ = ref(0);
@@ -34,7 +34,6 @@ let bufferImg;
 let loadGeneration = 0;
 
 const props = defineProps(["url"]);
-const canvas = useTemplateRef("galleryCanvas");
 
 console.log("props.url", props.url);
 let zarrUrl = props.url;
@@ -345,11 +344,6 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]:focus::-moz-range-thumb {
   outline: 3px solid white;
   outline-offset: 0.125rem;
-}
-
-canvas {
-  border: 1px solid red;
-  margin: 10px;
 }
 
 .footer {
