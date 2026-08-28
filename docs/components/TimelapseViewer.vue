@@ -1,5 +1,5 @@
 <script setup>
-import { useTemplateRef, onMounted } from "vue";
+import { useTemplateRef, onMounted, watch } from "vue";
 import { ref } from "vue";
 
 const sizeZ = ref(0);
@@ -23,6 +23,16 @@ let frameWidth = 10;
 
 let omezarr;
 let dsPath;
+
+// how many frames to keep loaded ahead of the current frame
+const BUFFER_SIZE = 25;
+// number of parallel image instances used for the one-off initial load
+const INITIAL_LOADERS = 5;
+
+// single reusable image instance for buffering frames ahead of playback
+let bufferImg;
+// bumped whenever loading should restart from a new frame (playback tick or user skip)
+let loadGeneration = 0;
 
 const props = defineProps(["url"]);
 const canvas = useTemplateRef("galleryCanvas");
@@ -58,24 +68,67 @@ function play(event) {
   event.stopPropagation();
 }
 
-async function loadFrames(step, offset) {
-  let img = await omezarr.NgffImage.load(zarrUrl);
-  let shape = await img.getShape(dsPath);
-  img.omero.rdefs = {};
+// loads the first BUFFER_SIZE frames in parallel (one-off, using separate image instances)
+async function loadInitialFrames() {
+  const count = Math.min(BUFFER_SIZE, sizeT.value);
+  const loaders = Math.min(INITIAL_LOADERS, count);
+  await Promise.all(
+    Array.from({ length: loaders }, async (_, offset) => {
+      let img = await omezarr.NgffImage.load(zarrUrl);
+      img.omero.rdefs = {};
+      for (let t = offset; t < count; t += loaders) {
+        img.setTIndex(t);
+        framesSrc.value[t] = await img.render({ arrayPathOrIndex: dsPath });
+      }
+    })
+  );
+}
 
-  // load all frames...
-  for (let t = offset; t < sizeT.value; t += step) {
-    img.setTIndex(t);
-    let imgSrc = await img.render({ arrayPathOrIndex: dsPath });
+// keeps loading a buffer of BUFFER_SIZE frames ahead of startIndex, wrapping around.
+// Restarting bumps loadGeneration so any in-progress loop from a previous call stops early.
+async function loadFramesAhead(startIndex) {
+  if (!dsPath || !sizeT.value) {
+    return;
+  }
+  loadGeneration++;
+  const myGeneration = loadGeneration;
+
+  if (!bufferImg) {
+    bufferImg = await omezarr.NgffImage.load(zarrUrl);
+    bufferImg.omero.rdefs = {};
+  }
+  // if global loadGeneration has changed while bufferImg loaded, stop early
+  if (loadGeneration !== myGeneration) {
+    return;
+  }
+
+  const count = Math.min(BUFFER_SIZE, sizeT.value);
+  for (let i = 0; i < count; i++) {
+    // again, abort if the loadGeneration has changed while loading frames
+    if (loadGeneration !== myGeneration) {
+      return;
+    }
+    // choose the next frame to load, and skip it if it's already loaded
+    const t = (startIndex + i) % sizeT.value;
+    if (framesSrc.value[t] !== placeholderImage) {
+      continue;
+    }
+    // load the next frame into the buffer image, and add to cache
+    bufferImg.setTIndex(t);
+    const imgSrc = await bufferImg.render({ arrayPathOrIndex: dsPath });
     framesSrc.value[t] = imgSrc;
   }
 }
+
+// re-buffer whenever the current frame changes, whether from playback or the user skipping
+watch(tIndex, (newIndex) => {
+  loadFramesAhead(Number(newIndex));
+});
 
 onMounted(async () => {
   // This loads from http://localhost:5173/ome-zarr.js/@fs/Users/wmoore/Desktop/ZARR/ome-zarr.js/dist/ome-zarr.js
   // NB: needs `npm run build` first!
   omezarr = await import("ome-zarr.js");
-  console.log("MOUNTED omezarr 2");
 
   let img = await omezarr.NgffImage.load(zarrUrl);
   //   let shapes = await img.calcShapes();
@@ -91,11 +144,8 @@ onMounted(async () => {
 
   framesSrc.value = new Array(sizeT.value).fill(placeholderImage);
 
-  loadFrames(5, 0);
-  loadFrames(5, 1);
-  loadFrames(5, 2);
-  loadFrames(5, 3);
-  loadFrames(5, 4);
+  // initially only load the first BUFFER_SIZE frames
+  await loadInitialFrames();
 });
 </script>
 
