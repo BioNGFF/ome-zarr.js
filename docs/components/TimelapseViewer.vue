@@ -201,29 +201,6 @@ onMounted(async () => {
         Size: {{ sizeX }} x {{ sizeY }} x {{ sizeZ }} x {{ sizeC }} x
         {{ sizeT }}
       </div>
-      <div :class="$style.galleryScroller">
-        <table
-          :class="$style.gallery"
-          :style="{ width: frameWidth * sizeT + 'px' }"
-        >
-          <tbody>
-            <tr>
-              <!-- some images stray outside of the .gallery flex row? -->
-              <td v-for="(frame, index) in framesSrc" :key="index">
-                <!-- if index==tIndex add $style.activeFrame -->
-                <img
-                  :class="[
-                    $style.frame,
-                    index === tIndex ? $style.activeFrame : '',
-                  ]"
-                  :src="frame"
-                  :style="{ width: frameWidth + 'px' }"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
 </template>
@@ -393,23 +370,6 @@ canvas {
 .controlsVisible .footer,
 .controlsVisible .playButton {
   visibility: visible;
-}
-
-.galleryScroller {
-  overflow-x: auto;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.gallery td {
-  /* flex-direction: row;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: max-content; */
-  padding: 0;
-  margin: 0;
-  border: 0;
 }
 
 .frame {
