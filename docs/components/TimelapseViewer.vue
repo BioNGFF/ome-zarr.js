@@ -19,7 +19,6 @@ let framesSrc = ref([]);
 
 let isPlaying = ref(false);
 let controlsVisible = ref(true);
-let frameWidth = 10;
 
 let omezarr;
 let dsPath;
@@ -169,38 +168,34 @@ onMounted(async () => {
       <span v-if="isPlaying" :class="$style.pause"></span>
       <span v-else>►</span>
     </button>
-
-    <div :class="$style.footer">
-      <div style="text-align: center; margin-bottom: 5px;">
-        <div :class="$style.tsliderTrackContainer">
-          
+  </div>
+  <!-- footer is outside the main viewer div -->
+  <div :class="$style.footer">
+    <div style="text-align: center; margin-bottom: 25px">
+      <div :class="$style.tsliderTrackContainer">
+        <div :class="$style.tsliderTrack">
           <div
-            :class="$style.tsliderTrack"
-          >
-            <div
-              v-for="(frame, index) in framesSrc"
-              :key="index"
-              :class="[
-                $style.loadedFrame,
-                frame !== placeholderImage ? $style.loaded : '',
-              ]"
-            ></div>
-          </div>
+            v-for="(frame, index) in framesSrc"
+            :key="index"
+            :class="[
+              $style.loadedFrame,
+              frame !== placeholderImage ? $style.loaded : '',
+            ]"
+          ></div>
         </div>
-        <input
-          :class="$style.tslider"
-          type="range"
-          v-model="tIndex"
-          :min="0"
-          :max="sizeT - 1"
-          :step="1"
-        />
       </div>
-      <div>
-        T index: {{ tIndex }} / {{ sizeT - 1 }} <br/>
-        Size: {{ sizeX }} x {{ sizeY }} x {{ sizeZ }} x {{ sizeC }} x
-        {{ sizeT }}
-      </div>
+      <input
+        :class="$style.tslider"
+        type="range"
+        v-model="tIndex"
+        :min="0"
+        :max="sizeT - 1"
+        :step="1"
+      />
+    </div>
+    <div style="float: right; margin: 10px">
+      Shape: {{ sizeT }} x {{ sizeC }} x {{ sizeZ }} x {{ sizeY }} x
+      {{ sizeX }}
     </div>
   </div>
 </template>
@@ -254,7 +249,8 @@ onMounted(async () => {
   position: relative;
 }
 
-.tslider, .tsliderTrackContainer {
+.tslider,
+.tsliderTrackContainer {
   width: 400px;
   max-width: 95%;
   position: absolute;
@@ -346,7 +342,7 @@ input[type="range"]::-moz-range-thumb {
   width: 1rem;
 }
 
-input[type="range"]:focus::-moz-range-thumb{
+input[type="range"]:focus::-moz-range-thumb {
   outline: 3px solid white;
   outline-offset: 0.125rem;
 }
@@ -354,11 +350,9 @@ input[type="range"]:focus::-moz-range-thumb{
 canvas {
   border: 1px solid red;
   margin: 10px;
-  /* max-height: 200px; */
 }
 
 .footer {
-  visibility: hidden;
   position: fixed;
   bottom: 0;
   left: 0;
