@@ -2,6 +2,8 @@
 import { onMounted, watch } from "vue";
 import { ref } from "vue";
 
+const TARGET_SIZE = 300;
+
 const sizeZ = ref(0);
 const sizeC = ref(0);
 const sizeT = ref(0);
@@ -19,6 +21,7 @@ let framesSrc = ref([]);
 
 let isPlaying = ref(false);
 let controlsVisible = ref(true);
+let showAbout = ref(false);
 
 let omezarr;
 let dsPath;
@@ -128,17 +131,17 @@ onMounted(async () => {
   // NB: needs `npm run build` first!
   omezarr = await import("ome-zarr.js");
 
-  let img = await omezarr.NgffImage.load(zarrUrl);
+  bufferImg = await omezarr.NgffImage.load(zarrUrl);
   //   let shapes = await img.calcShapes();
-  dsPath = await img.getPathForTargetSize(300);
-  let shape = await img.getShape(dsPath);
-  let axes = await img.getAxesNames();
+  dsPath = await bufferImg.getPathForTargetSize(TARGET_SIZE);
+  let shape = await bufferImg.getShape(dsPath);
+  let axes = await bufferImg.getAxesNames();
   sizeZ.value = shape[axes.indexOf("z")] || 1;
   sizeC.value = shape[axes.indexOf("c")] || 1;
   sizeT.value = shape[axes.indexOf("t")] || 1;
   sizeX.value = shape[axes.indexOf("x")] || 1;
   sizeY.value = shape[axes.indexOf("y")] || 1;
-  img.omero.rdefs = {};
+  bufferImg.omero.rdefs = {};
 
   framesSrc.value = new Array(sizeT.value).fill(placeholderImage);
 
@@ -153,7 +156,9 @@ onMounted(async () => {
     :class="[$style.viewer, controlsVisible ? $style.controlsVisible : '']"
     @click="controlsVisible = !controlsVisible"
   >
-    <img :class="$style.image" :src="framesSrc[tIndex]" />
+  <!-- set size to be 1.5 times the original -->
+    <img :class="$style.image"
+    :src="framesSrc[tIndex]" />
 
     <!-- play -->
     <button
@@ -206,6 +211,31 @@ onMounted(async () => {
       Shape: {{ sizeT }} x {{ sizeC }} x {{ sizeZ }} x {{ sizeY }} x
       {{ sizeX }}
     </div>
+
+    <div
+      v-if="showAbout"
+      :class="$style.aboutPanel"
+      @click="(event) => event.stopPropagation()"
+    >
+      <div>
+        This viewer is designed for viewing timelapse OME-zarr images on mobile devices.
+        We use <code>ome-zarr.js</code> to load the image with
+        a low target size of 300 pixels to reduce bandwidth.
+        The default rendering settings and Z-index are used to render movie frames
+        to data-urls and these strings are cached for smooth playback.
+      </div>
+    </div>
+    <button
+      :class="$style.aboutButton"
+      @click="
+        (event) => {
+          showAbout = !showAbout;
+          event.stopPropagation();
+        }
+      "
+    >
+      About this viewer
+    </button>
   </div>
 </template>
 
@@ -229,9 +259,8 @@ onMounted(async () => {
 }
 
 .image {
-  max-width: 100%;
-  max-height: 100%;
   object-fit: contain;
+  transform: scale(1.5);
 }
 
 .playButton {
@@ -391,5 +420,39 @@ select {
   background-repeat: no-repeat;
   background-position: right 8px center;
   background-size: 10px 6px;
+}
+
+.aboutButton {
+  position: absolute;
+  top: -50px;
+  right: 10px;
+  z-index: 102;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid white;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.aboutPanel {
+  position: absolute;
+  /* We want to calculate the top position based on the panel's own height */
+  /* Is should be negative of its own height plus 50px offset */
+  /* Example: if the panel's height is 150px, top would be calc(-150px - 50px) */
+  height: 172px; /* Set the height of the panel */
+  top: calc(-172px - 5px - 50px);
+  right: 10px;
+  z-index: 102;
+  width: 350px;
+  max-width: 90vw;
+  color: #333;
+  background-color: white;
+  border: 1px solid white;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 13px;
+  line-height: 21px;
+  overflow: auto;
 }
 </style>
