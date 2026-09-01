@@ -224,7 +224,8 @@ onMounted(async () => {
         We use <code>ome-zarr.js</code> to load the image with
         a low target size of 300 pixels to reduce bandwidth.
         The default rendering settings and Z-index are used to render movie frames
-        to data-urls and these strings are cached for smooth playback.
+        to data-urls and these strings are cached for smooth playback. Use <code>?source=ZARR_URL</code>
+        url parameter to view a specific OME-zarr image.
       </div>
     </div>
     <button
@@ -451,11 +452,11 @@ select {
   /* We want to calculate the top position based on the panel's own height */
   /* Is should be negative of its own height plus 50px offset */
   /* Example: if the panel's height is 150px, top would be calc(-150px - 50px) */
-  height: 172px; /* Set the height of the panel */
-  top: calc(-172px - 5px - 50px);
+  height: 190px; /* Set the height of the panel */
+  top: calc(-190px - 5px - 50px);
   right: 10px;
   z-index: 102;
-  width: 350px;
+  width: 360px;
   max-width: 90vw;
   color: #333;
   background-color: white;
