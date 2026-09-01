@@ -4,5 +4,5 @@ import TimelapseViewer from './components/TimelapseViewer.vue';
 </script>
 
 <ClientOnly>
-<TimelapseViewer url="https://raw.githubusercontent.com/lorenzocerrone/walk-ome-zarr/refs/heads/main/walk_to_y55.zarr" />
+<TimelapseViewer url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0044A/4007801.zarr" />
 </ClientOnly>
