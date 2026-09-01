@@ -151,6 +151,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- header is simple white block to match the docs pages (which don't extend full width) -->
+  <div :class="$style.header"></div>
   <!-- if controlsVisible add controlsVisible class -->
   <div
     :class="[$style.viewer, controlsVisible ? $style.controlsVisible : '']"
@@ -197,7 +199,7 @@ onMounted(async () => {
         :step="1"
       />
     </div>
-    <div style="float: right; padding: 10px; background-color: black">
+    <div style="text-align: right; padding: 10px; background-color: black">
       <label>
         Playback speed:
         <select v-model="framesPerSec">
@@ -240,6 +242,15 @@ onMounted(async () => {
 </template>
 
 <style module>
+.header {
+  width: 100%;
+  height: 64px;
+  background-color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
 .viewer {
   /* fill the screen */
   width: 100%;
