@@ -21,7 +21,8 @@ export default defineConfig({
           { text: 'render', link: '/render' },
           { text: 'NgffImage', link: '/image' },
           { text: 'Labels', link: '/labels' },
-          { text: 'LUTs', link: '/luts' }
+          { text: 'LUTs', link: '/luts' },
+          { text: 'Timelapse Viewer', link: '/timelapse' }
         ]
       }
     ],

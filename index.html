@@ -55,6 +55,9 @@
   </head>
   <body>
     <h2>render()</h2>
+    <div id="timelapse"></div>
+    <img id="movie" />
+    <input type="range" id="tIndex" min="0" max="200" value="0" />
     <p>Default thumbnail is smallest multiscales resolution:</p>
     <code><pre>
       let thumbSrc = await omezarr.render(url);
@@ -203,6 +206,41 @@
       import { ZipFileStore } from "@zarrita/storage";
       const omezarr = await import("/src/index.ts");
 
+
+      let imgZurich = await omezarr.NgffImage.load("https://raw.githubusercontent.com/lorenzocerrone/walk-ome-zarr/refs/heads/main/walk_to_y55.zarr");
+      //   let shapes = await imgZurich.calcShapes();
+      let dsPath = await imgZurich.getPathForTargetSize(300);
+      let shape = await imgZurich.getShape(dsPath);
+      let axes = await imgZurich.getAxesNames();
+      let size_Z = shape[axes.indexOf("z")] || 1;
+      let size_C = shape[axes.indexOf("c")] || 1;
+      let size_T = shape[axes.indexOf("t")] || 1;
+      let size_X = shape[axes.indexOf("x")] || 1;
+      let size_Y = shape[axes.indexOf("y")] || 1;
+      imgZurich.omero.rdefs = {};
+
+      let timelapseDiv = document.getElementById("timelapse");
+      for (let t = 0; t < size_T; t++) {
+        console.log("rendering t", t);
+        imgZurich.setTIndex(t);
+        let tSrc = await imgZurich.render({arrayPathOrIndex: dsPath});
+        
+        timelapseDiv.innerHTML += `<img class="timeFrame" id="frame_${t}" title="t: ${t}" src="${tSrc}" />`;
+      }
+
+      let $movie = document.getElementById("movie");
+      document.getElementById("tIndex").max = size_T - 1;
+      document.getElementById("tIndex").addEventListener("input", async (event) => {
+        let t = parseInt(event.target.value);
+        console.log("tIndex changed to", t);
+        let frame = document.getElementById("frame_" + t);
+        if (frame) {
+          let fSrc = frame.src;
+          $movie.src = fSrc;
+        }
+      });
+
+      throw new Error("Test error to check error handling");
 
       let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
       // Load the zarr.json to test {attrs} option.
