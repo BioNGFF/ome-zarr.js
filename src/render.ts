@@ -111,7 +111,8 @@ export function renderChunkWithLUT(
       const [min, max] = range;
       if (value < min) value = min;
       if (value > max) value = max;
-      value = Math.round(((bins - 1) * (value - min)) / (max - min));
+      // A constant plane (min === max) would divide by zero, so use the first LUT value
+      value = max === min ? 0 : Math.round(((bins - 1) * (value - min)) / (max - min));
       return lut[value];
     }
   } else {

@@ -96,6 +96,24 @@ test("renderChunkWithLUTrange", async () => {
 });
 
 
+test("renderChunkWithLUTconstantRange", async () => {
+
+    let fakeChunk = {shape: [2, 2], data: [0, 0, 0, 0]};
+    let lut = Array.from({length: 256}, (_, i) => [i, 0, 0, 255]); // red gradient
+
+    // min === max (e.g. a plane of fill values) maps to the first LUT value
+    let rendered = renderChunkWithLUT(fakeChunk, lut, {range: [0, 0]});
+
+    let expected = new Uint8ClampedArray([
+        0, 0, 0, 255,
+        0, 0, 0, 255,
+        0, 0, 0, 255,
+        0, 0, 0, 255,
+    ]);
+    expect(rendered).toStrictEqual(expected);
+});
+
+
 test("renderChunkWithColormap", async () => {
 
     let fakeChunk = {shape: [2, 3], data: [0, 1, 2, 3, 4, 5]};
