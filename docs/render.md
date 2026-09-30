@@ -36,6 +36,7 @@ import ThumbnailTest from './components/ThumbnailTest.vue';
 <div style="float:left; margin:3px"><Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr" /></div>
 <div style="float:left; margin:3px"><Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0066/ExpD_chicken_embryo_MIP.ome.zarr" /></div>
 <div style="float:left; margin:3px"><Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/v0.3/idr0079A/9836998.zarr" /></div>
+<div style="float:left; margin:3px"><Thumbnail url="https://livingobjects.ebi.ac.uk/idr/zarr/test-data/v0.9.dev1/idr0079_XZYC.ome.zarr" /></div>
 <div style="float:left; margin:3px"><Thumbnail url="https://s3.janelia.org/funceworm/test-uint64-small.zarr/" /></div>
 </ClientOnly>
 
