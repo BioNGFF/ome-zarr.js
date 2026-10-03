@@ -101,23 +101,29 @@ export function renderChunkWithLUT(
   // Values greater than the length of the LUT are "modulo" the LUT length,
   // so the LUT will repeat, excluding the FIRST value which is reserved for 0 values.
   // e.g. if LUT has 256 values, and chunk value is 257, it will use LUT[1].
-  const bins = lut.length;
+  const bins = lut.length - 1;
   const { dst, blending = "additive", rowDim, colDim } = options ?? {};
 
   let transferFunc: (value: number) => Color;
   if (options?.range) {
     const range = options.range;
-    transferFunc = function(value: number): Color {
-      const [min, max] = range;
-      if (value < min) value = min;
-      if (value > max) value = max;
-      value = Math.round(((bins - 1) * (value - min)) / (max - min));
-      return lut[value];
+    const [min, max] = range;
+    const diff = max - min;
+    // A constant plane (min === max) would divide by zero, so use the first LUT value
+    if (diff === 0) {
+      transferFunc = () => lut[0];
+    } else {
+      transferFunc = function(value: number): Color {
+        if (value < min) value = min;
+        if (value > max) value = max;
+        value = Math.round((bins * (value - min)) / diff);
+        return lut[value];
+      }
     }
   } else {
     transferFunc = function(value: number): Color {
       if (value <= 0) return lut[0];
-      const index = ((value - 1) % (bins - 1)) + 1;
+      const index = ((value - 1) % bins) + 1;
       return lut[index];
     }
   }
