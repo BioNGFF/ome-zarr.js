@@ -54,12 +54,11 @@
     </style>
   </head>
   <body>
-    <h2>render()</h2>
-    <p>Default thumbnail is smallest multiscales resolution:</p>
-    <code><pre>
-      let thumbSrc = await omezarr.render(url);
-      document.getElementById("thumbnail").src = thumbSrc;
-    </pre></code>
+
+    <p>RFC8 collection</p>
+    <div id="rfc8-thumbnails"></div>
+
+    <p>Various test thumbnails</p>
     <div id="thumbnails"></div>
 
     <p>If we know that all images are similar, we can just load the "multiscales" group for 1 image,
@@ -203,6 +202,37 @@
       import { ZipFileStore } from "@zarrita/storage";
       const omezarr = await import("/src/index.ts");
 
+      // Test - load sample RFC8 collection json
+      let rfc8Url = "https://raw.githubusercontent.com/will-moore/figure/refs/heads/save_omezarr_collection/sample_figures/rfc8/my_v0.5_images.zarr/zarr.json";
+      let collectionJson = await fetch(rfc8Url).then((res) => res.json());
+
+      for (let i = 0; i < collectionJson.ome.nodes.length; i++) {
+        // Load the first node from the RFC8 collection as RFC5 data
+        let rfc8multiscales = collectionJson.ome.nodes[i];
+        // need to create v0.5 attrs from each RFC8 multiscales node
+        let v05Attrs = {
+          "ome": {
+            "multiscales": [
+              {
+                "axes": rfc8multiscales.attributes.coordinateSystems[0].axes,
+                "datasets": rfc8multiscales.nodes.map(node => (
+                  {
+                    "path": node.path.path,
+                    "coordinateTransformations": node.attributes.coordinateTransformations
+                  }
+                ))
+              }
+            ]
+          }
+        }
+
+        // store isn't needed since arrays are full http URLs and attrs has multiscale info
+        let store = undefined;
+        let ngffImg = await omezarr.NgffImage.load(store, {attrs: v05Attrs});
+        let rfc8Src = await ngffImg.render({targetSize: 200, autoBoost: true});
+        let rfc8html = `<a target="_blank"><img src="${rfc8Src}" /></a>`;
+        document.getElementById("rfc8-thumbnails").innerHTML += rfc8html;
+      }
 
       let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
       // Load the zarr.json to test {attrs} option.
