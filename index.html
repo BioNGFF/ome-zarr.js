@@ -207,7 +207,7 @@
       let collectionJson = await fetch(rfc8Url).then((res) => res.json());
 
       for (let i = 0; i < collectionJson.ome.nodes.length; i++) {
-        // Load the first node from the RFC8 collection as RFC5 data
+        // Load each node from the RFC8 collection as RFC5 data
         let rfc8multiscales = collectionJson.ome.nodes[i];
         // need to create v0.5 attrs from each RFC8 multiscales node
         let v05Attrs = {
