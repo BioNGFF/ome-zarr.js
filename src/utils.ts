@@ -296,7 +296,12 @@ export async function openArrayOrGroup(
     location = zarr.root(store);
   }
   if (path) {
-    location = location.resolve(path);
+    // If path is full URL, use it as a new FetchStore - ignore any 'src' group
+    if (path.startsWith("http")) {
+      location = new zarr.FetchStore(path);
+    } else {
+      location = location.resolve(path);
+    }
   }
   const arrayOrGroup = await openFn(location, { kind });  // TODO https://github.com/manzt/zarrita.js/issues/317
   signal?.throwIfAborted();

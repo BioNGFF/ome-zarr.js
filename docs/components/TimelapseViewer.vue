@@ -333,7 +333,7 @@ onMounted(async () => {
   flex: 1 1 auto;
 }
 
-input[type="range"] {
+input[type="range"].tslider {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -346,13 +346,13 @@ input[type="range"] {
 }
 
 /* Removes default focus */
-input[type="range"]:focus {
+input[type="range"].tslider:focus {
   outline: none;
 }
 
 /******** Chrome, Safari, Opera and Edge Chromium styles ********/
 /* slider track */
-input[type="range"]::-webkit-slider-runnable-track {
+input[type="range"].tslider::-webkit-slider-runnable-track {
   background-color: rgba(0, 0, 0, 0.01);
   border-radius: 0rem;
   height: 5px;
@@ -360,7 +360,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 /* slider thumb */
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"].tslider::-webkit-slider-thumb {
   -webkit-appearance: none; /* Override default look */
   appearance: none;
   margin-top: -5.5px; /* Centers thumb on the track */
@@ -370,21 +370,21 @@ input[type="range"]::-webkit-slider-thumb {
   width: 1rem;
 }
 
-input[type="range"]:focus::-webkit-slider-thumb {
+input[type="range"].tslider:focus::-webkit-slider-thumb {
   outline: 3px solid white;
   outline-offset: 0.125rem;
 }
 
 /*********** Firefox styles ***********/
 /* slider track */
-input[type="range"]::-moz-range-track {
+input[type="range"].tslider::-moz-range-track {
   background-color: #dedede;
   border-radius: 0rem;
   height: 5px;
 }
 
 /* slider thumb */
-input[type="range"]::-moz-range-thumb {
+input[type="range"].tslider::-moz-range-thumb {
   background-color: white;
   border: none; /*Removes extra border that FF applies*/
   border-radius: 0.5rem;
@@ -392,7 +392,7 @@ input[type="range"]::-moz-range-thumb {
   width: 1rem;
 }
 
-input[type="range"]:focus::-moz-range-thumb {
+input[type="range"].tslider:focus::-moz-range-thumb {
   outline: 3px solid white;
   outline-offset: 0.125rem;
 }
